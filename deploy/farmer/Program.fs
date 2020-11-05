@@ -15,7 +15,12 @@ let parseCLI (key:string) (argv: string[]) =
 
 [<EntryPoint>]
 let main argv =
-    let deployEnvironment = Environment.GetEnvironmentVariable("AGN_ENVIRONMENT")
+    let deployEnvironment = 
+        match parseCLI "deployEnvironment" argv with
+        | Some "test" -> "test"
+        | Some "prod" -> ""
+        | _ -> failwith "invalid deployEnvironment"
+        
     let azureAppId = Environment.GetEnvironmentVariable("AGN_AZURE_APPID")
     let azureSecret = Environment.GetEnvironmentVariable("AGN_AZURE_SECRET")
     let azureTenant = Environment.GetEnvironmentVariable("AGN_AZURE_TENANT")
@@ -26,8 +31,7 @@ let main argv =
             sku Storage.Standard_LRS
         }
     
-        let webAppEnv = "-" + env
-        let webAppName = "active-game-night" + webAppEnv
+        let webAppName = "active-game-night-" + deployEnvironment
         let webApp = webApp {
             name webAppName
             operating_system Windows
@@ -51,22 +55,17 @@ let main argv =
         }
 
     let deployment = deployment deployEnvironment
-    printf "Generating ARM template..."
-    deployment |> Writer.quickWrite "output"
-    printfn "all done! Template written to output.json"
-
-    // Alternatively, deploy your resource group directly to Azure here.
-
-    let webAppEnv =
-        match deployEnvironment with
-        | "test" -> "-test"
-        | "prod" -> ""
-        | _ -> failwith "invalid deployEnvironment"
+    
     Deploy.authenticate azureAppId azureSecret azureTenant
     |> printfn "%A"
     
+    let rgName =
+        match deployEnvironment with
+        | "test" -> "-test"
+        | "" -> ""
+        | _ -> failwith "Invalid deploy enviroment"
     deployment 
-    |> Deploy.execute ("activegamenight" + webAppEnv) Deploy.NoParameters
+    |> Deploy.execute rgName Deploy.NoParameters
     |> printfn "%A"
     
     0

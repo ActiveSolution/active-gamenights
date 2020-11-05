@@ -1,0 +1,27 @@
+name: deploy to test
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.301
+      - name: Install tools
+        run: dotnet tool restore
+      - name: Paket install
+        run: dotnet paket install
+
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: active-game-night
+          path: ./output
+          
+      - name: Deploy to test
+        run: dotnet run --project -- environment=test
+
