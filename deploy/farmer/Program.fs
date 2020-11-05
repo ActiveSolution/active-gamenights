@@ -21,13 +21,12 @@ let main argv =
     let azureTenant = Environment.GetEnvironmentVariable("AGN_AZURE_TENANT")
 
     let deployment env =
-        let storageEnv = env |> Option.defaultValue ""
         let storage = storageAccount {
-            name ("activegamenight" + storageEnv)
+            name ("activegamenight" + env)
             sku Storage.Standard_LRS
         }
     
-        let webAppEnv = env |> Option.map (fun e -> "-" + e) |> Option.defaultValue ""
+        let webAppEnv = "-" + env
         let webAppName = "active-game-night" + webAppEnv
         let webApp = webApp {
             name webAppName
@@ -40,7 +39,7 @@ let main argv =
             setting "ServerPort" "8080"
             setting "PublicPath" "./public"
             setting "BasePath" (sprintf "https://%s.azurewebsites.net" webAppName) 
-            zip_deploy (zipDeployPath |> Option.defaultValue "")
+            zip_deploy "./output"
         }
         
         arm {
@@ -51,19 +50,23 @@ let main argv =
             ]
         }
 
-    let deployment = deployment environment
+    let deployment = deployment deployEnvironment
     printf "Generating ARM template..."
     deployment |> Writer.quickWrite "output"
     printfn "all done! Template written to output.json"
 
     // Alternatively, deploy your resource group directly to Azure here.
 
-    if zipDeployPath.IsSome then
-        let webAppEnv = environment |> Option.map (fun e -> "-" + e) |> Option.defaultValue ""
-        Deploy.authenticate
-        deployment 
-        |> Deploy.execute ("activegamenight" + webAppEnv) Deploy.NoParameters
-        |> printfn "%A"
-    else ()
+    let webAppEnv =
+        match deployEnvironment with
+        | "test" -> "-test"
+        | "prod" -> ""
+        | _ -> failwith "invalid deployEnvironment"
+    Deploy.authenticate azureAppId azureSecret azureTenant
+    |> printfn "%A"
+    
+    deployment 
+    |> Deploy.execute ("activegamenight" + webAppEnv) Deploy.NoParameters
+    |> printfn "%A"
     
     0
