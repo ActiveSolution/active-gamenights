@@ -28,6 +28,21 @@ module Helpers =
         
     let plusIcon = 
         faIcon [ "fas"; "fa-plus" ]
+        
+let githubLink =
+    Bulma.navbarItem.a [
+        prop.href "https://github.com/ActiveSolution/ActiveGameNight/blob/master/CHANGELOG.md"
+        prop.target.blank
+        prop.children [
+            Bulma.icon [
+                prop.children [
+                    Html.i [
+                        prop.classes [ "fab fa-fw fa-github" ]
+                    ]
+                ]
+            ]
+        ]
+    ]
     
 let navbar user =
     Bulma.navbar [
@@ -59,6 +74,7 @@ let navbar user =
                 prop.id "agn-navbar-menu"
                 prop.children [ 
                     Bulma.navbarEnd.div [
+                        githubLink
                         match user with
                         | Some (User username) ->
                             Bulma.navbarItem.a [
