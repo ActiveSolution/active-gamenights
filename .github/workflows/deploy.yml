@@ -1,8 +1,16 @@
-name: deploy to prod
+name: Deploy
+
+
+on:
+  workflow_dispatch:
+    inputs:
+      Environment:
+        description: 'Deploy to environment (test or prod)'
+        required: true
+        default: 'test'
 
 jobs:
-  build:
-
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,6 +30,6 @@ jobs:
           name: active-game-night
           path: ./output
           
-      - name: Deploy to prod
-        run: dotnet run --project -- environment=prod
+      - name: Deploy to test
+        run: dotnet run --project -- environment=${{ github.event.inputs.Environment }}
 
