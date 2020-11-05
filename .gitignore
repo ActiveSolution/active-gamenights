@@ -6,9 +6,6 @@ Debug
 *.user
 obj
 bin
-deploy
-release.sh
-createdockerimage.sh
 
 # paket
 *.exe
