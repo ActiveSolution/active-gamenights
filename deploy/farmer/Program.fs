@@ -1,3 +1,4 @@
+open System.IO
 open Farmer
 open Farmer.Builders
 open System
@@ -12,6 +13,14 @@ let parseCLI (key:string) (argv: string[]) =
     argv
     |> Array.tryFind (fun x -> x.ToLower().StartsWith(key.ToLower()))
     |> Option.bind (fun x -> x.Split('=', StringSplitOptions.RemoveEmptyEntries) |> Array.tryItem 1)
+    
+let outputPath = "./output"
+
+let rec copyFilesRecursively (source: DirectoryInfo) (target: DirectoryInfo) =
+    source.GetDirectories()
+    |> Seq.iter (fun dir -> copyFilesRecursively dir (target.CreateSubdirectory dir.Name))
+    source.GetFiles()
+    |> Seq.iter (fun file -> file.CopyTo(target.FullName + "/" + file.Name, true) |> ignore)
 
 [<EntryPoint>]
 let main argv =
@@ -43,7 +52,7 @@ let main argv =
             setting "ServerPort" "8080"
             setting "PublicPath" "./public"
             setting "BasePath" (sprintf "https://%s.azurewebsites.net" webAppName) 
-            zip_deploy "./output"
+            zip_deploy outputPath
         }
         
         arm {
@@ -55,6 +64,13 @@ let main argv =
         }
 
     let deployment = deployment deployEnvironment
+    
+    printfn "Copy public folder to %s" outputPath
+    let source = DirectoryInfo("./src/Backend/public")
+    let destination = DirectoryInfo("./output/public")
+    destination.Create()
+    copyFilesRecursively source destination
+    
     
     Deploy.authenticate azureAppId azureSecret azureTenant
     |> printfn "%A"
