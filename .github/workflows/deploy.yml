@@ -21,14 +21,9 @@ jobs:
       - name: Install tools
         run: dotnet tool restore
       - name: Paket restore
-        run: dotnet paket restore --group deploy
-
-      - name: Download artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: active-game-night
-          path: ./output
-          
+        run: dotnet paket restore
+      - name: Build
+        run: dotnet publish --configuration Release --output ./output
       - name: Deploy
         run: dotnet run --project -- environment=${{ github.event.inputs.Environment }}
         env:

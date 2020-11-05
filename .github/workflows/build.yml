@@ -18,9 +18,4 @@ jobs:
       - name: Paket restore
         run: dotnet paket restore
       - name: Build
-        run: dotnet publish --configuration Release --output ./output
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: active-game-night
-          path: ./output # or path/to/artifact       
+        run: dotnet build --configuration Release
