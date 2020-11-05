@@ -65,7 +65,7 @@ let main argv =
         | "" -> ""
         | _ -> failwith "Invalid deploy enviroment"
     deployment 
-    |> Deploy.execute rgName Deploy.NoParameters
+    |> Deploy.execute ("ActiveGameNight" + rgName) Deploy.NoParameters
     |> printfn "%A"
     
     0
