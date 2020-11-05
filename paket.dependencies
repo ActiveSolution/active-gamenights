@@ -1,0 +1,27 @@
+version 5.245.1
+
+group Backend
+    source https://api.nuget.org/v3/index.json
+    framework: netcoreapp3.1
+    storage: none
+
+    nuget Giraffe
+    nuget Saturn
+    nuget FSharp.Core
+    nuget FsToolkit.ErrorHandling
+    nuget FsToolkit.ErrorHandling.TaskResult
+    nuget FsConfig
+    nuget Microsoft.Extensions.Configuration.UserSecrets 
+    nuget Feliz.ViewEngine
+    nuget Feliz.Bulma.ViewEngine
+    nuget FSharp.Azure.Storage
+    nuget Unquote 4.0
+    nuget Saturn.Extensions.Turbolinks
+
+group deploy
+    source https://api.nuget.org/v3/index.json
+    framework: netcoreapp3.1
+    storage: none
+    
+    nuget FSharp.Core
+    nuget Farmer

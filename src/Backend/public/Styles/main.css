@@ -1,0 +1,8 @@
+span.remove-game-vote-button {
+    background-color: #feecf0; !important;
+    color: #cc0f35;
+}
+.remove-date-vote-button, span:hover {
+    background-color: #feecf0;
+    color: #cc0f35;
+}
