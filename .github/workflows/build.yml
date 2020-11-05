@@ -15,8 +15,8 @@ jobs:
           dotnet-version: 3.1.301
       - name: Install tools
         run: dotnet tool restore
-      - name: Paket install
-        run: dotnet paket install
+      - name: Paket restore
+        run: dotnet paket restore
       - name: Build
         run: dotnet publish --configuration Release --output ./output
       - name: Upload artifact
