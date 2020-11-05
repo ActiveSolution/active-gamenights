@@ -25,7 +25,7 @@ jobs:
       - name: Build
         run: dotnet publish --configuration Release --output ./output
       - name: Deploy
-        run: dotnet run --project -- environment=${{ github.event.inputs.Environment }}
+        run: dotnet run --project deploy/farmer -- environment=${{ github.event.inputs.Environment }}
         env:
           AGN_AZURE_APPID: ${{ secrets.AGN_AZURE_APPID }}
           AGN_AZURE_SECRET: ${{ secrets.AGN_AZURE_SECRET }}
