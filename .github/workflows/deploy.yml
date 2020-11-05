@@ -1,6 +1,5 @@
 name: Deploy
 
-
 on:
   workflow_dispatch:
     inputs:
@@ -30,6 +29,10 @@ jobs:
           name: active-game-night
           path: ./output
           
-      - name: Deploy to test
+      - name: Deploy
         run: dotnet run --project -- environment=${{ github.event.inputs.Environment }}
+        env:
+          AGN_AZURE_APPID: ${{ secrets.AGN_AZURE_APPID }}
+          AGN_AZURE_SECRET: ${{ secrets.AGN_AZURE_SECRET }}
+          AGN_AZURE_TENANT: ${{ secrets.AGN_AZURE_TENANT }}
 
