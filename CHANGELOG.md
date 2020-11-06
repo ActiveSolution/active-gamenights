@@ -9,7 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Slack notification
 * Export Calendar event
 * Edit Game (BGG-link, image, notes, number of players)
-* Display version
+
+
+## [0.2.1] - 2020-11-05
+### Added
+* Version endpoint
+* FAKE build script
 
 ## [0.2.0] - 2020-11-05
 ### Added

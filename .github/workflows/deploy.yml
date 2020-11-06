@@ -1,15 +1,10 @@
-name: Deploy
+name: ProdDeploy
 
-on:
-  workflow_dispatch:
-    inputs:
-      Environment:
-        description: 'Deploy to environment (test or prod)'
-        required: true
-        default: 'prod'
+on: workflow_dispatch
 
 jobs:
   deploy:
+
     runs-on: ubuntu-latest
 
     steps:
@@ -20,14 +15,11 @@ jobs:
           dotnet-version: 3.1.301
       - name: Install tools
         run: dotnet tool restore
-      - name: Paket restore
-        run: dotnet paket restore
       - name: Build
-        run: dotnet publish --configuration Release --output ./output
-      - name: Deploy
-        run: dotnet run --project deploy/farmer -- deployEnvironment=${{ github.event.inputs.Environment }}
+        run: dotnet fake build --target Package
+      - name: Deploy to prod
+        run: dotnet fake build --target CreateProdRelease
         env:
           AGN_AZURE_APPID: ${{ secrets.AGN_AZURE_APPID }}
           AGN_AZURE_SECRET: ${{ secrets.AGN_AZURE_SECRET }}
           AGN_AZURE_TENANT: ${{ secrets.AGN_AZURE_TENANT }}
-

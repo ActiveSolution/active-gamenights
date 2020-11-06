@@ -10,4 +10,3 @@ group Backend
     Feliz.Bulma.ViewEngine
     FSharp.Azure.Storage
     Unquote
-    Saturn.Extensions.Turbolinks

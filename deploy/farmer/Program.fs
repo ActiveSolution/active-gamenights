@@ -16,12 +16,6 @@ let parseCLI (key:string) (argv: string[]) =
     
 let outputPath = "./output"
 
-let rec copyFilesRecursively (source: DirectoryInfo) (target: DirectoryInfo) =
-    source.GetDirectories()
-    |> Seq.iter (fun dir -> copyFilesRecursively dir (target.CreateSubdirectory dir.Name))
-    source.GetFiles()
-    |> Seq.iter (fun file -> file.CopyTo(target.FullName + "/" + file.Name, true) |> ignore)
-
 [<EntryPoint>]
 let main argv =
     let (storageName, webAppName, rgName) =
@@ -66,7 +60,6 @@ let main argv =
     let source = DirectoryInfo("./src/Backend/public")
     let destination = DirectoryInfo("./output/public")
     destination.Create()
-    copyFilesRecursively source destination
     
     Deploy.authenticate azureAppId azureSecret azureTenant
     |> printfn "%A"

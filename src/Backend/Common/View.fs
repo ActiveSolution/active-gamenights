@@ -29,7 +29,7 @@ module Helpers =
     let plusIcon = 
         faIcon [ "fas"; "fa-plus" ]
         
-let githubLink =
+let private githubLink =
     Bulma.navbarItem.a [
         prop.href "https://github.com/ActiveSolution/ActiveGameNight/blob/master/CHANGELOG.md"
         prop.target.blank
@@ -44,7 +44,7 @@ let githubLink =
         ]
     ]
     
-let navbar user =
+let private navbar user =
     Bulma.navbar [
         prop.id "agn-navbar"
         prop.custom ("data-turbolinks-permanent", "")
@@ -93,8 +93,7 @@ let navbar user =
         ] 
     ]
     
-let html (BasePath basePath) (user: User option) (content : ReactElement) =
-    Html.html [
+let private htmlHead (BasePath basePath) =
         Html.head [
             Html.meta [ prop.charset.utf8 ]
             Html.meta [ 
@@ -148,6 +147,10 @@ let html (BasePath basePath) (user: User option) (content : ReactElement) =
                 prop.href "/Styles/main.css"
             ]
         ]
+
+let html basePath (user: User option) (content : ReactElement) =
+    Html.html [
+        htmlHead basePath
         Html.body [
             navbar user
             Bulma.section [
@@ -157,3 +160,14 @@ let html (BasePath basePath) (user: User option) (content : ReactElement) =
             ]
         ]
     ] |> Render.htmlDocument
+
+let versionView basePath =
+    Html.html [
+        htmlHead basePath
+        Html.body [
+            Bulma.section [
+                Html.p (sprintf "Version: %s" Version.version)
+            ]
+        ]
+    ]
+        

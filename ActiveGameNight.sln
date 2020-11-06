@@ -8,9 +8,6 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Backend", "src\Backend\Backend.fsproj", "{C6C7FF74-51AA-4085-980A-4452FCE45701}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deploy", "deploy", "{52B846AD-4396-459D-A708-61EA5C6895DD}"
-ProjectSection(SolutionItems) = preProject
-	deploy\paket.references = deploy\paket.references
-EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FarmerApp", "deploy\farmer\FarmerApp.fsproj", "{CF74B26A-BB23-47DC-93B3-397284A0D23C}"
 EndProject

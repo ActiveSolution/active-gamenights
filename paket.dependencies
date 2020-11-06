@@ -16,7 +16,20 @@ group Backend
     nuget Feliz.Bulma.ViewEngine
     nuget FSharp.Azure.Storage
     nuget Unquote 4.0
-    nuget Saturn.Extensions.Turbolinks
+
+group build
+    source https://api.nuget.org/v3/index.json
+    framework: netstandard2.0
+    storage: none
+    
+    nuget Fake.Core.ReleaseNotes
+    nuget Fake.Core.Target
+    nuget FAKE.Core.Environment
+    nuget FAKE.Core.Process
+    nuget FAKE.Net.Http
+    nuget Fake.DotNet.Cli
+    nuget Fake.IO.FileSystem
+    nuget Fake.Tools.Git
 
 group deploy
     source https://api.nuget.org/v3/index.json

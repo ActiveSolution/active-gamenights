@@ -11,6 +11,7 @@
     <Compile Include="Types.fs" />
     <Compile Include="Extensions.fs" />
     <Compile Include="Json.fs" />
+    <Compile Include="Version.fs" />
     <Compile Include="Common\View.fs" />
     <Compile Include="Storage.fs" />
     <Compile Include="Domain.fs" />

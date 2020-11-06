@@ -1,12 +1,14 @@
 module Backend.Startup
 
 open System
+open Feliz.ViewEngine
 open Giraffe
 open Microsoft.AspNetCore.Http
 open Saturn
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open Microsoft.Extensions.Logging
 open Backend.Extensions
+open Turbolinks
         
         
 let endpointPipe =
@@ -27,6 +29,13 @@ let requireUsername : HttpHandler =
         | Ok _ -> next ctx
         | Error _ -> redirectTo false "/user/add" next ctx
 
+let aboutRouter =
+    let about = (CompositionRoot.config.BasePath |> Common.View.versionView |> Render.htmlView |> htmlString)
+    router {
+        get "/about" about
+        get "/version" about
+    }
+
 let browserRouter =
     router {
         pipe_through requireUsername
@@ -45,6 +54,7 @@ let notFoundHandler : HttpHandler =
         
 let webApp =
     choose [ userRouter
+             aboutRouter
              browserRouter
              notFoundHandler ]
 
