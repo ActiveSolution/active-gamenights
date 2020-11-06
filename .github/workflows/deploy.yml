@@ -6,7 +6,7 @@ on:
       Environment:
         description: 'Deploy to environment (test or prod)'
         required: true
-        default: 'test'
+        default: 'prod'
 
 jobs:
   deploy:

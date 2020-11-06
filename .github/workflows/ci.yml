@@ -1,0 +1,53 @@
+name: CI
+
+on: push
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.301
+      - name: Install tools
+        run: dotnet tool restore
+      - name: Paket restore
+        run: dotnet paket restore
+      - name: Build
+        run: dotnet publish --configuration Release --output "./output"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: active-game-night
+          path: ./output  
+        
+        
+  deployToTest:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: active-game-night
+          path: ./output
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.301
+      - name: Install tools
+        run: dotnet tool restore
+      - name: Paket restore
+        run: dotnet paket restore --group deploy
+      - name: Deploy
+        run: dotnet run --project deploy/farmer -- deployEnvironment=test
+        env:
+          AGN_AZURE_APPID: ${{ secrets.AGN_AZURE_APPID }}
+          AGN_AZURE_SECRET: ${{ secrets.AGN_AZURE_SECRET }}
+          AGN_AZURE_TENANT: ${{ secrets.AGN_AZURE_TENANT }}
