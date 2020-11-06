@@ -24,23 +24,22 @@ let rec copyFilesRecursively (source: DirectoryInfo) (target: DirectoryInfo) =
 
 [<EntryPoint>]
 let main argv =
-    let deployEnvironment = 
+    let (storageName, webAppName, rgName) =
         match parseCLI "deployEnvironment" argv with
-        | Some "test" -> "test"
-        | Some "prod" -> ""
+        | Some "test" -> "activegamenighttest", "active-game-night-test", "activegamenight-test"
+        | Some "prod" -> "activegamenight", "active-game-night", "activegamenight"
         | _ -> failwith "invalid deployEnvironment"
         
     let azureAppId = Environment.GetEnvironmentVariable("AGN_AZURE_APPID")
     let azureSecret = Environment.GetEnvironmentVariable("AGN_AZURE_SECRET")
     let azureTenant = Environment.GetEnvironmentVariable("AGN_AZURE_TENANT")
 
-    let deployment env =
+    let deployment =
         let storage = storageAccount {
-            name ("activegamenight" + env)
+            name storageName
             sku Storage.Standard_LRS
         }
     
-        let webAppName = "active-game-night-" + deployEnvironment
         let webApp = webApp {
             name webAppName
             operating_system Windows
@@ -63,23 +62,15 @@ let main argv =
             ]
         }
 
-    let deployment = deployment deployEnvironment
-    
     printfn "Copy public folder to %s" outputPath
     let source = DirectoryInfo("./src/Backend/public")
     let destination = DirectoryInfo("./output/public")
     destination.Create()
     copyFilesRecursively source destination
     
-    
     Deploy.authenticate azureAppId azureSecret azureTenant
     |> printfn "%A"
     
-    let rgName =
-        match deployEnvironment with
-        | "test" -> "-test"
-        | "" -> ""
-        | _ -> failwith "Invalid deploy enviroment"
     deployment 
     |> Deploy.execute ("ActiveGameNight" + rgName) Deploy.NoParameters
     |> printfn "%A"
