@@ -128,11 +128,12 @@ let watchApp _ =
     cancelEvent.Cancel <- true
 
 let runFarmerDeploy env _ =
+    let args envStr = sprintf "--project %s -- deployEnvironment=%s" farmerDeployPath envStr
     match env with
-    | Test -> 
-        DotNet.exec (DotNet.Options.withWorkingDirectory farmerDeployPath) "run" "-- deployEnvironment=test"
+    | Test ->
+        DotNet.exec (DotNet.Options.Create()) "run" (args "test")
     | Prod -> 
-        DotNet.exec (DotNet.Options.withWorkingDirectory farmerDeployPath) "run" "-- deployEnvironment=prod"
+        DotNet.exec (DotNet.Options.Create()) "run" (args "prod")
     |> ignore
 
 let gitCheckUniqueTag _ =
