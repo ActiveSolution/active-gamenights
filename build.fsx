@@ -172,9 +172,9 @@ let waitForDeployment env _ =
     System.Threading.Thread.Sleep 5000
     match env with
     | Test ->
-        waitForResponse (TimeSpan.FromSeconds(30.)) "https://active-game-night-test.azurewebsites.net/"
+        waitForResponse (TimeSpan.FromSeconds(120.)) "https://active-game-night-test.azurewebsites.net/"
     | Prod ->
-        waitForResponse (TimeSpan.FromSeconds(30.)) "https://active-game-night.azurewebsites.net/"
+        waitForResponse (TimeSpan.FromSeconds(120.)) "https://active-game-night.azurewebsites.net/"
 
 //-----------------------------------------------------------------------------
 // Build Target Declaration
