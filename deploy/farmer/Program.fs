@@ -72,7 +72,7 @@ let main argv =
     |> printfn "%A"
     
     deployment 
-    |> Deploy.execute ("ActiveGameNight" + rgName) Deploy.NoParameters
+    |> Deploy.execute rgName Deploy.NoParameters
     |> printfn "%A"
     
     0
