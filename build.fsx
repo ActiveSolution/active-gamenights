@@ -144,7 +144,12 @@ let gitCheckUniqueTag _ =
             failwith "git error"
         | true, tags, _ -> 
             tags 
-    if allTags |> List.contains (semVersion.AsString) then failwithf "git tag already exists for %s, make sure ChangeLog is updated with a new version for this release" semVersion.AsString
+    let currentVersion = semVersion.AsString
+    Trace.tracefn "Current version is %s" currentVersion
+    Trace.tracefn "Existing tags:"
+    allTags
+    |> List.iter (Trace.tracefn "%s")
+    if allTags |> List.contains currentVersion then failwithf "git tag already exists for %s, make sure ChangeLog is updated with a new version for this release" currentVersion
 
 let gitTagDeployment _ =
     let tag = semVersion.AsString
