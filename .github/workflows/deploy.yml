@@ -15,8 +15,6 @@ jobs:
           dotnet-version: 3.1.301
       - name: Install tools
         run: dotnet tool restore
-      - name: Build
-        run: dotnet fake build --target Package
       - name: Deploy to prod
         run: dotnet fake build --target CreateProdRelease
         env:
