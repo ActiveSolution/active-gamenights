@@ -147,8 +147,9 @@ let gitCheckUniqueTag _ =
     if allTags |> List.contains (semVersion.AsString) then failwithf "git tag already exists for %s, make sure ChangeLog is updated with a new version for this release" semVersion.AsString
 
 let gitTagDeployment _ =
-    Git.Branches.tag "" semVersion.AsString
-
+    let tag = semVersion.AsString
+    Git.Branches.tag "" tag
+    Git.Branches.pushTag "" "origin" tag
 
 let waitForDeployment env _ =
     let waitForResponse timeout url =
