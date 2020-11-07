@@ -225,6 +225,7 @@ Target.create "CreateProdRelease" ignore
     ==> "CreateTestRelease"
 
 "GitCheckVersionTag"
+    ==> "Package"
     ==> "DeployToProd"
     ==> "GitTagProdDeployment"
     ==> "WaitForProdDeployment"
