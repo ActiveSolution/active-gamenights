@@ -9,6 +9,7 @@ open Backend
 open FsToolkit.ErrorHandling
 
 let basePath = CompositionRoot.config.BasePath
+let domain = CompositionRoot.config.Domain
 
 let toMissingUserError (ValidationError err) = AppError.MissingUser err
 let getAll (ctx : HttpContext) : HttpFuncResult =
@@ -19,14 +20,14 @@ let getAll (ctx : HttpContext) : HttpFuncResult =
             gameNights 
             |> List.ofSeq 
             |> Views.proposedGameNightsView currentUser
-            |> Common.View.html basePath (ctx.GetUser() |> Result.toOption)
+            |> Common.View.html basePath domain (ctx.GetUser() |> Result.toOption)
             |> ApiResponse.Html
     } 
     |> ApiResult.handle ctx
     
 let addProposedGameNight (ctx : HttpContext) =
     Views.addProposedGameNightView
-    |> Common.View.html basePath None
+    |> Common.View.html basePath domain None
     |> Controller.html ctx
     
 type CreateProposedGameNightDto =

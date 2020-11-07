@@ -13,7 +13,9 @@ type Config =
       [<DefaultValue("../../output/server/public")>]
       PublicPath: string
       [<DefaultValue("https://localhost:8085/")>]
-      BasePath: string }
+      BasePath: string 
+      [<DefaultValue("localhost")>]
+      Domain: string }
     
 let configRoot =
     ConfigurationBuilder()
@@ -43,7 +45,8 @@ let config =
             {| ConnectionString = Storage.ConnectionString config.AzureStorageConnectionString
                ServerPort = config.ServerPort
                PublicPath = config.PublicPath |> Path.GetFullPath
-               BasePath = BasePath config.BasePath |}
+               BasePath = BasePath config.BasePath
+               Domain = Domain config.Domain |}
         | Error msg ->
             match msg with
             | BadValue (name, msg) -> invalidArg name msg

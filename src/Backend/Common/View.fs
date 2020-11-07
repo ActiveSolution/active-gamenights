@@ -93,7 +93,7 @@ let private navbar user =
         ] 
     ]
     
-let private htmlHead (BasePath basePath) =
+let private htmlHead (BasePath basePath) (Domain domain) =
         Html.head [
             Html.meta [ prop.charset.utf8 ]
             Html.meta [ 
@@ -138,6 +138,12 @@ let private htmlHead (BasePath basePath) =
                 prop.defer true
                 prop.src "https://use.fontawesome.com/releases/v5.14.0/js/all.js"
             ]
+            Html.script [
+                prop.async true
+                prop.defer true
+                prop.custom ("data-domain", domain)
+                prop.src "https://plausible.io/js/plausible.js"
+            ]
             Html.script [ prop.src "https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.2.0/turbolinks.js" ]
             Html.script [
                 prop.src "/js/App.js"
@@ -148,9 +154,9 @@ let private htmlHead (BasePath basePath) =
             ]
         ]
 
-let html basePath (user: User option) (content : ReactElement) =
+let html basePath domain (user: User option) (content : ReactElement) =
     Html.html [
-        htmlHead basePath
+        htmlHead basePath domain
         Html.body [
             navbar user
             Bulma.section [
@@ -161,9 +167,9 @@ let html basePath (user: User option) (content : ReactElement) =
         ]
     ] |> Render.htmlDocument
 
-let versionView basePath =
+let versionView basePath domain =
     Html.html [
-        htmlHead basePath
+        htmlHead basePath domain
         Html.body [
             Bulma.section [
                 Html.p (sprintf "Version: %s" Version.version)

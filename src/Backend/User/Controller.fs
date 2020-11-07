@@ -10,8 +10,9 @@ open FsToolkit.ErrorHandling
 
 let addUser (ctx: HttpContext) =
     let basePath = CompositionRoot.config.BasePath
+    let domain = CompositionRoot.config.Domain
     Views.addUserView
-    |> Common.View.html basePath None
+    |> Common.View.html basePath domain None
     |> Controller.html ctx
     
 let createUser (ctx : HttpContext) =
@@ -25,7 +26,7 @@ let createUser (ctx : HttpContext) =
             Turbolinks.redirect ctx "/"
         | Error err -> Response.badRequest ctx err
     
-let clearUser (ctx : HttpContext) (username : string) =
+let clearUser (ctx : HttpContext) (_ : string) =
     ctx.ClearUsername()
     Turbolinks.redirect ctx "/user/add"
         

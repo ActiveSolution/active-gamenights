@@ -18,10 +18,10 @@ let outputPath = "./output"
 
 [<EntryPoint>]
 let main argv =
-    let (storageName, webAppName, rgName) =
+    let (storageName, webAppName, rgName, domain) =
         match parseCLI "deployEnvironment" argv with
-        | Some "test" -> "activegamenighttest", "active-game-night-test", "activegamenight-test"
-        | Some "prod" -> "activegamenight", "active-game-night", "activegamenight"
+        | Some "test" -> "activegamenighttest", "active-game-night-test", "activegamenight-test", "active-game-night-test.azurewebsites.net"
+        | Some "prod" -> "activegamenight", "active-game-night", "activegamenight", "active-game-night.azurewebsites.net"
         | _ -> failwith "invalid deployEnvironment"
         
     let azureAppId = Environment.GetEnvironmentVariable("AGN_AZURE_APPID")
@@ -45,6 +45,7 @@ let main argv =
             setting "ServerPort" "8080"
             setting "PublicPath" "./public"
             setting "BasePath" (sprintf "https://%s.azurewebsites.net" webAppName) 
+            setting "Domain" domain
             zip_deploy outputPath
         }
         

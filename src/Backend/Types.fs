@@ -69,6 +69,7 @@ type ConfirmedGameNight =
       Players : User list }
 
 type BasePath = BasePath of string
+type Domain = Domain of string
 type ApiResponse =
     | Html of string
     | Redirect of string

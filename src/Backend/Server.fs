@@ -30,7 +30,7 @@ let requireUsername : HttpHandler =
         | Error _ -> redirectTo false "/user/add" next ctx
 
 let aboutRouter =
-    let about = (CompositionRoot.config.BasePath |> Common.View.versionView |> Render.htmlView |> htmlString)
+    let about = ((CompositionRoot.config.BasePath, CompositionRoot.config.Domain) ||> Common.View.versionView |> Render.htmlView |> htmlString)
     router {
         get "/about" about
         get "/version" about
