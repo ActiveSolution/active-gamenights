@@ -17,49 +17,49 @@ let createProposedGameNight : CreateProposedGameNight =
             |> List.map (fun (FutureDate date) -> date, Set.empty)
             |> Map.ofList
         { ProposedGameNight.Id = GameNightId.newId()
-          Games = games
-          Dates = dates
+          GameVotes = games
+          DateVotes = dates
           ProposedBy = req.ProposedBy }
 
 let addGameVote : AddGameVote =
     fun req ->
         let newVotes = 
-            req.GameNight.Games 
+            req.GameNight.GameVotes 
             |> Map.tryFind req.GameName 
             |> Option.defaultValue Set.empty 
             |> Set.add req.User
         let newGames =
-            req.GameNight.Games |> Map.add req.GameName newVotes
-        { req.GameNight with Games = newGames}
+            req.GameNight.GameVotes |> Map.add req.GameName newVotes
+        { req.GameNight with GameVotes = newGames}
         
 let removeGameVote : RemoveGameVote =
     fun req ->
         let newVotes = 
-            req.GameNight.Games 
+            req.GameNight.GameVotes 
             |> Map.tryFind req.GameName 
             |> Option.defaultValue Set.empty 
             |> Set.remove req.User
         let newGames =
-            req.GameNight.Games |> Map.add req.GameName newVotes
-        { req.GameNight with Games = newGames}
+            req.GameNight.GameVotes |> Map.add req.GameName newVotes
+        { req.GameNight with GameVotes = newGames}
 let addDateVote : AddDateVote =
     fun req ->
         let newVotes = 
-            req.GameNight.Dates
+            req.GameNight.DateVotes
             |> Map.tryFind req.Date
             |> Option.defaultValue Set.empty 
             |> Set.add req.User
         let newDates =
-            req.GameNight.Dates |> Map.add req.Date newVotes
-        { req.GameNight with Dates = newDates }
+            req.GameNight.DateVotes |> Map.add req.Date newVotes
+        { req.GameNight with DateVotes = newDates }
         
 let removeDateVote : RemoveDateVote =
     fun req ->
         let newVotes = 
-            req.GameNight.Dates
+            req.GameNight.DateVotes
             |> Map.tryFind req.Date
             |> Option.defaultValue Set.empty 
             |> Set.remove req.User
         let newDates =
-            req.GameNight.Dates |> Map.add req.Date newVotes
-        { req.GameNight with Dates = newDates }
+            req.GameNight.DateVotes |> Map.add req.Date newVotes
+        { req.GameNight with DateVotes = newDates }

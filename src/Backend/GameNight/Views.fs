@@ -83,7 +83,7 @@ let private gameNightCard currentUser (gn: ProposedGameNight) =
                 Bulma.level [
                     Bulma.levelLeft [
                         yield! gameVoteList gn.Id gameName currentUser votes
-                        if hasVoted gn.Games.[gameName] currentUser then
+                        if hasVoted gn.GameVotes.[gameName] currentUser then
                             Html.none
                         else
                             addVoteButton "add-game-vote-button" [("data-game", gameName.Val); ("data-gamenight", gn.Id.Val.ToString())] "add vote"
@@ -111,7 +111,7 @@ let private gameNightCard currentUser (gn: ProposedGameNight) =
                 Bulma.level [
                     Bulma.levelLeft [
                         yield! dateVoteList gn.Id date currentUser votes
-                        if hasVoted gn.Dates.[date] currentUser then
+                        if hasVoted gn.DateVotes.[date] currentUser then
                             Html.none
                         else
                             addVoteButton "add-date-vote-button" ["data-date", (date |> Date.toString); ("data-gamenight", gn.Id.Val.ToString())] "add vote"
@@ -127,13 +127,13 @@ let private gameNightCard currentUser (gn: ProposedGameNight) =
                 Bulma.cardHeaderTitle.p (gn.ProposedBy.Val + " wants to play")
             ]
             Bulma.cardContent [
-                for gameName, votes in gn.Games |> Map.toList do
+                for gameName, votes in gn.GameVotes |> Map.toList do
                     Html.unorderedList [
                         Html.listItem [
                             gameCard gameName votes 
                         ] 
                     ] 
-                for date, votes in gn.Dates |> Map.toList do
+                for date, votes in gn.DateVotes |> Map.toList do
                     Html.unorderedList [
                         Html.listItem [
                             dateCard date votes 

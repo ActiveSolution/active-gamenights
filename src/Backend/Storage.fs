@@ -56,16 +56,16 @@ module Implementation =
     let saveProposedGameNight inGameNightTable (gn: ProposedGameNight) : Async<OperationResult> =
         { PartitionKey = partitionKey
           Id = gn.Id |> GameNightId.toString
-          Games = serializeGamesMap gn.Games
-          Dates = serializeDatesMap gn.Dates
+          Games = serializeGamesMap gn.GameVotes
+          Dates = serializeDatesMap gn.DateVotes
           ProposedBy = gn.ProposedBy.Val }
         |> InsertOrMerge
         |> inGameNightTable
         
     let toProposedGameNight (entity: ProposedGameNightEntity) =
         { ProposedGameNight.Id = GameNightId.parse entity.Id |> Result.orFail
-          Games = deserializeGamesMap entity.Games
-          Dates = deserializeDatesMap entity.Dates
+          GameVotes = deserializeGamesMap entity.Games
+          DateVotes = deserializeDatesMap entity.Dates
           ProposedBy = User.create entity.ProposedBy |> Result.orFail }
           
     let getProposedGameNight (fromGameNightTable : EntityQuery<ProposedGameNightEntity> -> Async<seq<ProposedGameNightEntity * EntityMetadata>>) id : AsyncResult<ProposedGameNight, NotFoundError> =
@@ -92,7 +92,7 @@ module Implementation =
             return
                 result
                 |> Seq.map (fst >> toProposedGameNight)
-                |> Seq.sortBy (fun x -> x.Dates |> Map.toList |> List.minBy (fun (date,_) -> date))
+                |> Seq.sortBy (fun x -> x.DateVotes |> Map.toList |> List.minBy (fun (date,_) -> date))
         }
 
 open Implementation

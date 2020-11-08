@@ -59,12 +59,12 @@ type GameVotes = Map<GameName, Set<User>>
 type DateVotes = Map<Date, Set<User>>
 type ProposedGameNight =
     { Id : GameNightId
-      Games : GameVotes
-      Dates : DateVotes
+      GameVotes : GameVotes
+      DateVotes : DateVotes
       ProposedBy : User }
 type ConfirmedGameNight =
     { Id : GameNightId 
-      Games : (GameName) list
+      GameVotes : GameVotes
       Date : Date
       Players : User list }
 
