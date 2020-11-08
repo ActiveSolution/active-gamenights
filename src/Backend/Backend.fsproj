@@ -9,6 +9,7 @@
     <Compile Include="TurbolinksHelpers.fs" />
     <Compile Include="Helpers.fs" />
     <Compile Include="Types.fs" />
+    <Compile Include="Implementations.fs" />
     <Compile Include="Extensions.fs" />
     <Compile Include="Json.fs" />
     <Compile Include="Version.fs" />

@@ -3,7 +3,6 @@ module Backend.Storage
 open FSharp.Azure.Storage.Table
 open Microsoft.Azure.Cosmos.Table
 open Backend
-open Backend.Extensions
 open FsToolkit.ErrorHandling
 
 type GameEntity = 

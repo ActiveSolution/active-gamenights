@@ -1,7 +1,21 @@
+[<AutoOpen>]
 module Backend.Extensions
 
+open Backend.Implementations
 open Microsoft.AspNetCore.Http
 open FsToolkit.ErrorHandling
+
+type GameName with
+    member this.Val = GameName.value this
+
+type GameNightId with
+    member this.Val = GameNightId.value this
+
+type User with    
+    member this.Val = this |> fun (User u) -> u
+
+type BasePath with
+    member this.Val = this |> fun (BasePath bp) -> bp
 
 module HttpContext = 
     let usernameKey = "username"

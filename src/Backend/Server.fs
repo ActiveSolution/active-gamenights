@@ -7,7 +7,6 @@ open Microsoft.AspNetCore.Http
 open Saturn
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open Microsoft.Extensions.Logging
-open Backend.Extensions
 open Turbolinks
         
         

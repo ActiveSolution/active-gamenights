@@ -1,8 +1,9 @@
 module Backend.Domain
 
 open System
-open Backend.Extensions
 open Backend.Helpers
+open Backend
+open Backend.Implementations
 
 let createUser : CreateUser = User.create 
 let createGame : CreateGame = fun _ _ -> notImplemented()
