@@ -1,0 +1,244 @@
+openapi: 3.0.0
+info:
+  description: "API Specification for Active Game Night"
+  version: 0.0.1
+  title: Active Game Night
+  termsOfService: https://github.com/ActiveSolution/ActiveGameNight/blob/master/TERMS.md
+  contact:
+    name: ActiveSolution Sverige AB
+    url: https://github.com/ActiveSolution/ActiveGameNight
+  license:
+    name: GNU GPLv3
+    url: https://www.gnu.org/licenses/gpl-3.0.en.html
+    
+paths:
+  /gamenight:
+    get:
+      tags:
+        - game-night
+      summary: Returns all game nights
+      description: ""
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GameNight"
+
+    post:
+      tags:
+        - game-night
+      summary: Create a new proposed game night
+      description: ""
+      parameters:
+        - in: header
+          name: X-Username
+          required: true
+          schema:
+            type: string
+          description: The username
+      requestBody:
+        description: Proposed game night
+        content: 
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/PostProposedGameNight'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request
+
+  /gamenight/{gameNightId}/game/{gameName}/vote:
+    post:
+      tags:
+        - game-vote
+      summary: Vote on a game for a game night
+      description: ""
+      parameters:
+        - in: header
+          name: X-Username
+          required: true
+          schema:
+            type: string
+          description: The username
+        - in: path
+          name: gameNightId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The game night id
+        - in: path
+          name: gameName
+          required: true
+          schema:
+            type: string
+          description: The game name
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          description: Bad Request
+
+  /gamenight/{gameNightId}/game/{gameName}/vote/{username}:
+    delete:
+      tags:
+        - game-vote
+      summary: Remove vote on a game for a game night
+      description: ""
+      parameters:
+        - in: path
+          name: gameNightId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The game night id
+        - in: path
+          name: gameName
+          required: true
+          schema:
+            type: string
+          description: The game name
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          description: Bad Request
+
+  /gamenight/{gameNightId}/date/{date}/vote:
+    post:
+      tags:
+        - date-vote
+      summary: Vote on a date for a game night
+      description: ""
+      parameters:
+        - in: header
+          name: X-Username
+          required: true
+          schema:
+            type: string
+          description: The username
+        - in: path
+          name: gameNightId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The game night id
+        - in: path
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+          description: The date YYYY-mm-dd
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          description: Bad Request
+
+  /gamenight/{gameNightId}/date/{date}/vote/{username}:
+    delete:
+      tags:
+        - date-vote
+      summary: Remove a vote on a date for a game night
+      description: ""
+      parameters:
+        - in: path
+          name: gameNightId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The game night id
+        - in: path
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+          description: The date YYYY-mm-dd
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          description: Bad Request
+     
+components:
+  schemas:
+    PostProposedGameNight:
+      type: object
+      properties:
+        games:
+          type: array
+          items: 
+            type: string
+        dates:
+          type: array
+          items: 
+            type: string
+            format: date
+        notes:
+          type: string
+
+    GameNight:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        gameVotes:
+          $ref: "#/components/schemas/GameVotes"
+        dateVotes:
+          $ref: "#/components/schemas/DateVotes"
+        proposedBy:
+          type: string
+        status:
+          type: string
+          enum:
+            - proposed
+            - confirmed
+        notes:
+          type: string
+
+    GameVotes:
+      type: object
+      additionalProperties:
+        type: object
+        properties: 
+          game: 
+            type: string
+          votes: 
+            type: array
+            items:
+              type: string
+
+    DateVotes:
+      type: object
+      additionalProperties:
+        type: object
+        properties:
+          game: 
+            type: string
+          votes:
+            type: array
+            items:
+              type: string
+              format: date
+
