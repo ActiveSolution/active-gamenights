@@ -79,18 +79,35 @@ module CreateGameRequest =
             Link = None
             Notes = None }
     
-    
 open Saturn
+module BrowserResult =
+    let handle ctx (res : BrowserResult) =
+        match res with
+        | Ok (Html template) -> Controller.html ctx template
+        | Ok (Redirect uri) -> Turbolinks.redirect ctx uri
+        | Error (AppError.Validation (ValidationError err)) -> Response.badRequest ctx err
+        | Error (AppError.MissingUser _) -> Turbolinks.redirect ctx "/user/add"
+        | Error (AppError.NotFound _) -> Response.notFound ctx ()
+        | Error (AppError.Duplicate)  -> Response.internalError ctx ()
+        
+
+module BrowserTaskResult =
+    let handle ctx (res: BrowserTaskResult) =
+        Task.bind (BrowserResult.handle ctx) res
+
 module ApiResult =
-    let handle ctx (res : ApiResult) =
-        res
-        |> Task.bind
-            (fun r ->
-                match r with
-                | Ok (Html template) -> Controller.html ctx template
-                | Ok (Redirect uri) -> Turbolinks.redirect ctx uri
-                | Error (AppError.Validation (ValidationError err)) -> Response.badRequest ctx err
-                | Error (AppError.MissingUser _) -> Turbolinks.redirect ctx "/user/add"
-                | Error (AppError.NotFound _) -> Response.notFound ctx ()
-                | Error (AppError.Duplicate)  -> Response.internalError ctx ())
+    let handle ctx (res : ApiResult<_>) =
+        match res with
+        | Ok (Created uri) -> Response.created ctx uri
+        | Ok (Json result) -> Controller.json ctx result
+        | Ok (Accepted) -> Response.accepted ctx ()
+        | Error (AppError.Validation (ValidationError err)) -> Response.badRequest ctx err
+        | Error (AppError.MissingUser _) -> Turbolinks.redirect ctx "/user/add"
+        | Error (AppError.NotFound _) -> Response.notFound ctx ()
+        | Error (AppError.Duplicate)  -> Response.internalError ctx ()
+        
+
+module ApiTaskResult =
+    let handle ctx (res: ApiTaskResult<_>) =
+        Task.bind (ApiResult.handle ctx) res
         

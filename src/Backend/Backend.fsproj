@@ -22,6 +22,7 @@
     <Compile Include="User\Controller.fs" />
     <Compile Include="GameNight\Views.fs" />
     <Compile Include="GameNight\Controller.fs" />
+    <Compile Include="Api\GameNight.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

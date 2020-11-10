@@ -21,18 +21,21 @@ let getAll (ctx : HttpContext) : HttpFuncResult =
             |> List.ofSeq 
             |> Views.proposedGameNightsView currentUser
             |> Common.View.html basePath domain (ctx.GetUser() |> Result.toOption)
-            |> ApiResponse.Html
+            |> BrowserResponse.Html
     } 
-    |> ApiResult.handle ctx
-    
-let addProposedGameNight (ctx : HttpContext) =
-    Views.addProposedGameNightView
-    |> Common.View.html basePath domain None
-    |> Controller.html ctx
+    |> BrowserTaskResult.handle ctx
     
 type CreateProposedGameNightDto =
     { Games : string list
       Dates : string list }
+
+let addProposedGameNight (ctx : HttpContext) =
+    Views.addProposedGameNightView
+    |> Common.View.html basePath domain None
+    |> Html
+    |> Ok 
+    |> BrowserResult.handle ctx
+    
 let saveProposedGameNight (ctx: HttpContext) : HttpFuncResult =
     taskResult {
         let! dto = ctx.BindJsonAsync<CreateProposedGameNightDto>()
@@ -59,7 +62,7 @@ let saveProposedGameNight (ctx: HttpContext) : HttpFuncResult =
         let! _ = CompositionRoot.storage.SaveProposedGameNight gn
         return (Redirect "/gamenight")
     }
-    |> ApiResult.handle ctx
+    |> BrowserTaskResult.handle ctx
     
     
 let gameController (gameNightId: string) =
@@ -80,7 +83,7 @@ let gameController (gameNightId: string) =
                 let! _ = CompositionRoot.storage.SaveProposedGameNight updated
                 return Redirect "/gamenight"
             }
-            |> ApiResult.handle ctx
+            |> BrowserTaskResult.handle ctx
                 
         let deleteGameVote (ctx: HttpContext) (_: string) =
             taskResult {
@@ -98,7 +101,7 @@ let gameController (gameNightId: string) =
                 let! _ = CompositionRoot.storage.SaveProposedGameNight updated
                 return Redirect "/gamenight"
                 
-            } |> ApiResult.handle ctx
+            } |> BrowserTaskResult.handle ctx
     
         controller {
             create saveGameVote
@@ -130,7 +133,7 @@ let dateController (gameNightId: string) =
                 let! _ = CompositionRoot.storage.SaveProposedGameNight updated
                 return Redirect "/gamenight"
             }
-            |> ApiResult.handle ctx
+            |> BrowserTaskResult.handle ctx
                 
         let deleteDateVote (ctx: HttpContext) (_: string) =
             taskResult {
@@ -148,7 +151,7 @@ let dateController (gameNightId: string) =
                 let! _ = CompositionRoot.storage.SaveProposedGameNight updated
                 return Redirect "/gamenight"
                 
-            } |> ApiResult.handle ctx
+            } |> BrowserTaskResult.handle ctx
     
         controller {
             create saveDateVote

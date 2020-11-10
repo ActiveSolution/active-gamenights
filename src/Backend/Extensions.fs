@@ -10,6 +10,7 @@ type GameName with
 
 type GameNightId with
     member this.Val = GameNightId.value this
+    member this.ToString() = this.Val.ToString()
 
 type User with    
     member this.Val = this |> fun (User u) -> u

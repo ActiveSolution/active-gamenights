@@ -19,7 +19,7 @@ let endpointPipe =
     
 let userRouter =
     router {
-        forward "/user" (User.Controller.controller)
+        forward "" (User.Controller.controller)
     }
     
 let requireUsername : HttpHandler =
@@ -28,33 +28,37 @@ let requireUsername : HttpHandler =
         | Ok _ -> next ctx
         | Error _ -> redirectTo false "/user/add" next ctx
 
-let aboutRouter =
-    let about = ((CompositionRoot.config.BasePath, CompositionRoot.config.Domain) ||> Common.View.versionView |> Render.htmlView |> htmlString)
-    router {
-        get "/about" about
-        get "/version" about
-    }
+let about = ((CompositionRoot.config.BasePath, CompositionRoot.config.Domain) ||> Common.View.versionView |> Render.htmlView |> htmlString)
 
 let browserRouter =
     router {
         pipe_through requireUsername
+        pipe_through endpointPipe
         forward "" (GameNight.Controller.controller)
         forward "/gamenight" (GameNight.Controller.controller)
     }
-
+    
 let notFoundHandler : HttpHandler =
     fun next ctx ->
-        task {
-            return! (setStatusCode 404
-                     >=> htmlString "<div>Not Found!</div>")
-                        next
-                        ctx
-        }
+        (setStatusCode 404 >=> text "Not found") next ctx
+        
+let apiRouter =
+    router {
+        forward "/gamenight" (Api.GameNight.controller CompositionRoot.storage)
+        not_found_handler notFoundHandler
+    }
+
+let topRouter =
+    router {
+        get "/about" about
+        get "/version" about
+        forward "/user" userRouter
+        forward "/api" apiRouter
+        forward "" browserRouter
+    }
         
 let webApp =
-    choose [ userRouter
-             aboutRouter
-             browserRouter
+    choose [ topRouter
              notFoundHandler ]
 
 let errorHandler: ErrorHandler =

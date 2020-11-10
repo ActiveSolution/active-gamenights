@@ -70,10 +70,18 @@ type ConfirmedGameNight =
 
 type BasePath = BasePath of string
 type Domain = Domain of string
-type ApiResponse =
+type BrowserResponse =
     | Html of string
     | Redirect of string
-type ApiResult = Task<Result<ApiResponse, AppError>>
+type BrowserResult = Result<BrowserResponse, AppError>
+type BrowserTaskResult = Task<BrowserResult>
+
+type ApiResponse<'T> =
+    | Json of 'T
+    | Created of Location: string
+    | Accepted
+type ApiResult<'T> = Result<ApiResponse<'T>, AppError>
+type ApiTaskResult<'T> = Task<ApiResult<'T>>
     
 // Domain
 // Requests
