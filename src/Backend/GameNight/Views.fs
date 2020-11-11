@@ -1,6 +1,5 @@
 module Backend.GameNight.Views
 
-open System.Web
 open Backend
 open Backend.Common.View.Helpers
 open Feliz.ViewEngine

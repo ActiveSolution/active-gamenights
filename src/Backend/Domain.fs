@@ -1,12 +1,9 @@
 module Backend.Domain
 
-open System
-open Backend.Helpers
 open Backend
-open Backend.Implementations
+open FsToolkit.ErrorHandling
 
 let createUser : CreateUser = User.create 
-let createGame : CreateGame = fun _ _ -> notImplemented()
 let createProposedGameNight : CreateProposedGameNight =
     fun req ->
         let games =

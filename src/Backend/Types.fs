@@ -7,11 +7,13 @@ open System.Threading.Tasks
 type AsyncResult<'TResult, 'TError> = Async<Result<'TResult, 'TError>>
 
 type ValidationError = ValidationError of string
+type DomainError = DomainError of string
 type NotFoundError = NotFoundError
 type AppError =
     | Duplicate 
     | NotFound of NotFoundError
     | Validation of ValidationError
+    | Domain of DomainError
     | MissingUser of string
     
 type GameName = GameName of string
@@ -85,23 +87,10 @@ type ApiTaskResult<'T> = Task<ApiResult<'T>>
     
 // Domain
 // Requests
-type CreateGameRequest =
-    { Name : GameName
-      CreatedBy : User
-      NumberOfPlayers : NumberOfPlayers option
-      Link : Link option
-      Notes : string option } 
 type CreateProposedGameNightRequest =
     { Games : GameName list
       Dates : FutureDate list
       ProposedBy : User }
-type AddGameRequest =
-    { GameNightId : GameNightId
-      GameName : GameName
-      User : User }
-type AddDateRequest =
-    { GameNightId : GameNightId 
-      Date : Date }
 type GameVoteRequest =
     { GameNight : ProposedGameNight
       GameName : GameName 
@@ -113,17 +102,11 @@ type DateVoteRequest =
       
 // Commands
 type CreateUser = string -> Result<User, ValidationError>
-type CreateGame = CreateGameRequest -> Game list -> Result<Game, string>
 type CreateProposedGameNight = CreateProposedGameNightRequest -> ProposedGameNight
-type AddGame = AddGameRequest -> (ProposedGameNight * Game option)
-type AddDate = AddDateRequest -> ProposedGameNight
 type AddGameVote = GameVoteRequest -> ProposedGameNight
 type AddDateVote = DateVoteRequest -> ProposedGameNight
 type RemoveGameVote = GameVoteRequest -> ProposedGameNight
 type RemoveDateVote = DateVoteRequest -> ProposedGameNight
-type ConfirmGameNight = ProposedGameNight -> Result<ConfirmedGameNight, string>
-type AddPlayer = ConfirmedGameNight * User -> ConfirmedGameNight
-type RemovePlayer = ConfirmedGameNight * User -> ConfirmedGameNight
 
 // Queries
 type GetGames = unit -> Async<Game list>

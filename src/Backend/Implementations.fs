@@ -86,6 +86,7 @@ module BrowserResult =
         | Ok (Html template) -> Controller.html ctx template
         | Ok (Redirect uri) -> Turbolinks.redirect ctx uri
         | Error (AppError.Validation (ValidationError err)) -> Response.badRequest ctx err
+        | Error (AppError.Domain (DomainError err)) -> Response.badRequest ctx err
         | Error (AppError.MissingUser _) -> Turbolinks.redirect ctx "/user/add"
         | Error (AppError.NotFound _) -> Response.notFound ctx ()
         | Error (AppError.Duplicate)  -> Response.internalError ctx ()
@@ -102,6 +103,7 @@ module ApiResult =
         | Ok (Json result) -> Controller.json ctx result
         | Ok (Accepted) -> Response.accepted ctx ()
         | Error (AppError.Validation (ValidationError err)) -> Response.badRequest ctx err
+        | Error (AppError.Domain (DomainError err)) -> Response.badRequest ctx err
         | Error (AppError.MissingUser _) -> Turbolinks.redirect ctx "/user/add"
         | Error (AppError.NotFound _) -> Response.notFound ctx ()
         | Error (AppError.Duplicate)  -> Response.internalError ctx ()
