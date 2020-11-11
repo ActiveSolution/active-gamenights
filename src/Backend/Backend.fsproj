@@ -17,12 +17,12 @@
     <Compile Include="Storage.fs" />
     <Compile Include="Domain.fs" />
     <Compile Include="Configuration.fs" />
-    <Compile Include="CompositionRoot.fs" />
     <Compile Include="User\Views.fs" />
     <Compile Include="User\Controller.fs" />
     <Compile Include="GameNight\Views.fs" />
     <Compile Include="GameNight\Controller.fs" />
     <Compile Include="Api\GameNight.fs" />
+    <Compile Include="CompositionRoot.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

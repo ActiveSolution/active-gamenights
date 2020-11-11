@@ -6,9 +6,7 @@ open Saturn
 open Microsoft.AspNetCore.Http
 open FsToolkit.ErrorHandling
 
-let addUser (ctx: HttpContext) =
-    let basePath = CompositionRoot.config.BasePath
-    let domain = CompositionRoot.config.Domain
+let addUser basePath domain (ctx: HttpContext) =
     Views.addUserView
     |> Common.View.html basePath domain None
     |> Controller.html ctx
@@ -28,8 +26,8 @@ let clearUser (ctx : HttpContext) (_ : string) =
     Ok (Redirect "/user/add")
     |> BrowserResult.handle ctx
         
-let controller = controller {
-    add addUser
+let controller basePath domain = controller {
+    add (addUser basePath domain)
     create createUser
     delete clearUser
 }

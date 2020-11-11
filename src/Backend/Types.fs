@@ -129,4 +129,3 @@ type RemovePlayer = ConfirmedGameNight * User -> ConfirmedGameNight
 type GetGames = unit -> Async<Game list>
 type GetProposedGameNights = unit -> Async<ProposedGameNight seq>
 
-    

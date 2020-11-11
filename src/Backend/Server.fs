@@ -5,7 +5,6 @@ open Feliz.ViewEngine
 open Giraffe
 open Microsoft.AspNetCore.Http
 open Saturn
-open FSharp.Control.Tasks.V2.ContextInsensitive
 open Microsoft.Extensions.Logging
 open Turbolinks
         
@@ -19,7 +18,7 @@ let endpointPipe =
     
 let userRouter =
     router {
-        forward "" (User.Controller.controller)
+        forward "" CompositionRoot.userController
     }
     
 let requireUsername : HttpHandler =
@@ -34,8 +33,8 @@ let browserRouter =
     router {
         pipe_through requireUsername
         pipe_through endpointPipe
-        forward "" (GameNight.Controller.controller)
-        forward "/gamenight" (GameNight.Controller.controller)
+        forward "" CompositionRoot.gameNightController
+        forward "/gamenight" CompositionRoot.gameNightController
     }
     
 let notFoundHandler : HttpHandler =
@@ -44,7 +43,7 @@ let notFoundHandler : HttpHandler =
         
 let apiRouter =
     router {
-        forward "/gamenight" (Api.GameNight.controller CompositionRoot.storage)
+        forward "/gamenight" CompositionRoot.Api.gameNightController
         not_found_handler notFoundHandler
     }
 
