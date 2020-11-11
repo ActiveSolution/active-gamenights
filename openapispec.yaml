@@ -18,6 +18,23 @@ paths:
         - game-night
       summary: Returns all game nights
       description: ""
+      parameters:
+        - in: query
+          name: status
+          description: "Filter by game night status"
+          required: false
+          schema:
+            type: array
+            items: 
+              $ref: "#/compontents/schemas/GameNightStatus"
+            uniqueItems: true
+        - in: query
+          name: startDate
+          description: "Return only game night on startDate and later"
+          schema:
+            type: string
+            format: date
+
       responses:
         "200":
           description: OK
@@ -210,10 +227,7 @@ components:
         proposedBy:
           type: string
         status:
-          type: string
-          enum:
-            - proposed
-            - confirmed
+          $ref: "#/components/schemas/GameNightStatus"
         notes:
           type: string
 
@@ -242,3 +256,10 @@ components:
               type: string
               format: date
 
+    GameNightStatus:
+      type: string
+      enum:
+        - proposed
+        - confirmed
+        - completed
+        - cancelled
