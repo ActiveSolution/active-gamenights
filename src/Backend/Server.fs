@@ -18,7 +18,7 @@ let endpointPipe =
     
 let userRouter =
     router {
-        forward "" CompositionRoot.userController
+        forward "" CompositionRoot.Browser.userController
     }
     
 let requireUsername : HttpHandler =
@@ -27,14 +27,14 @@ let requireUsername : HttpHandler =
         | Ok _ -> next ctx
         | Error _ -> redirectTo false "/user/add" next ctx
 
-let about = ((CompositionRoot.config.BasePath, CompositionRoot.config.Domain) ||> Common.View.versionView |> Render.htmlView |> htmlString)
+let about = ((CompositionRoot.config.BasePath, CompositionRoot.config.Domain) ||> Browser.Common.View.versionView |> Render.htmlView |> htmlString)
 
 let browserRouter =
     router {
         pipe_through requireUsername
         pipe_through endpointPipe
-        forward "" CompositionRoot.gameNightController
-        forward "/gamenight" CompositionRoot.gameNightController
+        forward "" CompositionRoot.Browser.gameNightController
+        forward "/gamenight" CompositionRoot.Browser.gameNightController
     }
     
 let notFoundHandler : HttpHandler =

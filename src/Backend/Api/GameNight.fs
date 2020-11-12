@@ -1,54 +1,78 @@
 module Backend.Api.GameNight
 
-
+open System
+open System.Threading.Tasks
 open Giraffe
 open Saturn
 open Backend.Extensions
 open Microsoft.AspNetCore.Http
-open System
 open Backend
 open FsToolkit.ErrorHandling
+
 
 type CreateProposedGameNightDto =
     { Games : string list
       Dates : string list }
-
+    
+type GameNightDto =
+    { Id : Guid
+      GameVotes : (string * (string list)) list
+      DateVotes : (DateTime * (string list)) list
+      CreatedBy : string }
+    
+type GetAllGameNights = unit -> ApiTaskResult<seq<GameNightDto>>
+      
+module GameNightDto =
+    let usersToDto (users: Set<User>) =
+        users
+        |> Set.toList
+        |> List.map (fun u -> u.Val)
+    let gameVotesToDto (votes: GameVotes) =
+        votes
+        |> Map.toList
+        |> List.map (fun (game, users) -> game.Val, usersToDto users)
+        
+    let dateVotesToDto (votes: DateVotes) =
+        votes
+        |> Map.toList
+        |> List.map (fun (date, users) -> Date.toDateTime date, usersToDto users)
+         
+    let fromProposedGameNight (gn : ProposedGameNight) =
+        { Id = gn.Id.Val
+          GameVotes = gn.GameVotes |> gameVotesToDto
+          DateVotes = gn.DateVotes |> dateVotesToDto
+          CreatedBy = gn.CreatedBy.Val }
+           
+    let fromConfirmedGameNight (gn : ConfirmedGameNight) =
+        { Id = gn.Id.Val
+          GameVotes = gn.GameVotes |> gameVotesToDto
+          DateVotes = [ Date.toDateTime gn.Date, usersToDto gn.Players ] 
+          CreatedBy = gn.CreatedBy.Val }
+    
 let parseUsernameHeader (ctx: HttpContext) =
     ctx.TryGetRequestHeader "X-Username"
     |> Result.requireSome (ValidationError "Missing username header")
     |> Result.bind User.create 
-    |> Result.mapError AppError.Validation
+    |> Result.mapError ApiError.Validation
 
 module GameNight =
-    let getAll (storage: Storage.Service) (ctx : HttpContext) =
-        taskResult {
-            let! gameNights = storage.GetProposedGameNights()
-            return Json gameNights
-        } 
-        |> ApiTaskResult.handle ctx
+    let getAll (storage: Storage.Service) : GetAllGameNights =
+        fun () ->
+            taskResult {
+                let! proposedGameNights = storage.GetProposedGameNights() |> Async.map (Seq.map GameNightDto.fromProposedGameNight) |> Async.StartChild
+                let! confirmedGameNights = storage.GetConfirmedGameNights() |> Async.map (Seq.map GameNightDto.fromConfirmedGameNight) |> Async.StartChild
+                let! proposedGameNights = proposedGameNights 
+                let! confirmedGameNights = confirmedGameNights 
+                return Json (Seq.concat [proposedGameNights; confirmedGameNights])
+            } 
         
     let saveProposedGameNight (storage: Storage.Service) (ctx: HttpContext) : HttpFuncResult =
         taskResult {
             let! dto = ctx.BindJsonAsync<CreateProposedGameNightDto>()
-            let! gameNames =
-                dto.Games
-               |> List.choose (fun s -> if String.IsNullOrWhiteSpace(s) then None else Some s)
-               |> List.map (GameName.create >> Result.mapError AppError.Validation)
-               |> List.distinct
-               |> List.sequenceResultM
-            let! dates =
-                dto.Dates
-                |> List.choose (fun s -> if String.IsNullOrWhiteSpace s then None else Some s)
-                |> List.map (FutureDate.tryParse >> Result.mapError AppError.Validation)
-                |> List.distinct
-                |> List.sequenceResultM
             let! user = parseUsernameHeader ctx
             
-            let req =
-                { CreateProposedGameNightRequest.Games = gameNames
-                  Dates = dates
-                  ProposedBy = user }
-            let gn = Domain.createProposedGameNight req
+            let! req = Domain.ProposedGameNight.CreateProposedGameNightRequest.create (dto.Games, dto.Dates, user) |> Result.mapError ApiError.Validation
+            let gn = Domain.ProposedGameNight.createProposedGameNight req
             
             let! _ = storage.SaveProposedGameNight gn
             return gn.Id.ToString() |> sprintf "/gamenight/%s" |> Created
@@ -58,16 +82,13 @@ module GameNight =
 module Votes =
     let saveGameVote (storage : Storage.Service) gameNightId gameName (ctx: HttpContext) = 
         taskResult {
-            let! gameNightId = GameNightId.parse gameNightId |> Result.mapError AppError.Validation
-            let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError AppError.NotFound
+            let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.Validation
+            let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
             
-            let! gameName = gameName |> Helpers.replaceWhiteSpace |> GameName.create |> Result.mapError AppError.Validation
+            let! gameName = gameName |> Helpers.replaceWhiteSpace |> GameName.create |> Result.mapError ApiError.Validation
             let! user = parseUsernameHeader ctx
-            let req = 
-                { GameVoteRequest.GameName = gameName
-                  GameNight = gameNight
-                  User = user }
-            let updated = Domain.addGameVote req
+            let req = Domain.ProposedGameNight.GameVoteRequest.create (gameNight, gameName, user)
+            let updated = Domain.ProposedGameNight.addGameVote req
             
             let! _ = storage.SaveProposedGameNight updated
             return Accepted
@@ -76,16 +97,13 @@ module Votes =
             
     let deleteGameVote (storage: Storage.Service) gameNightId gameName (ctx: HttpContext) (_: string) =
         taskResult {
-            let! gameNightId = GameNightId.parse gameNightId |> Result.mapError AppError.Validation
-            let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError AppError.NotFound
+            let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.Validation
+            let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
             
-            let! gameName = gameName |> Helpers.replaceWhiteSpace |> GameName.create |> Result.mapError AppError.Validation
-            let! user = ctx.GetUser() |> Result.mapError AppError.Validation
-            let req = 
-                { GameVoteRequest.GameName = gameName
-                  GameNight = gameNight
-                  User = user }
-            let updated = Domain.removeGameVote req
+            let! gameName = gameName |> Helpers.replaceWhiteSpace |> GameName.create |> Result.mapError ApiError.Validation
+            let! user = ctx.GetUser() |> Result.mapError ApiError.Validation
+            let req = Domain.ProposedGameNight.GameVoteRequest.create (gameNight, gameName, user)
+            let updated = Domain.ProposedGameNight.removeGameVote req
             
             let! _ = storage.SaveProposedGameNight updated
             return Accepted
@@ -96,16 +114,13 @@ module Votes =
     let saveDateVote (storage: Storage.Service) gameNightId date (ctx: HttpContext) = 
         taskResult {
             
-            let! gameNightId = GameNightId.parse gameNightId |> Result.mapError AppError.Validation
-            let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError AppError.NotFound
+            let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.Validation
+            let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
             
-            let! date = date |> Date.tryParse |> Result.mapError AppError.Validation
-            let! user = ctx.GetUser() |> Result.mapError AppError.Validation
-            let req = 
-                { DateVoteRequest.Date = date
-                  GameNight = gameNight
-                  User = user }
-            let updated = Domain.addDateVote req
+            let! date = date |> Date.tryParse |> Result.mapError ApiError.Validation
+            let! user = ctx.GetUser() |> Result.mapError ApiError.Validation
+            let req = Domain.ProposedGameNight.DateVoteRequest.create (gameNight, date, user)
+            let updated = Domain.ProposedGameNight.addDateVote req
             
             let! _ = storage.SaveProposedGameNight updated
             return Accepted
@@ -114,16 +129,14 @@ module Votes =
             
     let deleteDateVote (storage : Storage.Service) gameNightId date (ctx: HttpContext) (_: string) =
         taskResult {
-            let! gameNightId = GameNightId.parse gameNightId |> Result.mapError AppError.Validation
-            let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError AppError.NotFound
+            let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.Validation
+            let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
             
-            let! date = date |> Date.tryParse |> Result.mapError AppError.Validation
-            let! user = ctx.GetUser() |> Result.mapError AppError.Validation
-            let req = 
-                { DateVoteRequest.Date = date
-                  GameNight = gameNight
-                  User = user }
-            let updated = Domain.removeDateVote req
+            let! date = date |> Date.tryParse |> Result.mapError ApiError.Validation
+            let! user = ctx.GetUser() |> Result.mapError ApiError.Validation
+            
+            let req = Domain.ProposedGameNight.DateVoteRequest.create (gameNight, date, user)
+            let updated = Domain.ProposedGameNight.removeDateVote req
             
             let! _ = storage.SaveProposedGameNight updated
             return Accepted
@@ -157,7 +170,7 @@ let controller (storage : Storage.Service) =
         }
     
     controller {
-        index (GameNight.getAll storage)
+        index (fun ctx -> GameNight.getAll storage >> ApiTaskResult.handle ctx)
         create (GameNight.saveProposedGameNight storage)
         
         subController "/game" gameController

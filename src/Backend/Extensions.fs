@@ -65,7 +65,3 @@ module Result =
         match xResult with 
         | Error _ -> None 
         | Ok v -> Some v
-    let orFail xResult =
-        match xResult with
-        | Error _ -> failwith "Result is Error"
-        | Ok v -> v

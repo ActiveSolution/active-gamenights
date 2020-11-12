@@ -1,4 +1,4 @@
-module Backend.Common.View
+module Backend.Browser.Common.View
 
 open Backend
 open Feliz.ViewEngine

@@ -1,7 +1,7 @@
-module Backend.GameNight.Views
+module Backend.Browser.GameNight.Views
 
 open Backend
-open Backend.Common.View.Helpers
+open Backend.Browser.Common.View.Helpers
 open Feliz.ViewEngine
 open Feliz.Bulma.ViewEngine
 
@@ -123,7 +123,7 @@ let private gameNightCard currentUser (gn: ProposedGameNight) =
         prop.classes [ "mb-5" ]
         prop.children [
             Bulma.cardHeader [
-                Bulma.cardHeaderTitle.p (gn.ProposedBy.Val + " wants to play")
+                Bulma.cardHeaderTitle.p (gn.CreatedBy.Val + " wants to play")
             ]
             Bulma.cardContent [
                 for gameName, votes in gn.GameVotes |> Map.toList do

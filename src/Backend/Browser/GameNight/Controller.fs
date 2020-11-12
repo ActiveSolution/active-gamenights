@@ -1,4 +1,4 @@
-module Backend.GameNight.Controller
+module Backend.Browser.GameNight.Controller
 
 open Giraffe
 open Saturn
@@ -8,7 +8,7 @@ open System
 open Backend
 open FsToolkit.ErrorHandling
 
-let toMissingUserError (ValidationError err) = AppError.MissingUser err
+let toMissingUserError (ValidationError err) = BrowserError.MissingUser err
 let getAll (storage: Storage.Service) basePath domain (ctx : HttpContext) : HttpFuncResult =
     taskResult {
         let! gameNights = storage.GetProposedGameNights()
@@ -17,7 +17,7 @@ let getAll (storage: Storage.Service) basePath domain (ctx : HttpContext) : Http
             gameNights 
             |> List.ofSeq 
             |> Views.proposedGameNightsView currentUser
-            |> Common.View.html basePath domain (ctx.GetUser() |> Result.toOption)
+            |> Browser.Common.View.html basePath domain (ctx.GetUser() |> Result.toOption)
             |> BrowserResponse.Html
     } 
     |> BrowserTaskResult.handle ctx
@@ -28,7 +28,7 @@ type CreateProposedGameNightDto =
 
 let addProposedGameNight basePath domain (ctx : HttpContext) =
     Views.addProposedGameNightView
-    |> Common.View.html basePath domain None
+    |> Browser.Common.View.html basePath domain None
     |> Html
     |> Ok 
     |> BrowserResult.handle ctx
@@ -36,25 +36,10 @@ let addProposedGameNight basePath domain (ctx : HttpContext) =
 let saveProposedGameNight (storage: Storage.Service) (ctx: HttpContext) : HttpFuncResult =
     taskResult {
         let! dto = ctx.BindJsonAsync<CreateProposedGameNightDto>()
-        let! gameNames =
-            dto.Games
-           |> List.choose (fun s -> if String.IsNullOrWhiteSpace(s) then None else Some s)
-           |> List.map (GameName.create >> Result.mapError AppError.Validation)
-           |> List.distinct
-           |> List.sequenceResultM
-        let! dates =
-            dto.Dates
-            |> List.choose (fun s -> if String.IsNullOrWhiteSpace s then None else Some s)
-            |> List.map (FutureDate.tryParse >> Result.mapError AppError.Validation)
-            |> List.distinct
-            |> List.sequenceResultM
         let! user = ctx.GetUser() |> Result.mapError toMissingUserError
         
-        let req =
-            { CreateProposedGameNightRequest.Games = gameNames
-              Dates = dates
-              ProposedBy = user }
-        let gn = Domain.createProposedGameNight req
+        let! req = Domain.ProposedGameNight.CreateProposedGameNightRequest.create (dto.Games, dto.Dates, user) |> Result.mapError BrowserError.Validation
+        let gn = Domain.ProposedGameNight.createProposedGameNight req
         
         let! _ = storage.SaveProposedGameNight gn
         return (Redirect "/gamenight")
@@ -66,16 +51,13 @@ let gameController (storage : Storage.Service) (gameNightId: string) =
     let voteController (gameName: string) =
         let saveGameVote (ctx: HttpContext) = 
             taskResult {
-                let! gameNightId = GameNightId.parse gameNightId |> Result.mapError AppError.Validation
-                let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError AppError.NotFound
+                let! gameNightId = GameNightId.parse gameNightId |> Result.mapError BrowserError.Validation
+                let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError BrowserError.NotFound
                 
-                let! gameName = gameName |> Helpers.replaceWhiteSpace |> GameName.create |> Result.mapError AppError.Validation
+                let! gameName = gameName |> Helpers.replaceWhiteSpace |> GameName.create |> Result.mapError BrowserError.Validation
                 let! user = ctx.GetUser() |> Result.mapError toMissingUserError
-                let req = 
-                    { GameVoteRequest.GameName = gameName
-                      GameNight = gameNight
-                      User = user }
-                let updated = Domain.addGameVote req
+                let req = Domain.ProposedGameNight.GameVoteRequest.create (gameNight, gameName, user)
+                let updated = Domain.ProposedGameNight.addGameVote req
                 
                 let! _ = storage.SaveProposedGameNight updated
                 return Redirect "/gamenight"
@@ -84,16 +66,13 @@ let gameController (storage : Storage.Service) (gameNightId: string) =
                 
         let deleteGameVote (ctx: HttpContext) (_: string) =
             taskResult {
-                let! gameNightId = GameNightId.parse gameNightId |> Result.mapError AppError.Validation
-                let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError AppError.NotFound
+                let! gameNightId = GameNightId.parse gameNightId |> Result.mapError BrowserError.Validation
+                let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError BrowserError.NotFound
                 
-                let! gameName = gameName |> Helpers.replaceWhiteSpace |> GameName.create |> Result.mapError AppError.Validation
+                let! gameName = gameName |> Helpers.replaceWhiteSpace |> GameName.create |> Result.mapError BrowserError.Validation
                 let! user = ctx.GetUser() |> Result.mapError toMissingUserError
-                let req = 
-                    { GameVoteRequest.GameName = gameName
-                      GameNight = gameNight
-                      User = user }
-                let updated = Domain.removeGameVote req
+                let req = Domain.ProposedGameNight.GameVoteRequest.create (gameNight, gameName, user)
+                let updated = Domain.ProposedGameNight.removeGameVote req
                 
                 let! _ = storage.SaveProposedGameNight updated
                 return Redirect "/gamenight"
@@ -116,16 +95,13 @@ let dateController (storage: Storage.Service) (gameNightId: string) =
         let saveDateVote (ctx: HttpContext) = 
             taskResult {
                 
-                let! gameNightId = GameNightId.parse gameNightId |> Result.mapError AppError.Validation
-                let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError AppError.NotFound
+                let! gameNightId = GameNightId.parse gameNightId |> Result.mapError BrowserError.Validation
+                let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError BrowserError.NotFound
                 
-                let! date = date |> Date.tryParse |> Result.mapError AppError.Validation
+                let! date = date |> Date.tryParse |> Result.mapError BrowserError.Validation
                 let! user = ctx.GetUser() |> Result.mapError toMissingUserError
-                let req = 
-                    { DateVoteRequest.Date = date
-                      GameNight = gameNight
-                      User = user }
-                let updated = Domain.addDateVote req
+                let req = Domain.ProposedGameNight.DateVoteRequest.create (gameNight, date, user)
+                let updated = Domain.ProposedGameNight.addDateVote req
                 
                 let! _ = storage.SaveProposedGameNight updated
                 return Redirect "/gamenight"
@@ -134,16 +110,13 @@ let dateController (storage: Storage.Service) (gameNightId: string) =
                 
         let deleteDateVote (ctx: HttpContext) (_: string) =
             taskResult {
-                let! gameNightId = GameNightId.parse gameNightId |> Result.mapError AppError.Validation
-                let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError AppError.NotFound
+                let! gameNightId = GameNightId.parse gameNightId |> Result.mapError BrowserError.Validation
+                let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError BrowserError.NotFound
                 
-                let! date = date |> Date.tryParse |> Result.mapError AppError.Validation
+                let! date = date |> Date.tryParse |> Result.mapError BrowserError.Validation
                 let! user = ctx.GetUser() |> Result.mapError toMissingUserError
-                let req = 
-                    { DateVoteRequest.Date = date
-                      GameNight = gameNight
-                      User = user }
-                let updated = Domain.removeDateVote req
+                let req = Domain.ProposedGameNight.DateVoteRequest.create (gameNight, date, user)
+                let updated = Domain.ProposedGameNight.removeDateVote req
                 
                 let! _ = storage.SaveProposedGameNight updated
                 return Redirect "/gamenight"

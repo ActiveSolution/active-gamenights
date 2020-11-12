@@ -69,6 +69,9 @@ module FutureDate =
             if dt.Date < DateTime.Today then Error (ValidationError "Future date must be in the future")
             else dt |> Date.fromDateTime |> FutureDate |> Ok
         | false, _ -> Error (ValidationError "Not a date")
+        
+    let toDateTime (FutureDate date) =
+        date |> Date.toDateTime
 
 module CreateGameRequest =
       let withName name user =
@@ -85,11 +88,11 @@ module BrowserResult =
         match res with
         | Ok (Html template) -> Controller.html ctx template
         | Ok (Redirect uri) -> Turbolinks.redirect ctx uri
-        | Error (AppError.Validation (ValidationError err)) -> Response.badRequest ctx err
-        | Error (AppError.Domain (DomainError err)) -> Response.badRequest ctx err
-        | Error (AppError.MissingUser _) -> Turbolinks.redirect ctx "/user/add"
-        | Error (AppError.NotFound _) -> Response.notFound ctx ()
-        | Error (AppError.Duplicate)  -> Response.internalError ctx ()
+        | Error (BrowserError.Validation (ValidationError err)) -> Response.badRequest ctx err
+        | Error (BrowserError.Domain (DomainError err)) -> Response.badRequest ctx err
+        | Error (BrowserError.MissingUser _) -> Turbolinks.redirect ctx "/user/add"
+        | Error (BrowserError.NotFound _) -> Response.notFound ctx ()
+        | Error (BrowserError.Duplicate)  -> Response.internalError ctx ()
         
 
 module BrowserTaskResult =
@@ -102,11 +105,10 @@ module ApiResult =
         | Ok (Created uri) -> Response.created ctx uri
         | Ok (Json result) -> Controller.json ctx result
         | Ok (Accepted) -> Response.accepted ctx ()
-        | Error (AppError.Validation (ValidationError err)) -> Response.badRequest ctx err
-        | Error (AppError.Domain (DomainError err)) -> Response.badRequest ctx err
-        | Error (AppError.MissingUser _) -> Turbolinks.redirect ctx "/user/add"
-        | Error (AppError.NotFound _) -> Response.notFound ctx ()
-        | Error (AppError.Duplicate)  -> Response.internalError ctx ()
+        | Error (ApiError.Validation (ValidationError err)) -> Response.badRequest ctx err
+        | Error (ApiError.Domain (DomainError err)) -> Response.badRequest ctx err
+        | Error (ApiError.NotFound _) -> Response.notFound ctx ()
+        | Error (ApiError.Duplicate)  -> Response.internalError ctx ()
         
 
 module ApiTaskResult =

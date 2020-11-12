@@ -4,18 +4,6 @@ module Backend.Types
 open System
 open System.Threading.Tasks
 
-type AsyncResult<'TResult, 'TError> = Async<Result<'TResult, 'TError>>
-
-type ValidationError = ValidationError of string
-type DomainError = DomainError of string
-type NotFoundError = NotFoundError
-type AppError =
-    | Duplicate 
-    | NotFound of NotFoundError
-    | Validation of ValidationError
-    | Domain of DomainError
-    | MissingUser of string
-    
 type GameName = GameName of string
 type Link = string
 type NumberOfPlayers = NumberOfPlayers of int
@@ -63,52 +51,51 @@ type ProposedGameNight =
     { Id : GameNightId
       GameVotes : GameVotes
       DateVotes : DateVotes
-      ProposedBy : User }
+      CreatedBy : User }
 type ConfirmedGameNight =
     { Id : GameNightId 
       GameVotes : GameVotes
       Date : Date
-      Players : User list }
+      Players : Set<User>
+      CreatedBy : User }
+type CancelledGameNight =
+    { Id : GameNightId
+      GameVotes : GameVotes
+      DateVotes : DateVotes
+      CreatedBy : User }
 
+
+type AsyncResult<'TResult, 'TError> = Async<Result<'TResult, 'TError>>
+
+type ValidationError = ValidationError of string
+type DomainError = DomainError of string
+type NotFoundError = NotFoundError
+type BrowserError =
+    | Duplicate 
+    | NotFound of NotFoundError
+    | Validation of ValidationError
+    | Domain of DomainError
+    | MissingUser of string
+    
+type ApiError =
+    | Duplicate 
+    | NotFound of NotFoundError
+    | Validation of ValidationError
+    | Domain of DomainError
+    
+
+// Web
 type BasePath = BasePath of string
 type Domain = Domain of string
 type BrowserResponse =
     | Html of string
     | Redirect of string
-type BrowserResult = Result<BrowserResponse, AppError>
+type BrowserResult = Result<BrowserResponse, BrowserError>
 type BrowserTaskResult = Task<BrowserResult>
 
 type ApiResponse<'T> =
     | Json of 'T
     | Created of Location: string
     | Accepted
-type ApiResult<'T> = Result<ApiResponse<'T>, AppError>
+type ApiResult<'T> = Result<ApiResponse<'T>, ApiError>
 type ApiTaskResult<'T> = Task<ApiResult<'T>>
-    
-// Domain
-// Requests
-type CreateProposedGameNightRequest =
-    { Games : GameName list
-      Dates : FutureDate list
-      ProposedBy : User }
-type GameVoteRequest =
-    { GameNight : ProposedGameNight
-      GameName : GameName 
-      User : User }
-type DateVoteRequest =
-    { GameNight : ProposedGameNight
-      Date : Date 
-      User : User }
-      
-// Commands
-type CreateUser = string -> Result<User, ValidationError>
-type CreateProposedGameNight = CreateProposedGameNightRequest -> ProposedGameNight
-type AddGameVote = GameVoteRequest -> ProposedGameNight
-type AddDateVote = DateVoteRequest -> ProposedGameNight
-type RemoveGameVote = GameVoteRequest -> ProposedGameNight
-type RemoveDateVote = DateVoteRequest -> ProposedGameNight
-
-// Queries
-type GetGames = unit -> Async<Game list>
-type GetProposedGameNights = unit -> Async<ProposedGameNight seq>
-

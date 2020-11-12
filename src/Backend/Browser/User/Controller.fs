@@ -1,6 +1,7 @@
-module Backend.User.Controller
+module Backend.Browser.User.Controller
 
 open Backend
+open Backend.Browser
 open Giraffe
 open Saturn
 open Microsoft.AspNetCore.Http
@@ -8,14 +9,14 @@ open FsToolkit.ErrorHandling
 
 let addUser basePath domain (ctx: HttpContext) =
     Views.addUserView
-    |> Common.View.html basePath domain None
+    |> Browser.Common.View.html basePath domain None
     |> Controller.html ctx
     
 let createUser (ctx : HttpContext) =
     ctx.GetFormValue HttpContext.usernameKey
-    |> Result.requireSome (sprintf "missing form value %s" HttpContext.usernameKey |> ValidationError |> AppError.Validation)
+    |> Result.requireSome (sprintf "missing form value %s" HttpContext.usernameKey |> ValidationError |> BrowserError.Validation)
     |> Result.map (Helpers.replaceWhiteSpace)
-    |> Result.bind (Domain.createUser >> Result.mapError AppError.Validation)
+    |> Result.bind (Domain.User.createUser >> Result.mapError BrowserError.Validation)
     |> Result.map (fun (User username) -> 
         ctx.SetUsername username
         Redirect "/")

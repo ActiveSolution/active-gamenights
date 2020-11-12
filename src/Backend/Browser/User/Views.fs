@@ -1,8 +1,8 @@
-module Backend.User.Views
+module Backend.Browser.User.Views
 
 open Feliz.ViewEngine
 open Feliz.Bulma.ViewEngine
-open Backend.Common.View.Helpers
+open Backend.Browser.Common.View.Helpers
 open Backend.Extensions
 
 let addUserView =

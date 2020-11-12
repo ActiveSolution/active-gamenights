@@ -11,17 +11,19 @@
     <Compile Include="Types.fs" />
     <Compile Include="Implementations.fs" />
     <Compile Include="Extensions.fs" />
+    <Compile Include="Domain\User.fs" />
+    <Compile Include="Domain\ProposedGameNight.fs" />
+    <Compile Include="Domain\ConfirmedGameNight.fs" />
     <Compile Include="Json.fs" />
     <Compile Include="Version.fs" />
-    <Compile Include="Common\View.fs" />
     <Compile Include="Storage.fs" />
-    <Compile Include="Domain.fs" />
     <Compile Include="Configuration.fs" />
-    <Compile Include="User\Views.fs" />
-    <Compile Include="User\Controller.fs" />
-    <Compile Include="GameNight\Views.fs" />
-    <Compile Include="GameNight\Controller.fs" />
     <Compile Include="Api\GameNight.fs" />
+    <Compile Include="Browser\Common\View.fs" />
+    <Compile Include="Browser\User\Views.fs" />
+    <Compile Include="Browser\User\Controller.fs" />
+    <Compile Include="Browser\GameNight\Views.fs" />
+    <Compile Include="Browser\GameNight\Controller.fs" />
     <Compile Include="CompositionRoot.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
