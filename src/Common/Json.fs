@@ -1,4 +1,4 @@
-module Backend.Json
+module Common.Json
 
 open Newtonsoft.Json
 

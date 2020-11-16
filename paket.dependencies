@@ -1,5 +1,19 @@
 version 5.245.1
 
+
+group Common
+    source https://api.nuget.org/v3/index.json
+    framework: netcoreapp3.1
+    storage: none
+
+    nuget FSharp.Core
+    nuget FsToolkit.ErrorHandling
+    nuget FsToolkit.ErrorHandling.TaskResult
+    nuget FSharp.Azure.Storage
+    nuget Unquote 4.0
+    nuget Newtonsoft.Json
+    nuget FSharpPlus 1.2.0-CI01568 
+
 group Backend
     source https://api.nuget.org/v3/index.json
     framework: netcoreapp3.1
@@ -16,6 +30,28 @@ group Backend
     nuget Feliz.Bulma.ViewEngine
     nuget FSharp.Azure.Storage
     nuget Unquote 4.0
+    
+group Functions
+
+    source https://api.nuget.org/v3/index.json
+    framework: netcoreapp3.1
+    storage: none
+
+    nuget FSharp.Core
+    nuget FsToolkit.ErrorHandling
+    nuget FsToolkit.ErrorHandling.TaskResult
+    nuget FsConfig
+    nuget Microsoft.Extensions.Configuration.UserSecrets 
+    nuget Microsoft.NET.Sdk.Functions 3.0.11
+    
+group Domain
+    source https://api.nuget.org/v3/index.json
+    framework: netcoreapp3.1
+    storage: none
+
+    nuget FSharp.Core
+    nuget FsToolkit.ErrorHandling
+    nuget FSharpPlus 1.2.0-CI01568 
 
 group build
     source https://api.nuget.org/v3/index.json

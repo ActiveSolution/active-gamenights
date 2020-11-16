@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Common.fs" />
+    <Compile Include="Types.fs" />
+    <Compile Include="Date.fs" />
+    <Compile Include="FutureDate.fs" />
+    <Compile Include="User.fs" />
+    <Compile Include="GameName.fs" />
+    <Compile Include="GameNightId.fs" />
+    <Compile Include="Workflows\GameNights.fs" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

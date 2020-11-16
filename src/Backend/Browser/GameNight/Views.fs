@@ -1,18 +1,17 @@
 module Backend.Browser.GameNight.Views
 
-open Backend
 open Backend.Browser.Common.View.Helpers
 open Feliz.ViewEngine
 open Feliz.Bulma.ViewEngine
+open Domain
+open FSharpPlus.Data
 
-
-let removeWhiteSpace (attr: (string * string)) = (fst attr, (snd attr).Replace(" ", "__"))
 
 let private addVoteButton className dataAttrs (text :string) =
     Bulma.levelItem [
         Bulma.tag [
             for dataAttr in dataAttrs do
-                prop.custom (removeWhiteSpace dataAttr)
+                prop.custom dataAttr
             color.isPrimary
             prop.classes [ className; "button is-light" ]
             prop.text text
@@ -23,7 +22,7 @@ let private removeVoteButton className dataAttrs (text :string) =
     Bulma.levelItem [
         Bulma.tag [
             for dataAttr in dataAttrs do
-                prop.custom (removeWhiteSpace dataAttr)
+                prop.custom dataAttr
             color.isPrimary
             prop.text text
             prop.classes [ className; "button" ]
@@ -126,13 +125,13 @@ let private gameNightCard currentUser (gn: ProposedGameNight) =
                 Bulma.cardHeaderTitle.p (gn.CreatedBy.Val + " wants to play")
             ]
             Bulma.cardContent [
-                for gameName, votes in gn.GameVotes |> Map.toList do
+                for gameName, votes in gn.GameVotes |> NonEmptyMap.toList do
                     Html.unorderedList [
                         Html.listItem [
                             gameCard gameName votes 
                         ] 
                     ] 
-                for date, votes in gn.DateVotes |> Map.toList do
+                for date, votes in gn.DateVotes |> NonEmptyMap.toList do
                     Html.unorderedList [
                         Html.listItem [
                             dateCard date votes 

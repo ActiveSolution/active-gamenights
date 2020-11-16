@@ -7,16 +7,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="TurbolinksHelpers.fs" />
-    <Compile Include="Helpers.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="Implementations.fs" />
     <Compile Include="Extensions.fs" />
-    <Compile Include="Domain\User.fs" />
-    <Compile Include="Domain\ProposedGameNight.fs" />
-    <Compile Include="Domain\ConfirmedGameNight.fs" />
-    <Compile Include="Json.fs" />
     <Compile Include="Version.fs" />
-    <Compile Include="Storage.fs" />
     <Compile Include="Configuration.fs" />
     <Compile Include="Api\GameNight.fs" />
     <Compile Include="Browser\Common\View.fs" />
@@ -26,6 +20,10 @@
     <Compile Include="Browser\GameNight\Controller.fs" />
     <Compile Include="CompositionRoot.fs" />
     <Compile Include="Server.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Domain\Domain.fsproj" />
+    <ProjectReference Include="..\Common\Common.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

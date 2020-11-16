@@ -1,9 +1,11 @@
-module Backend.Storage
+module Common.Storage
 
 open FSharp.Azure.Storage.Table
 open Microsoft.Azure.Cosmos.Table
-open Backend
+open Domain
 open FsToolkit.ErrorHandling
+open FSharpPlus.Data
+
 
 type GameEntity = 
     { [<PartitionKey>] PartitionKey : string
@@ -34,6 +36,8 @@ module Implementation =
     let confirmedStatus = "confirmed"
     let completedStatus = "completed"
     let cancelledStatus = "cancelled"
+    let ensureSuccessful (o: OperationResult) =
+        if o.HttpStatusCode >= 200 && o.HttpStatusCode < 300 then () else failwithf "Table storage operation not successful %i" o.HttpStatusCode
     
     let okOrFail msg = Result.defaultWith (fun _ -> failwith msg)
     let someOrFail msg = Option.defaultWith (fun _ -> failwith msg)
@@ -44,31 +48,31 @@ module Implementation =
     
     [<AutoOpen>]
     module Helpers =
-        let serializeGameVotes (gs: Map<GameName, Set<User>>) =
+        let serializeGameVotes (gs: NonEmptyMap<GameName, Set<User>>) =
             gs
-            |> Map.toList
+            |> NonEmptyMap.toList
             |> List.map (fun (x, y) -> (x, y |> Set.toList))
             |> Json.serialize
             
-        let deserializeGameVotes (str: string) : Map<GameName, Set<User>> =
+        let deserializeGameVotes (str: string) : NonEmptyMap<GameName, Set<User>> =
             Json.deserialize str
-            |> Map.ofList
+            |> NonEmptyMap.ofList
             
-        let serializeDateVotes (ds: Map<Date, Set<User>>) =
+        let serializeDateVotes (ds: NonEmptyMap<Date, Set<User>>) =
             let result =
                 ds
-                |> Map.toList
+                |> NonEmptyMap.toList
                 |> List.map (fun (k,v) -> (k |> Date.toDateTime, v |> Set.toList))
                 |> Json.serialize
             result
             
-        let deserializeDateVotes (str: string) : Map<Date, Set<User>> =
+        let deserializeDateVotes (str: string) : NonEmptyMap<Date, Set<User>> =
             Json.deserialize str
             |> List.map (fun (k,v) -> 
                 Date.tryParse k |> Result.valueOr (fun (ValidationError d) -> failwithf "date deserialization failed %s" d), v)
-            |> Map.ofList
+            |> NonEmptyMap.ofList
         
-    let saveProposedGameNight inGameNightTable (gn: ProposedGameNight) : Async<OperationResult> =
+    let saveProposedGameNight inGameNightTable (gn: ProposedGameNight) : Async<unit> =
         { PartitionKey = partitionKey
           Id = gn.Id |> GameNightId.toString
           GameVotes = serializeGameVotes gn.GameVotes
@@ -77,9 +81,10 @@ module Implementation =
           Status = proposedStatus }
         |> InsertOrMerge
         |> inGameNightTable
+        |> Async.map ensureSuccessful
         
-    let saveConfirmedGameNight inGameNightTable (gn: ConfirmedGameNight) : Async<OperationResult> =
-        let dateVotes = (gn.Date, gn.Players) |> List.singleton |> Map.ofList  
+    let saveConfirmedGameNight inGameNightTable (gn: ConfirmedGameNight) : Async<unit> =
+        let dateVotes = (gn.Date, gn.Players |> NonEmptySet.toSet) |> List.singleton |> NonEmptyMap.ofList  
         { PartitionKey = partitionKey
           Id = gn.Id |> GameNightId.toString
           GameVotes = serializeGameVotes gn.GameVotes
@@ -88,8 +93,9 @@ module Implementation =
           Status = confirmedStatus }
         |> InsertOrMerge
         |> inGameNightTable
+        |> Async.map ensureSuccessful
         
-    let saveCancelledGameNight inGameNightTable (gn: CancelledGameNight) : Async<OperationResult> =
+    let saveCancelledGameNight inGameNightTable (gn: CancelledGameNight) : Async<unit> =
         { PartitionKey = partitionKey
           Id = gn.Id |> GameNightId.toString
           GameVotes = serializeGameVotes gn.GameVotes
@@ -98,6 +104,8 @@ module Implementation =
           Status = cancelledStatus }
         |> InsertOrMerge
         |> inGameNightTable
+        |> Async.map ensureSuccessful
+
         
     let toProposedGameNight (entity: GameNightEntity) =
         { ProposedGameNight.Id = parseGameNightId entity.Id
@@ -109,14 +117,14 @@ module Implementation =
         let date, players =
             entity.DateVotes
             |> deserializeDateVotes
-            |> Map.toList
+            |> NonEmptyMap.toList
             |> List.tryExactlyOne
             |> someOrFail "Confirmed Game Night should have exactly one date"
            
         { ConfirmedGameNight.Id = parseGameNightId entity.Id
           GameVotes = deserializeGameVotes entity.GameVotes
           Date = date
-          Players = players
+          Players = players |> NonEmptySet.ofSet
           CreatedBy = parseUser entity.CreatedBy }
           
     let toCancelledGameNight (entity: GameNightEntity) =
@@ -141,7 +149,7 @@ module Implementation =
             with exn -> return! Error NotFoundError
         }
         
-    let getAllProposedGameNights fromGameNightTable () : Async<ProposedGameNight seq> =
+    let getAllProposedGameNights fromGameNightTable () : Async<ProposedGameNight list> =
         async {
             let! result =
                 Query.all<GameNightEntity>
@@ -150,10 +158,11 @@ module Implementation =
             return
                 result
                 |> Seq.map (fst >> toProposedGameNight)
-                |> Seq.sortBy (fun x -> x.DateVotes |> Map.toList |> List.minBy (fun (date,_) -> date))
+                |> Seq.sortBy (fun x -> x.DateVotes |> NonEmptyMap.toList |> List.minBy (fun (date,_) -> date))
+                |> List.ofSeq
         }
         
-    let getAllConfirmedGameNights fromGameNightTable () : Async<ConfirmedGameNight seq> =
+    let getAllConfirmedGameNights fromGameNightTable () : Async<ConfirmedGameNight list> =
         async {
             let! result =
                 Query.all<GameNightEntity>
@@ -163,9 +172,10 @@ module Implementation =
                 result
                 |> Seq.map (fst >> toConfirmedGameNight)
                 |> Seq.sortBy (fun x -> x.Date)
+                |> List.ofSeq
         }
         
-    let getAllCancelledGameNights fromGameNightTable () : Async<CancelledGameNight seq> =
+    let getAllCancelledGameNights fromGameNightTable () : Async<CancelledGameNight list> =
         async {
             let! result =
                 Query.all<GameNightEntity>
@@ -174,7 +184,8 @@ module Implementation =
             return
                 result
                 |> Seq.map (fst >> toCancelledGameNight)
-                |> Seq.sortBy (fun x -> x.DateVotes |> Map.toList |> List.minBy (fun (date,_) -> date))
+                |> Seq.sortBy (fun x -> x.DateVotes |> NonEmptyMap.toList |> List.minBy (fun (date,_) -> date))
+                |> List.ofSeq
         }
         
 open Implementation         

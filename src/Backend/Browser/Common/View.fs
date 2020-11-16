@@ -3,6 +3,7 @@ module Backend.Browser.Common.View
 open Backend
 open Feliz.ViewEngine
 open Feliz.Bulma.ViewEngine
+open Domain
 
 
 module Helpers =

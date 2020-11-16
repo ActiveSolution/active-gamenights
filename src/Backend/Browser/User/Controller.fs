@@ -6,6 +6,7 @@ open Giraffe
 open Saturn
 open Microsoft.AspNetCore.Http
 open FsToolkit.ErrorHandling
+open Domain
 
 let addUser basePath domain (ctx: HttpContext) =
     Views.addUserView
@@ -15,8 +16,7 @@ let addUser basePath domain (ctx: HttpContext) =
 let createUser (ctx : HttpContext) =
     ctx.GetFormValue HttpContext.usernameKey
     |> Result.requireSome (sprintf "missing form value %s" HttpContext.usernameKey |> ValidationError |> BrowserError.Validation)
-    |> Result.map (Helpers.replaceWhiteSpace)
-    |> Result.bind (Domain.User.createUser >> Result.mapError BrowserError.Validation)
+    |> Result.bind (User.create >> Result.mapError BrowserError.Validation)
     |> Result.map (fun (User username) -> 
         ctx.SetUsername username
         Redirect "/")

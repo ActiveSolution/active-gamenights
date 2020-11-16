@@ -4,16 +4,8 @@ module Backend.Extensions
 open Backend.Implementations
 open Microsoft.AspNetCore.Http
 open FsToolkit.ErrorHandling
+open Domain
 
-type GameName with
-    member this.Val = GameName.value this
-
-type GameNightId with
-    member this.Val = GameNightId.value this
-    member this.ToString() = this.Val.ToString()
-
-type User with    
-    member this.Val = this |> fun (User u) -> u
 
 type BasePath with
     member this.Val = this |> fun (BasePath bp) -> bp

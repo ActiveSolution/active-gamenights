@@ -1,13 +1,15 @@
 module Backend.Api.GameNight
 
 open System
-open System.Threading.Tasks
 open Giraffe
 open Saturn
 open Backend.Extensions
 open Microsoft.AspNetCore.Http
 open Backend
 open FsToolkit.ErrorHandling
+open Domain
+open Common
+open FSharpPlus.Data
 
 
 type CreateProposedGameNightDto =
@@ -19,22 +21,20 @@ type GameNightDto =
       GameVotes : (string * (string list)) list
       DateVotes : (DateTime * (string list)) list
       CreatedBy : string }
-    
-type GetAllGameNights = unit -> ApiTaskResult<seq<GameNightDto>>
       
 module GameNightDto =
-    let usersToDto (users: Set<User>) =
+    let private usersToDto (users: Set<User>) =
         users
         |> Set.toList
-        |> List.map (fun u -> u.Val)
-    let gameVotesToDto (votes: GameVotes) =
+        |> List.map User.value
+    let private gameVotesToDto (votes: NonEmptyMap<GameName, Set<User>>) =
         votes
-        |> Map.toList
+        |> NonEmptyMap.toList
         |> List.map (fun (game, users) -> game.Val, usersToDto users)
         
-    let dateVotesToDto (votes: DateVotes) =
+    let private dateVotesToDto (votes: NonEmptyMap<Date, Set<User>>) =
         votes
-        |> Map.toList
+        |> NonEmptyMap.toList
         |> List.map (fun (date, users) -> Date.toDateTime date, usersToDto users)
          
     let fromProposedGameNight (gn : ProposedGameNight) =
@@ -46,7 +46,7 @@ module GameNightDto =
     let fromConfirmedGameNight (gn : ConfirmedGameNight) =
         { Id = gn.Id.Val
           GameVotes = gn.GameVotes |> gameVotesToDto
-          DateVotes = [ Date.toDateTime gn.Date, usersToDto gn.Players ] 
+          DateVotes = [ Date.toDateTime gn.Date, usersToDto (gn.Players |> NonEmptySet.toSet) ] 
           CreatedBy = gn.CreatedBy.Val }
     
 let parseUsernameHeader (ctx: HttpContext) =
@@ -56,6 +56,7 @@ let parseUsernameHeader (ctx: HttpContext) =
     |> Result.mapError ApiError.Validation
 
 module GameNight =
+    type GetAllGameNights = unit -> ApiTaskResult<seq<GameNightDto>>
     let getAll (storage: Storage.Service) : GetAllGameNights =
         fun () ->
             taskResult {
@@ -71,8 +72,8 @@ module GameNight =
             let! dto = ctx.BindJsonAsync<CreateProposedGameNightDto>()
             let! user = parseUsernameHeader ctx
             
-            let! req = Domain.ProposedGameNight.CreateProposedGameNightRequest.create (dto.Games, dto.Dates, user) |> Result.mapError ApiError.Validation
-            let gn = Domain.ProposedGameNight.createProposedGameNight req
+            let! req = Workflows.GameNights.ProposeGameNightRequest.create (dto.Games, dto.Dates, user) |> Result.mapError ApiError.Validation
+            let gn = Workflows.GameNights.proposeGameNight req
             
             let! _ = storage.SaveProposedGameNight gn
             return gn.Id.ToString() |> sprintf "/gamenight/%s" |> Created
@@ -85,10 +86,10 @@ module Votes =
             let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.Validation
             let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
             
-            let! gameName = gameName |> Helpers.replaceWhiteSpace |> GameName.create |> Result.mapError ApiError.Validation
+            let! gameName = gameName |> GameName.create |> Result.mapError ApiError.Validation
             let! user = parseUsernameHeader ctx
-            let req = Domain.ProposedGameNight.GameVoteRequest.create (gameNight, gameName, user)
-            let updated = Domain.ProposedGameNight.addGameVote req
+            let req = Workflows.GameNights.GameVoteRequest.create (gameNight, gameName, user)
+            let updated = Workflows.GameNights.addGameVote req
             
             let! _ = storage.SaveProposedGameNight updated
             return Accepted
@@ -100,10 +101,10 @@ module Votes =
             let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.Validation
             let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
             
-            let! gameName = gameName |> Helpers.replaceWhiteSpace |> GameName.create |> Result.mapError ApiError.Validation
+            let! gameName = gameName |> GameName.create |> Result.mapError ApiError.Validation
             let! user = ctx.GetUser() |> Result.mapError ApiError.Validation
-            let req = Domain.ProposedGameNight.GameVoteRequest.create (gameNight, gameName, user)
-            let updated = Domain.ProposedGameNight.removeGameVote req
+            let req = Workflows.GameNights.GameVoteRequest.create (gameNight, gameName, user)
+            let updated = Workflows.GameNights.removeGameVote req
             
             let! _ = storage.SaveProposedGameNight updated
             return Accepted
@@ -119,8 +120,8 @@ module Votes =
             
             let! date = date |> Date.tryParse |> Result.mapError ApiError.Validation
             let! user = ctx.GetUser() |> Result.mapError ApiError.Validation
-            let req = Domain.ProposedGameNight.DateVoteRequest.create (gameNight, date, user)
-            let updated = Domain.ProposedGameNight.addDateVote req
+            let req = Workflows.GameNights.DateVoteRequest.create (gameNight, date, user)
+            let updated = Workflows.GameNights.addDateVote req
             
             let! _ = storage.SaveProposedGameNight updated
             return Accepted
@@ -135,8 +136,8 @@ module Votes =
             let! date = date |> Date.tryParse |> Result.mapError ApiError.Validation
             let! user = ctx.GetUser() |> Result.mapError ApiError.Validation
             
-            let req = Domain.ProposedGameNight.DateVoteRequest.create (gameNight, date, user)
-            let updated = Domain.ProposedGameNight.removeDateVote req
+            let req = Workflows.GameNights.DateVoteRequest.create (gameNight, date, user)
+            let updated = Workflows.GameNights.removeDateVote req
             
             let! _ = storage.SaveProposedGameNight updated
             return Accepted
