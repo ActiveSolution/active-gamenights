@@ -14,7 +14,7 @@ let parseCLI (key:string) (argv: string[]) =
     |> Array.tryFind (fun x -> x.ToLower().StartsWith(key.ToLower()))
     |> Option.bind (fun x -> x.Split('=', StringSplitOptions.RemoveEmptyEntries) |> Array.tryItem 1)
     
-let webAppOutput = "./output/webApp"
+let webAppOutput = "./output/webapp"
 let functionsOutput = "./output/functions"
 
 [<EntryPoint>]
