@@ -28,7 +28,6 @@ type ConnectionString = ConnectionString of string
     with member this.Val = this |> fun (ConnectionString cs) -> cs
     
 
-    
 module Implementation =
     let gameNightsTable = "GameNights"
     let partitionKey = "AGN"
@@ -146,7 +145,7 @@ module Implementation =
                     |> Seq.head 
                     |> fst 
                     |> toProposedGameNight
-            with exn -> return! Error NotFoundError
+            with exn -> return! Error NotFoundError // TODO check status code
         }
         
     let getAllProposedGameNights fromGameNightTable () : Async<ProposedGameNight list> =

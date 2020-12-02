@@ -24,8 +24,12 @@ let srcGlob = src @@ "**/*.??proj"
 let deployGlob = rootPath  @@ "deploy/**/*.??proj"
 let backendPath = src @@ "Backend"
 let backendProj = backendPath @@ "Backend.fsproj"
+let functionsPath = src @@ "Functions"
+let functionsProj = functionsPath @@ "Functions.fsproj"
 let farmerDeployPath = rootPath @@ "deploy" @@ "farmer"
 let outputPath = "./output"
+let webAppOutput = outputPath @@ "webapp"
+let functionsOutput = outputPath @@ "functions"
 
 //-----------------------------------------------------------------------------
 // Helpers
@@ -77,7 +81,7 @@ let clean _ =
     |> Seq.iter Shell.rm
 
 let dotnetPublishBackend ctx =
-    Shell.copyDir (outputPath @@ "public") (backendPath @@ "public") (fun _ -> true)
+    Shell.copyDir (webAppOutput @@ "public") (backendPath @@ "public") (fun _ -> true)
 
     let args =
         [
@@ -92,8 +96,25 @@ let dotnetPublishBackend ctx =
             Common =
                 c.Common
                 |> DotNet.Options.withAdditionalArgs args
-            OutputPath = Some (outputPath)
+            OutputPath = Some (webAppOutput)
         }) backendProj
+
+let dotnetPublishFunctions ctx =
+    let args =
+        [
+            sprintf "/p:PackageVersion=%s" (semVersion).AsString
+        ]
+    DotNet.publish(fun c ->
+        { c with
+            Configuration = configuration (ctx.Context.AllExecutingTargets)
+            NoBuild = true
+            NoRestore = true
+            SelfContained = Some false
+            Common =
+                c.Common
+                |> DotNet.Options.withAdditionalArgs args
+            OutputPath = Some (functionsOutput)
+        }) functionsProj
 
 let dotnetRestore _ = DotNet.restore id sln
 
@@ -195,6 +216,7 @@ Target.create "DotnetBuild" dotnetBuild
 Target.create "WatchApp" watchApp
 Target.create "Build" ignore
 Target.create "DotnetPublishBackend" dotnetPublishBackend
+Target.create "DotnetPublishFunctions" dotnetPublishFunctions
 Target.create "Package" ignore
 Target.create "DeployToTest" (runFarmerDeploy Test)
 Target.create "DeployToProd" (runFarmerDeploy Prod)
@@ -222,7 +244,7 @@ Target.create "CreateProdRelease" ignore
     ==> "WriteVersionToFile"
     ==> "DotnetBuild"
     ==> "Build"
-    ==> "DotnetPublishBackend"
+    ==> "DotnetPublishBackend" <=> "DotnetPublishFunctions"
     ==> "Package"
 
 "DeployToTest"

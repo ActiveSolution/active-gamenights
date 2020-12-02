@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Edit Game (BGG-link, image, notes, number of players)
 * Add filters for GET /api/gamenight
 
+## [0.3.3] - 2020-12-02
+### Changed
+* Run on linux
+### Added
+* Functions project
 
 ## [0.2.3] - 2020-11-10
 ### Added

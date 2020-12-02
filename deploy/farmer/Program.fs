@@ -14,7 +14,8 @@ let parseCLI (key:string) (argv: string[]) =
     |> Array.tryFind (fun x -> x.ToLower().StartsWith(key.ToLower()))
     |> Option.bind (fun x -> x.Split('=', StringSplitOptions.RemoveEmptyEntries) |> Array.tryItem 1)
     
-let outputPath = "./output"
+let webAppOutput = "./output/webApp"
+let functionsOutput = "./output/functions"
 
 [<EntryPoint>]
 let main argv =
@@ -36,7 +37,7 @@ let main argv =
     
         let webApp = webApp {
             name webAppName
-            operating_system Windows
+            operating_system Linux
             runtime_stack Runtime.DotNetCore31
             https_only
             always_on
@@ -46,7 +47,16 @@ let main argv =
             setting "PublicPath" "./public"
             setting "BasePath" (sprintf "https://%s.azurewebsites.net" webAppName) 
             setting "Domain" domain
-            zip_deploy outputPath
+            zip_deploy webAppOutput
+        }
+
+        let functions = functions {
+            name (webAppName + "-functions")
+            link_to_storage_account storage.Name.ResourceName
+            operating_system Linux
+            link_to_service_plan webApp.ServicePlanName
+            zip_deploy functionsOutput
+            setting "ENABLE_ORYX_BUILD" "false" // az cli zip-deploy for linux az functions consumption plan. tworkaround from https://github.com/Azure/Azure-Functions/issues/1200
         }
         
         arm {
@@ -54,13 +64,9 @@ let main argv =
             add_resources [
                 storage
                 webApp
+                functions
             ]
         }
-
-    printfn "Copy public folder to %s" outputPath
-    let source = DirectoryInfo("./src/Backend/public")
-    let destination = DirectoryInfo("./output/public")
-    destination.Create()
     
     Deploy.authenticate azureAppId azureSecret azureTenant
     |> printfn "%A"

@@ -7,7 +7,7 @@ open Domain
 open FSharpPlus.Data
 
 
-let private addVoteButton className dataAttrs (text :string) =
+let private addVoteButton className dataAttrs (text: string) =
     Bulma.levelItem [
         Bulma.tag [
             for dataAttr in dataAttrs do
@@ -18,7 +18,7 @@ let private addVoteButton className dataAttrs (text :string) =
         ]
     ]
     
-let private removeVoteButton className dataAttrs (text :string) =
+let private removeVoteButton className dataAttrs (text: string) =
     Bulma.levelItem [
         Bulma.tag [
             for dataAttr in dataAttrs do

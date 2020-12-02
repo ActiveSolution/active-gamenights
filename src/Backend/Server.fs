@@ -77,7 +77,7 @@ let configureLogging (log:ILoggingBuilder) =
     log.AddConsole() |> ignore
     
 application {
-    url ("https://*:" + CompositionRoot.config.ServerPort.ToString() + "/")
+    url ("http://*:" + CompositionRoot.config.ServerPort.ToString() + "/")
     error_handler errorHandler
     pipe_through endpointPipe
     use_router webApp
