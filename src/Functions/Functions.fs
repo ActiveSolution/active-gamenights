@@ -49,8 +49,8 @@ module Functions =
     open Implementation
     
     [<FunctionName("ConfirmGameNight")>]
-    let runConfirmGameNight([<TimerTrigger("15 8 * * *")>]myTimer: TimerInfo, log: ILogger) =
-        let msg = sprintf "F# Time trigger function executed at: %A" DateTime.Now
+    let runConfirmGameNight([<TimerTrigger("*/5 * * * *")>]myTimer: TimerInfo, log: ILogger) =
+        let msg = sprintf "ConfirmGameNight function executed at: %A" DateTime.Now
         log.LogInformation msg
         
         confirmGameNights CompositionRoot.storage
