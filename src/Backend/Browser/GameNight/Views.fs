@@ -44,7 +44,7 @@ let private gameVoteList (gameNightId: GameNightId) (GameName gameName) (current
             ]
     ]
 
-let hasVoted votes user =
+let private hasVoted votes user =
     votes
     |> Set.contains user
     
@@ -60,8 +60,82 @@ let private dateVoteList (gameNightId: GameNightId) date (currentUser: User) vot
                 ] 
             ]
     ]
+
+let private confirmedGameNightCard currentUser (gn: ConfirmedGameNight) =
+    let gameCard (gameName: GameName) votes =
+        Bulma.media [
+            Bulma.mediaLeft [
+                Bulma.image [
+                    image.is64x64
+                    prop.children [
+                        Html.img [
+                            prop.src "https://via.placeholder.com/64"
+                        ]
+                    ]
+                ]
+            ]
+            Bulma.mediaContent [
+                Bulma.content [
+                    Html.p gameName.Val
+                ]
+                Bulma.level [
+                    Bulma.levelLeft [
+                        yield! gameVoteList gn.Id gameName currentUser votes
+                        if hasVoted gn.GameVotes.[gameName] currentUser then
+                            Html.none
+                        else
+                            addVoteButton "add-game-vote-button" [("data-game", gameName.Val); ("data-gamenight", gn.Id.Val.ToString())] "add vote"
+                    ]
+                ]
+            ]
+        ]
+        
+    let dateCard (date: Date) votes =
+        Bulma.media [
+            Bulma.mediaLeft [
+                Bulma.image [
+                    image.is64x64
+                    prop.children [
+                        Html.img [
+                            prop.src "/Images/calendar.jpg"
+                        ]
+                    ]
+                ]
+            ]
+            Bulma.mediaContent [
+                Bulma.content [
+                    Html.p (date |> Date.toString)
+                ]
+                Bulma.level [
+                    Bulma.levelLeft [
+                        yield! dateVoteList gn.Id date currentUser votes
+                        if hasVoted (gn.Players |> NonEmptySet.toSet) currentUser then
+                            Html.none
+                        else
+                            addVoteButton "add-date-vote-button" ["data-date", (date |> Date.toString); ("data-gamenight", gn.Id.Val.ToString())] "add vote"
+                    ]
+                ]
+            ]
+        ]
     
-let private gameNightCard currentUser (gn: ProposedGameNight) =
+    Bulma.card [
+        prop.classes [ "mb-5" ]
+        prop.children [
+            Bulma.cardHeader [
+                Bulma.cardHeaderTitle.p (gn.CreatedBy.Val + " wants to play")
+            ]
+            Bulma.cardContent [
+                for gameName, votes in gn.GameVotes |> NonEmptyMap.toList do
+                    Html.unorderedList [
+                        Html.listItem [
+                            gameCard gameName votes 
+                        ] 
+                    ] 
+                dateCard gn.Date (gn.Players |> NonEmptySet.toSet)
+            ]
+        ]
+    ]
+let private proposedGameNightCard currentUser (gn: ProposedGameNight) =
     let gameCard (gameName: GameName) votes =
         Bulma.media [
             Bulma.mediaLeft [
@@ -143,7 +217,7 @@ let private gameNightCard currentUser (gn: ProposedGameNight) =
 
 let private proposedGameNightsList currentUser gameNights =
     gameNights
-    |> List.map (gameNightCard currentUser)
+    |> List.map (proposedGameNightCard currentUser)
     |> Bulma.section
     
     
@@ -153,11 +227,15 @@ let private addProposedGameLink =
         prop.children [ plusIcon; Html.text "Add new game night" ]
     ]
     
-let proposedGameNightsView currentUser gameNights =
+let gameNightsView currentUser confirmed proposed =
     Bulma.container [
-        Bulma.title.h2 "Vote for upcoming game nights"
+        Bulma.title.h2 "Confirmed game nights"
         Bulma.section [
-            for gameNight in gameNights do gameNightCard currentUser gameNight
+            for gameNight in confirmed do confirmedGameNightCard currentUser gameNight
+        ]
+        Bulma.title.h2 "Vote for proposed game nights"
+        Bulma.section [
+            for gameNight in proposed do proposedGameNightCard currentUser gameNight
         ]
         addProposedGameLink
     ]

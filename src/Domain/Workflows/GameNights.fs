@@ -131,7 +131,7 @@ let removeDateVote : RemoveDateVote =
         
 let confirmGameNight : ConfirmGameNight =
     fun proposed ->
-        let winningDate, players =
+        let mostVotedDate, players =
             proposed.DateVotes
             |> NonEmptyMap.toList
             |> List.maxBy (fun (_, votes) -> votes.Count)
@@ -145,7 +145,7 @@ let confirmGameNight : ConfirmGameNight =
         else
             Confirmed
                 { ConfirmedGameNight.Id = proposed.Id
-                  ConfirmedGameNight.Date = winningDate
+                  ConfirmedGameNight.Date = mostVotedDate
                   ConfirmedGameNight.Players = NonEmptySet.ofSet players
                   ConfirmedGameNight.GameVotes = proposed.GameVotes
                   ConfirmedGameNight.CreatedBy = proposed.CreatedBy }

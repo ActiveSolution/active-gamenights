@@ -48,11 +48,11 @@ let configuration (targets : Target list) =
     | "Release" -> DotNet.BuildConfiguration.Release
     | config -> DotNet.BuildConfiguration.Custom config
 
-let dotNetWatch watchCmd workingDir =
+let dotNetWatch watchCmd workingDir args =
     DotNet.exec
         (fun p -> { p with WorkingDirectory = workingDir })
         (sprintf "watch %s" watchCmd)
-        ""
+        args
     |> ignore
 
 let semVersion = 
@@ -140,9 +140,10 @@ let dotnetBuild ctx =
 
 let watchApp _ =
 
-    let server() = dotNetWatch "run" backendPath
+    let server() = dotNetWatch "run" backendPath ""
+    let functions() = dotNetWatch "msbuild" functionsPath "/t:RunFunctions"
 
-    [ server ]
+    [ server; functions ]
     |> Seq.iter (invokeAsync >> Async.Catch >> Async.Ignore >> Async.Start)
     printfn "Press Ctrl+C (or Ctrl+Break) to stop..."
     let cancelEvent = Console.CancelKeyPress |> Async.AwaitEvent |> Async.RunSynchronously

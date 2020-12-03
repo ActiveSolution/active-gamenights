@@ -13,6 +13,7 @@ open Domain.Date.Operators
 open FSharpPlus.Data
 open Microsoft.Azure.WebJobs.Extensions.Http
 open Microsoft.AspNetCore.Mvc
+open Microsoft.AspNetCore.Http
 
 
 
@@ -57,7 +58,7 @@ module Functions =
         |> Async.StartAsTask :> Task
         
     [<FunctionName("Status")>]
-    let runStatus([<HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "status")>]req, log: ILogger) =
+    let runStatus([<HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "status")>](req: HttpRequest), log: ILogger) =
         let msg = sprintf "Status function executed at: %A" DateTime.Now
         log.LogInformation msg
         

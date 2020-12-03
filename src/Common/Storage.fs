@@ -42,7 +42,6 @@ module Implementation =
     let someOrFail msg = Option.defaultWith (fun _ -> failwith msg)
     let parseUser entityUser = User.create entityUser |> okOrFail "Entity has invalid CreatedBy"
     let parseGameNightId entityId =
-        printfn "entityId %A" entityId
         GameNightId.parse entityId |> okOrFail "Entity has invalid GameNightId"
     
     [<AutoOpen>]

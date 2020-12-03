@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Edit Game (BGG-link, image, notes, number of players)
 * Add filters for GET /api/gamenight
 
+## [0.3.4] - 2020-12-03
+### Added
+* Game nights are now confirmed 2 days prior the earliest suggested date
+### Changed
+* Show Confirmed and Proposed Game nights in the game night view.
+
 ## [0.3.3] - 2020-12-02
 ### Changed
 * Run on linux

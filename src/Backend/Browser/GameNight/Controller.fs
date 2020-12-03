@@ -12,12 +12,11 @@ open Common
 let toMissingUserError (ValidationError err) = BrowserError.MissingUser err
 let getAll (storage: Storage.Service) basePath domain (ctx : HttpContext) : HttpFuncResult =
     taskResult {
-        let! gameNights = storage.GetProposedGameNights()
+        let! proposed = storage.GetProposedGameNights()
+        let! confirmed = storage.GetConfirmedGameNights()
         let! currentUser = ctx.GetUser() |> Result.mapError toMissingUserError
         return 
-            gameNights 
-            |> List.ofSeq 
-            |> Views.proposedGameNightsView currentUser
+            Views.gameNightsView currentUser confirmed proposed
             |> Browser.Common.View.html basePath domain (ctx.GetUser() |> Result.toOption)
             |> BrowserResponse.Html
     } 

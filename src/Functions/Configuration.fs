@@ -8,15 +8,7 @@ open Common
 
 type Config =
     { [<DefaultValue("UseDevelopmentStorage=true")>]
-      AzureStorageConnectionString: string
-      [<DefaultValue("8085")>]
-      ServerPort: uint16
-      [<DefaultValue("../../output/server/public")>]
-      PublicPath: string
-      [<DefaultValue("https://localhost:8085/")>]
-      BasePath: string 
-      [<DefaultValue("localhost")>]
-      Domain: string }
+      AzureStorageConnectionString: string }
     
 let configRoot =
     ConfigurationBuilder()

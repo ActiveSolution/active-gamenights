@@ -14,7 +14,7 @@ type Config =
       ServerPort: uint16
       [<DefaultValue("../../output/server/public")>]
       PublicPath: string
-      [<DefaultValue("https://localhost:8085/")>]
+      [<DefaultValue("http://localhost:8085/")>]
       BasePath: string 
       [<DefaultValue("localhost")>]
       Domain: string }
