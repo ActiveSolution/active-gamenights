@@ -25,17 +25,17 @@ module Functions =
                 
             earliestDate <= dueDate
                 
-        let confirmGameNights (storage: Storage.Service) =
+        let confirmGameNights env =
             let confirmGameNight gn =
                 match Workflows.GameNights.confirmGameNight gn with
                 | Workflows.GameNights.Confirmed gn ->
-                    storage.SaveConfirmedGameNight gn
+                    Storage.saveConfirmedGameNight env gn
                 | Workflows.GameNights.Cancelled gn ->
-                    storage.SaveCancelledGameNight gn
+                    Storage.saveCancelledGameNight env gn
         
             async {
                 let dueDate = Date.today() + TimeSpan.FromDays(1.)
-                let! gameNights = storage.GetProposedGameNights()
+                let! gameNights = Storage.getAllProposedGameNights env
                 return!
                     gameNights
                     |> List.filter (isDueForConfirmation dueDate)
@@ -47,15 +47,15 @@ module Functions =
     open Implementation
     
     [<FunctionName("ConfirmGameNight")>]
-    let runConfirmGameNight([<TimerTrigger("*/5 * * * *")>]_myTimer: TimerInfo, log: ILogger) =
+    let runConfirmGameNight([<TimerTrigger("*/5 * * * *")>]myTimer: TimerInfo, log: ILogger) =
         let msg = sprintf "ConfirmGameNight function executed at: %A" DateTime.Now
         log.LogInformation msg
         
-        confirmGameNights CompositionRoot.storage
+        confirmGameNights CompositionRoot.env
         |> Async.StartAsTask :> Task
         
     [<FunctionName("Status")>]
-    let runStatus([<HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "status")>]_req: HttpRequest, log: ILogger) =
+    let runStatus([<HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "status")>]req: HttpRequest, log: ILogger) =
         let msg = sprintf "Status function executed at: %A" DateTime.Now
         log.LogInformation msg
         

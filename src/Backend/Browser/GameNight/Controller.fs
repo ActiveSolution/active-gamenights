@@ -9,10 +9,10 @@ open FsToolkit.ErrorHandling
 open Domain
 
 let toMissingUserError (ValidationError err) = BrowserError.MissingUser err
-let getAll (storage: Storage.Service) basePath domain (ctx : HttpContext) : HttpFuncResult =
+let getAll env basePath domain (ctx : HttpContext) : HttpFuncResult =
     taskResult {
-        let! proposed = storage.GetProposedGameNights()
-        let! confirmed = storage.GetConfirmedGameNights()
+        let! proposed = Storage.getAllProposedGameNights env
+        let! confirmed = Storage.getAllConfirmedGameNights env
         let! currentUser = ctx.GetUser() |> Result.mapError toMissingUserError
         return 
             Views.gameNightsView currentUser confirmed proposed
@@ -32,7 +32,7 @@ let addProposedGameNight basePath domain (ctx : HttpContext) =
     |> Ok 
     |> BrowserResult.handle ctx
     
-let saveProposedGameNight (storage: Storage.Service) (ctx: HttpContext) : HttpFuncResult =
+let saveProposedGameNight env (ctx: HttpContext) : HttpFuncResult =
     taskResult {
         let! dto = ctx.BindJsonAsync<CreateProposedGameNightDto>()
         let! user = ctx.GetUser() |> Result.mapError toMissingUserError
@@ -40,25 +40,25 @@ let saveProposedGameNight (storage: Storage.Service) (ctx: HttpContext) : HttpFu
         let! req = Workflows.GameNights.ProposeGameNightRequest.create (dto.Games, dto.Dates, user) |> Result.mapError BrowserError.Validation
         let gn = Workflows.GameNights.proposeGameNight req
         
-        let! _ = storage.SaveProposedGameNight gn
+        let! _ = Storage.saveProposedGameNight env gn
         return (Redirect "/gamenight")
     }
     |> BrowserTaskResult.handle ctx
     
     
-let gameController (storage : Storage.Service) (gameNightId: string) =
+let gameController env (gameNightId: string) =
     let voteController (gameName: string) =
         let saveGameVote (ctx: HttpContext) = 
             taskResult {
                 let! gameNightId = GameNightId.parse gameNightId |> Result.mapError BrowserError.Validation
-                let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError BrowserError.NotFound
+                let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError BrowserError.NotFound
                 
                 let! gameName = gameName |> GameName.create |> Result.mapError BrowserError.Validation
                 let! user = ctx.GetUser() |> Result.mapError toMissingUserError
                 let req = Workflows.GameNights.GameVoteRequest.create (gameNight, gameName, user)
                 let updated = Workflows.GameNights.addGameVote req
                 
-                let! _ = storage.SaveProposedGameNight updated
+                let! _ = Storage.saveProposedGameNight env updated
                 return Redirect "/gamenight"
             }
             |> BrowserTaskResult.handle ctx
@@ -66,14 +66,14 @@ let gameController (storage : Storage.Service) (gameNightId: string) =
         let deleteGameVote (ctx: HttpContext) (_: string) =
             taskResult {
                 let! gameNightId = GameNightId.parse gameNightId |> Result.mapError BrowserError.Validation
-                let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError BrowserError.NotFound
+                let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError BrowserError.NotFound
                 
                 let! gameName = gameName |> GameName.create |> Result.mapError BrowserError.Validation
                 let! user = ctx.GetUser() |> Result.mapError toMissingUserError
                 let req = Workflows.GameNights.GameVoteRequest.create (gameNight, gameName, user)
                 let updated = Workflows.GameNights.removeGameVote req
                 
-                let! _ = storage.SaveProposedGameNight updated
+                let! _ = Storage.saveProposedGameNight env updated
                 return Redirect "/gamenight"
                 
             } |> BrowserTaskResult.handle ctx
@@ -87,7 +87,7 @@ let gameController (storage : Storage.Service) (gameNightId: string) =
         subController "/vote" voteController
     }
     
-let dateController (storage: Storage.Service) (gameNightId: string) =
+let dateController env (gameNightId: string) =
     
     let voteController (date: string) =
     
@@ -95,14 +95,14 @@ let dateController (storage: Storage.Service) (gameNightId: string) =
             taskResult {
                 
                 let! gameNightId = GameNightId.parse gameNightId |> Result.mapError BrowserError.Validation
-                let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError BrowserError.NotFound
+                let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError BrowserError.NotFound
                 
                 let! date = date |> Date.tryParse |> Result.mapError BrowserError.Validation
                 let! user = ctx.GetUser() |> Result.mapError toMissingUserError
                 let req = Workflows.GameNights.DateVoteRequest.create (gameNight, date, user)
                 let updated = Workflows.GameNights.addDateVote req
                 
-                let! _ = storage.SaveProposedGameNight updated
+                let! _ = Storage.saveProposedGameNight env updated
                 return Redirect "/gamenight"
             }
             |> BrowserTaskResult.handle ctx
@@ -110,14 +110,14 @@ let dateController (storage: Storage.Service) (gameNightId: string) =
         let deleteDateVote (ctx: HttpContext) (_: string) =
             taskResult {
                 let! gameNightId = GameNightId.parse gameNightId |> Result.mapError BrowserError.Validation
-                let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError BrowserError.NotFound
+                let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError BrowserError.NotFound
                 
                 let! date = date |> Date.tryParse |> Result.mapError BrowserError.Validation
                 let! user = ctx.GetUser() |> Result.mapError toMissingUserError
                 let req = Workflows.GameNights.DateVoteRequest.create (gameNight, date, user)
                 let updated = Workflows.GameNights.removeDateVote req
                 
-                let! _ = storage.SaveProposedGameNight updated
+                let! _ = Storage.saveProposedGameNight env updated
                 return Redirect "/gamenight"
                 
             } |> BrowserTaskResult.handle ctx
@@ -131,11 +131,11 @@ let dateController (storage: Storage.Service) (gameNightId: string) =
         subController "/vote" voteController
     }
     
-let controller (storage: Storage.Service) basePath domain = controller {
-    index (getAll storage basePath domain)
+let controller env basePath domain = controller {
+    index (getAll env basePath domain)
     add (addProposedGameNight basePath domain)
-    create (saveProposedGameNight storage)
+    create (saveProposedGameNight env)
     
-    subController "/game" (gameController storage)
-    subController "/date" (dateController storage)
+    subController "/game" (gameController env)
+    subController "/date" (dateController env)
 }

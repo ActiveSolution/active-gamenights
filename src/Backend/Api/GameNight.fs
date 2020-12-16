@@ -56,17 +56,17 @@ let parseUsernameHeader (ctx: HttpContext) =
 
 module GameNight =
     type GetAllGameNights = unit -> ApiTaskResult<seq<GameNightDto>>
-    let getAll (storage: Storage.Service) : GetAllGameNights =
+    let getAll env : GetAllGameNights =
         fun () ->
             taskResult {
-                let! proposedGameNights = storage.GetProposedGameNights() |> Async.map (Seq.map GameNightDto.fromProposedGameNight) |> Async.StartChild
-                let! confirmedGameNights = storage.GetConfirmedGameNights() |> Async.map (Seq.map GameNightDto.fromConfirmedGameNight) |> Async.StartChild
+                let! proposedGameNights = Storage.getAllProposedGameNights env |> Async.map (Seq.map GameNightDto.fromProposedGameNight) |> Async.StartChild
+                let! confirmedGameNights = Storage.getAllConfirmedGameNights env |> Async.map (Seq.map GameNightDto.fromConfirmedGameNight) |> Async.StartChild
                 let! proposedGameNights = proposedGameNights 
                 let! confirmedGameNights = confirmedGameNights 
                 return Json (Seq.concat [proposedGameNights; confirmedGameNights])
             } 
         
-    let saveProposedGameNight (storage: Storage.Service) (ctx: HttpContext) : HttpFuncResult =
+    let saveProposedGameNight env (ctx: HttpContext) : HttpFuncResult =
         taskResult {
             let! dto = ctx.BindJsonAsync<CreateProposedGameNightDto>()
             let! user = parseUsernameHeader ctx
@@ -74,63 +74,63 @@ module GameNight =
             let! req = Workflows.GameNights.ProposeGameNightRequest.create (dto.Games, dto.Dates, user) |> Result.mapError ApiError.Validation
             let gn = Workflows.GameNights.proposeGameNight req
             
-            let! _ = storage.SaveProposedGameNight gn
+            let! _ = Storage.saveProposedGameNight env gn
             return gn.Id.ToString() |> sprintf "/gamenight/%s" |> Created
         }
         |> ApiTaskResult.handle ctx
     
 module Votes =
-    let saveGameVote (storage : Storage.Service) gameNightId gameName (ctx: HttpContext) = 
+    let saveGameVote env gameNightId gameName (ctx: HttpContext) = 
         taskResult {
             let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.Validation
-            let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
+            let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
             
             let! gameName = gameName |> GameName.create |> Result.mapError ApiError.Validation
             let! user = parseUsernameHeader ctx
             let req = Workflows.GameNights.GameVoteRequest.create (gameNight, gameName, user)
             let updated = Workflows.GameNights.addGameVote req
             
-            let! _ = storage.SaveProposedGameNight updated
+            let! _ = Storage.saveProposedGameNight env updated
             return Accepted
         }
         |> ApiTaskResult.handle ctx
             
-    let deleteGameVote (storage: Storage.Service) gameNightId gameName (ctx: HttpContext) (_: string) =
+    let deleteGameVote env gameNightId gameName (ctx: HttpContext) (_: string) =
         taskResult {
             let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.Validation
-            let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
+            let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
             
             let! gameName = gameName |> GameName.create |> Result.mapError ApiError.Validation
             let! user = ctx.GetUser() |> Result.mapError ApiError.Validation
             let req = Workflows.GameNights.GameVoteRequest.create (gameNight, gameName, user)
             let updated = Workflows.GameNights.removeGameVote req
             
-            let! _ = storage.SaveProposedGameNight updated
+            let! _ = Storage.saveProposedGameNight env updated
             return Accepted
             
         } |> ApiTaskResult.handle ctx
         
         
-    let saveDateVote (storage: Storage.Service) gameNightId date (ctx: HttpContext) = 
+    let saveDateVote env gameNightId date (ctx: HttpContext) = 
         taskResult {
             
             let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.Validation
-            let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
+            let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
             
             let! date = date |> Date.tryParse |> Result.mapError ApiError.Validation
             let! user = ctx.GetUser() |> Result.mapError ApiError.Validation
             let req = Workflows.GameNights.DateVoteRequest.create (gameNight, date, user)
             let updated = Workflows.GameNights.addDateVote req
             
-            let! _ = storage.SaveProposedGameNight updated
+            let! _ = Storage.saveProposedGameNight env updated
             return Accepted
         }
         |> ApiTaskResult.handle ctx
             
-    let deleteDateVote (storage : Storage.Service) gameNightId date (ctx: HttpContext) (_: string) =
+    let deleteDateVote env gameNightId date (ctx: HttpContext) (_: string) =
         taskResult {
             let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.Validation
-            let! gameNight = storage.GetProposedGameNight gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
+            let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
             
             let! date = date |> Date.tryParse |> Result.mapError ApiError.Validation
             let! user = ctx.GetUser() |> Result.mapError ApiError.Validation
@@ -138,19 +138,19 @@ module Votes =
             let req = Workflows.GameNights.DateVoteRequest.create (gameNight, date, user)
             let updated = Workflows.GameNights.removeDateVote req
             
-            let! _ = storage.SaveProposedGameNight updated
+            let! _ = Storage.saveProposedGameNight env updated
             return Accepted
             
         } |> ApiTaskResult.handle ctx
     
     
-let controller (storage : Storage.Service) =
+let controller env =
     let dateController (gameNightId: string) =
         let voteController (date: string) =
         
             controller {
-                create (Votes.saveDateVote storage gameNightId date)
-                delete (Votes.deleteDateVote storage gameNightId date)
+                create (Votes.saveDateVote env gameNightId date)
+                delete (Votes.deleteDateVote env gameNightId date)
             }
             
         controller {
@@ -161,8 +161,8 @@ let controller (storage : Storage.Service) =
         let voteController (gameName: string) =
         
             controller {
-                create (Votes.saveGameVote storage gameNightId gameName)
-                delete (Votes.deleteGameVote storage gameNightId gameName)
+                create (Votes.saveGameVote env gameNightId gameName)
+                delete (Votes.deleteGameVote env gameNightId gameName)
             }
             
         controller {
@@ -170,8 +170,8 @@ let controller (storage : Storage.Service) =
         }
     
     controller {
-        index (fun ctx -> GameNight.getAll storage >> ApiTaskResult.handle ctx)
-        create (GameNight.saveProposedGameNight storage)
+        index (fun ctx -> GameNight.getAll env >> ApiTaskResult.handle ctx)
+        create (GameNight.saveProposedGameNight env)
         
         subController "/game" gameController
         subController "/date" dateController

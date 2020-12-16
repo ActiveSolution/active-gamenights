@@ -1,11 +1,12 @@
+[<RequireQualifiedAccess>]
 module Storage
 
 open Infrastructure
 open FSharp.Azure.Storage.Table
-open Microsoft.Azure.Cosmos.Table
 open Domain
 open FsToolkit.ErrorHandling
 open FSharpPlus.Data
+open Microsoft.Azure.Cosmos.Table
 
 
 type GameEntity = 
@@ -28,6 +29,12 @@ type GameNightEntity =
 type ConnectionString = ConnectionString of string
     with member this.Val = this |> fun (ConnectionString cs) -> cs
     
+type ITables =
+    abstract InGameNightTable : Operation<GameNightEntity> -> Async<OperationResult>
+    abstract FromGameNightTable : EntityQuery<GameNightEntity> -> Async<seq<GameNightEntity * EntityMetadata>>
+    
+type IStorage =
+    abstract Tables: ITables
 
 module Implementation =
     let gameNightsTable = "GameNights"
@@ -71,41 +78,6 @@ module Implementation =
                 Date.tryParse k |> Result.valueOr (fun (ValidationError d) -> failwithf "date deserialization failed %s" d), v)
             |> NonEmptyMap.ofList
         
-    let saveProposedGameNight inGameNightTable (gn: ProposedGameNight) : Async<unit> =
-        { PartitionKey = partitionKey
-          Id = gn.Id |> GameNightId.toString
-          GameVotes = serializeGameVotes gn.GameVotes
-          DateVotes = serializeDateVotes gn.DateVotes
-          CreatedBy = gn.CreatedBy.Val
-          Status = proposedStatus }
-        |> InsertOrMerge
-        |> inGameNightTable
-        |> Async.map ensureSuccessful
-        
-    let saveConfirmedGameNight inGameNightTable (gn: ConfirmedGameNight) : Async<unit> =
-        let dateVotes = (gn.Date, gn.Players |> NonEmptySet.toSet) |> List.singleton |> NonEmptyMap.ofList  
-        { PartitionKey = partitionKey
-          Id = gn.Id |> GameNightId.toString
-          GameVotes = serializeGameVotes gn.GameVotes
-          DateVotes = serializeDateVotes dateVotes
-          CreatedBy = gn.CreatedBy.Val
-          Status = confirmedStatus }
-        |> InsertOrMerge
-        |> inGameNightTable
-        |> Async.map ensureSuccessful
-        
-    let saveCancelledGameNight inGameNightTable (gn: CancelledGameNight) : Async<unit> =
-        { PartitionKey = partitionKey
-          Id = gn.Id |> GameNightId.toString
-          GameVotes = serializeGameVotes gn.GameVotes
-          DateVotes = serializeDateVotes gn.DateVotes
-          CreatedBy = gn.CreatedBy.Val
-          Status = cancelledStatus }
-        |> InsertOrMerge
-        |> inGameNightTable
-        |> Async.map ensureSuccessful
-
-        
     let toProposedGameNight (entity: GameNightEntity) =
         { ProposedGameNight.Id = parseGameNightId entity.Id
           GameVotes = deserializeGameVotes entity.GameVotes
@@ -132,77 +104,103 @@ module Implementation =
           DateVotes = deserializeDateVotes entity.DateVotes
           CreatedBy = parseUser entity.CreatedBy}
           
-    let getProposedGameNight (fromGameNightTable : EntityQuery<GameNightEntity> -> Async<seq<GameNightEntity * EntityMetadata>>) id : AsyncResult<ProposedGameNight, NotFoundError> =
-        let stringId = GameNightId.toString id
-        asyncResult {
-            try
-                let! result =
-                    Query.all<GameNightEntity>
-                    |> Query.where <@ fun _ s -> s.PartitionKey = partitionKey && s.RowKey = stringId @>
-                    |> fromGameNightTable
-                return 
-                    result 
-                    |> Seq.head 
-                    |> fst 
-                    |> toProposedGameNight
-            with _ -> return! Error NotFoundError // TODO check status code
-        }
         
-    let getAllProposedGameNights fromGameNightTable () : Async<ProposedGameNight list> =
-        async {
+open Implementation
+        
+let saveConfirmedGameNight (env: #IStorage) (gn: ConfirmedGameNight) : Async<unit> =
+    let dateVotes = (gn.Date, gn.Players |> NonEmptySet.toSet) |> List.singleton |> NonEmptyMap.ofList  
+    { PartitionKey = partitionKey
+      Id = gn.Id |> GameNightId.toString
+      GameVotes = serializeGameVotes gn.GameVotes
+      DateVotes = serializeDateVotes dateVotes
+      CreatedBy = gn.CreatedBy.Val
+      Status = confirmedStatus }
+    |> InsertOrMerge
+    |> env.Tables.InGameNightTable
+    |> Async.map ensureSuccessful
+    
+let saveCancelledGameNight (env: #IStorage) (gn: CancelledGameNight) : Async<unit> =
+    { PartitionKey = partitionKey
+      Id = gn.Id |> GameNightId.toString
+      GameVotes = serializeGameVotes gn.GameVotes
+      DateVotes = serializeDateVotes gn.DateVotes
+      CreatedBy = gn.CreatedBy.Val
+      Status = cancelledStatus }
+    |> InsertOrMerge
+    |> env.Tables.InGameNightTable
+    |> Async.map ensureSuccessful
+    
+let getProposedGameNight (env: #IStorage) id : AsyncResult<ProposedGameNight, NotFoundError> =
+    let stringId = GameNightId.toString id
+    asyncResult {
+        try
             let! result =
                 Query.all<GameNightEntity>
-                |> Query.where <@ fun g _ -> g.Status = proposedStatus @>
-                |> fromGameNightTable
-            return
-                result
-                |> Seq.map (fst >> toProposedGameNight)
-                |> Seq.sortBy (fun x -> x.DateVotes |> NonEmptyMap.toList |> List.minBy (fun (date,_) -> date))
-                |> List.ofSeq
-        }
-        
-    let getAllConfirmedGameNights fromGameNightTable () : Async<ConfirmedGameNight list> =
-        async {
-            let! result =
-                Query.all<GameNightEntity>
-                |> Query.where <@ fun g _ -> g.Status = confirmedStatus @>
-                |> fromGameNightTable
-            return
-                result
-                |> Seq.map (fst >> toConfirmedGameNight)
-                |> Seq.sortBy (fun x -> x.Date)
-                |> List.ofSeq
-        }
-        
-    let getAllCancelledGameNights fromGameNightTable () : Async<CancelledGameNight list> =
-        async {
-            let! result =
-                Query.all<GameNightEntity>
-                |> Query.where <@ fun g _ -> g.Status = proposedStatus @>
-                |> fromGameNightTable
-            return
-                result
-                |> Seq.map (fst >> toCancelledGameNight)
-                |> Seq.sortBy (fun x -> x.DateVotes |> NonEmptyMap.toList |> List.minBy (fun (date,_) -> date))
-                |> List.ofSeq
-        }
-        
-open Implementation         
-
-type Service(connectionString : ConnectionString) =
-    let account = CloudStorageAccount.Parse connectionString.Val
-    let tableClient = account.CreateCloudTableClient()
+                |> Query.where <@ fun _ s -> s.PartitionKey = partitionKey && s.RowKey = stringId @>
+                |> env.Tables.FromGameNightTable
+            return 
+                result 
+                |> Seq.head 
+                |> fst 
+                |> toProposedGameNight
+        with _ -> return! Error NotFoundError // TODO check status code
+    }
     
-    do (tableClient.GetTableReference gameNightsTable).CreateIfNotExists() |> ignore
+let getAllProposedGameNights (env: #IStorage) : Async<ProposedGameNight list> =
+    async {
+        let! result =
+            Query.all<GameNightEntity>
+            |> Query.where <@ fun g _ -> g.Status = proposedStatus @>
+            |> env.Tables.FromGameNightTable
+        return
+            result
+            |> Seq.map (fst >> toProposedGameNight)
+            |> Seq.sortBy (fun x -> x.DateVotes |> NonEmptyMap.toList |> List.minBy (fun (date,_) -> date))
+            |> List.ofSeq
+    }
     
-    let inGameNightTable = inTableAsync tableClient gameNightsTable
-    let fromGameNightTable = fromTableAsync tableClient gameNightsTable
+let getAllConfirmedGameNights (env: #IStorage) : Async<ConfirmedGameNight list> =
+    async {
+        let! result =
+            Query.all<GameNightEntity>
+            |> Query.where <@ fun g _ -> g.Status = confirmedStatus @>
+            |> env.Tables.FromGameNightTable
+        return
+            result
+            |> Seq.map (fst >> toConfirmedGameNight)
+            |> Seq.sortBy (fun x -> x.Date)
+            |> List.ofSeq
+    }
     
-    member _.SaveProposedGameNight (gameNight: ProposedGameNight) = saveProposedGameNight inGameNightTable gameNight
-    member _.GetProposedGameNights () = getAllProposedGameNights fromGameNightTable ()
-    member _.GetProposedGameNight (id) = getProposedGameNight fromGameNightTable id
-    member _.SaveConfirmedGameNight (gameNight: ConfirmedGameNight) = saveConfirmedGameNight inGameNightTable gameNight
-    member _.GetConfirmedGameNights () = getAllConfirmedGameNights fromGameNightTable ()
-    member _.SaveCancelledGameNight (gameNight: CancelledGameNight) = saveCancelledGameNight inGameNightTable gameNight
-    member _.GetCancelledGameNights () = getAllCancelledGameNights fromGameNightTable ()
-
+let getAllCancelledGameNights (env: #IStorage) : Async<CancelledGameNight list> =
+    async {
+        let! result =
+            Query.all<GameNightEntity>
+            |> Query.where <@ fun g _ -> g.Status = proposedStatus @>
+            |> env.Tables.FromGameNightTable
+        return
+            result
+            |> Seq.map (fst >> toCancelledGameNight)
+            |> Seq.sortBy (fun x -> x.DateVotes |> NonEmptyMap.toList |> List.minBy (fun (date,_) -> date))
+            |> List.ofSeq
+    }
+    
+let saveProposedGameNight (env: #IStorage) (gn: ProposedGameNight) : Async<unit> =
+    { PartitionKey = partitionKey
+      Id = gn.Id |> GameNightId.toString
+      GameVotes = serializeGameVotes gn.GameVotes
+      DateVotes = serializeDateVotes gn.DateVotes
+      CreatedBy = gn.CreatedBy.Val
+      Status = proposedStatus }
+    |> InsertOrMerge
+    |> env.Tables.InGameNightTable
+    |> Async.map ensureSuccessful
+    
+let live (ConnectionString connectionString) : ITables =
+    
+    let account = CloudStorageAccount.Parse connectionString
+    let tableClient = account.CreateCloudTableClient()    
+    
+    { new ITables with
+        member _.InGameNightTable(operation) = inTableAsync tableClient gameNightsTable operation
+        member _.FromGameNightTable(query) = fromTableAsync tableClient gameNightsTable query }
