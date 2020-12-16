@@ -1,19 +1,6 @@
 version 5.249.0
 
 
-group Common
-    source https://api.nuget.org/v3/index.json
-    framework: netcoreapp3.1
-    storage: none
-
-    nuget FSharp.Core
-    nuget FsToolkit.ErrorHandling
-    nuget FsToolkit.ErrorHandling.TaskResult
-    nuget FSharp.Azure.Storage
-    nuget Unquote 4.0
-    nuget Newtonsoft.Json
-    nuget FSharpPlus 1.2.0-CI01568 
-
 group Backend
     source https://api.nuget.org/v3/index.json
     framework: netcoreapp3.1
@@ -48,7 +35,7 @@ group Functions
     nuget Microsoft.NET.Sdk.Functions 
     nuget Newtonsoft.Json 12.0.3
     
-group Domain
+group Core
     source https://api.nuget.org/v3/index.json
     framework: netcoreapp3.1
     storage: none
@@ -56,6 +43,10 @@ group Domain
     nuget FSharp.Core
     nuget FsToolkit.ErrorHandling
     nuget FSharpPlus 1.2.0-CI01568 
+    nuget FsToolkit.ErrorHandling.TaskResult
+    nuget FSharp.Azure.Storage
+    nuget Unquote 4.0
+    nuget Newtonsoft.Json
 
 group build
     source https://api.nuget.org/v3/index.json

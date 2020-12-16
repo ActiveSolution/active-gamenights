@@ -4,7 +4,7 @@ module User =
     open System
 
     let create str =
-        let str = Common.canonize str
+        let str = Helpers.canonize str
         if String.IsNullOrWhiteSpace str then
             Error (ValidationError "User cannot be empty")
         else User str |> Ok

@@ -1,4 +1,4 @@
-module Common.Json
+module Infrastructure.Json
 
 open Newtonsoft.Json
 

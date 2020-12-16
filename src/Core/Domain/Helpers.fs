@@ -1,4 +1,4 @@
-module internal Domain.Common
+module internal Domain.Helpers
 
 open System
 

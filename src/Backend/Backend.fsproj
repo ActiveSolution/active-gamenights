@@ -22,8 +22,7 @@
     <Compile Include="Server.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Domain\Domain.fsproj" />
-    <ProjectReference Include="..\Common\Common.fsproj" />
+    <ProjectReference Include="..\Core\Core.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

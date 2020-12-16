@@ -2,7 +2,6 @@ module Backend.CompositionRoot
 
 open Backend
 open Giraffe
-open Common
 
 let config = Configuration.config.Value
 

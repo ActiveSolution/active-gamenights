@@ -7,7 +7,7 @@ module GameNightId =
     let value (GameNightId id) = id
     let parse (str: string) =
         str
-        |> Common.tryParseGuid
+        |> Helpers.tryParseGuid
         |> Result.requireSome (ValidationError "Not a valid guid")
         |> Result.map GameNightId
     let newId () = Guid.NewGuid() |> GameNightId

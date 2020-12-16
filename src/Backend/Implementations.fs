@@ -1,7 +1,6 @@
 [<AutoOpen>]
 module Backend.Implementations
 
-open System
 open Domain
 open FsToolkit.ErrorHandling
 open Turbolinks

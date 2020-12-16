@@ -4,7 +4,7 @@ open System
 
 module GameName =
     let create str =
-        let str = Common.canonize str
+        let str = Helpers.canonize str
         if String.IsNullOrWhiteSpace str then
             Error (ValidationError "GameName cannot be empty")
         else GameName str |> Ok

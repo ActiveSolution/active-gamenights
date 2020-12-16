@@ -4,7 +4,7 @@ open System
 open FSharpPlus.Data
 
 [<AutoOpen>]
-module Types =
+module Domain =
 
     type ValidationError = ValidationError of string
     type DomainError = DomainError of string

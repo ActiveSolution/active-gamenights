@@ -9,7 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Slack notification
 * Export Calendar event
 * Edit Game (BGG-link, image, notes, number of players)
-* Add filters for GET /api/gamenight
+* Add filters for GET /api/gamenight (e.g. ?status=completed/confirmed/cancelled/proposed&fromDate=2020-12-13)
+
+## [0.3.5] - 2020-12-16
+### Changed
+* Change due-date to tomorrow.
+* Restructure dependencies
 
 ## [0.3.4] - 2020-12-03
 ### Added

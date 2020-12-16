@@ -1,7 +1,6 @@
 module Functions.CompositionRoot
 
 open Backend
-open Common
 
 let config = Configuration.config.Value
 

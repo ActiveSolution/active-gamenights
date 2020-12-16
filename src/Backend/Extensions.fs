@@ -1,7 +1,6 @@
 [<AutoOpen>]
 module Backend.Extensions
 
-open Backend.Implementations
 open Microsoft.AspNetCore.Http
 open FsToolkit.ErrorHandling
 open Domain

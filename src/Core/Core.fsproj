@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>Domain</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Domain\Helpers.fs" />
+    <Compile Include="Domain\Domain.fs" />
+    <Compile Include="Domain\Date.fs" />
+    <Compile Include="Domain\FutureDate.fs" />
+    <Compile Include="Domain\User.fs" />
+    <Compile Include="Domain\GameName.fs" />
+    <Compile Include="Domain\GameNightId.fs" />
+    <Compile Include="Domain\Workflows\GameNights.fs" />
+    <Compile Include="Infrastructure\Types.fs" />
+    <Compile Include="Infrastructure\Json.fs" />
+    <Compile Include="Infrastructure\Storage.fs" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

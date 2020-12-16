@@ -1,8 +1,8 @@
-group Common
+group Core
     FSharp.Core
     FsToolkit.ErrorHandling
+    FSharpPlus
     FsToolkit.ErrorHandling.TaskResult
     FSharp.Azure.Storage
     Unquote
     Newtonsoft.Json
-    FSharpPlus

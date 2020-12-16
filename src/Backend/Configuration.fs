@@ -4,7 +4,6 @@ open FsConfig
 open Microsoft.Extensions.Configuration
 open System.IO
 open Backend
-open Common
 
 
 type Config =

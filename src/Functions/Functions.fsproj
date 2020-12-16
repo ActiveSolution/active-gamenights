@@ -22,8 +22,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Domain\Domain.fsproj" />
-    <ProjectReference Include="..\Common\Common.fsproj" />
+    <ProjectReference Include="..\Core\Core.fsproj" />
   </ItemGroup>
   <Target Name="RunFunctions">
     <Exec Command="func start" />

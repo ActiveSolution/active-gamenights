@@ -3,7 +3,6 @@ module Backend.Configuration
 open FsConfig
 open Microsoft.Extensions.Configuration
 open System.IO
-open Common
 
 
 type Config =

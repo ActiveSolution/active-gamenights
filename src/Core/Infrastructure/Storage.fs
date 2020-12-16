@@ -1,5 +1,6 @@
-module Common.Storage
+module Storage
 
+open Infrastructure
 open FSharp.Azure.Storage.Table
 open Microsoft.Azure.Cosmos.Table
 open Domain
@@ -144,7 +145,7 @@ module Implementation =
                     |> Seq.head 
                     |> fst 
                     |> toProposedGameNight
-            with exn -> return! Error NotFoundError // TODO check status code
+            with _ -> return! Error NotFoundError // TODO check status code
         }
         
     let getAllProposedGameNights fromGameNightTable () : Async<ProposedGameNight list> =

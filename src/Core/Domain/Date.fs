@@ -24,3 +24,6 @@ module Operators =
         |> toDateTime
         |> (fun dt -> dt.Add (timeSpan))
         |> fromDateTime
+
+
+// Implementations

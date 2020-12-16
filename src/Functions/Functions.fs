@@ -2,9 +2,7 @@ namespace Functions.Functions
 
 open System
 open System.Threading.Tasks
-open Common
 open Microsoft.Azure.WebJobs
-open Microsoft.Azure.WebJobs.Host
 open Microsoft.Extensions.Logging
 open Domain
 open FsToolkit.ErrorHandling
@@ -14,7 +12,6 @@ open FSharpPlus.Data
 open Microsoft.Azure.WebJobs.Extensions.Http
 open Microsoft.AspNetCore.Mvc
 open Microsoft.AspNetCore.Http
-
 
 
 module Functions =
@@ -37,7 +34,7 @@ module Functions =
                     storage.SaveCancelledGameNight gn
         
             async {
-                let dueDate = Date.today() + TimeSpan.FromDays(2.)
+                let dueDate = Date.today() + TimeSpan.FromDays(1.)
                 let! gameNights = storage.GetProposedGameNights()
                 return!
                     gameNights
@@ -50,7 +47,7 @@ module Functions =
     open Implementation
     
     [<FunctionName("ConfirmGameNight")>]
-    let runConfirmGameNight([<TimerTrigger("*/5 * * * *")>]myTimer: TimerInfo, log: ILogger) =
+    let runConfirmGameNight([<TimerTrigger("*/5 * * * *")>]_myTimer: TimerInfo, log: ILogger) =
         let msg = sprintf "ConfirmGameNight function executed at: %A" DateTime.Now
         log.LogInformation msg
         
@@ -58,7 +55,7 @@ module Functions =
         |> Async.StartAsTask :> Task
         
     [<FunctionName("Status")>]
-    let runStatus([<HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "status")>](req: HttpRequest), log: ILogger) =
+    let runStatus([<HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "status")>]_req: HttpRequest, log: ILogger) =
         let msg = sprintf "Status function executed at: %A" DateTime.Now
         log.LogInformation msg
         
