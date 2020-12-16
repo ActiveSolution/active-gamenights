@@ -17,8 +17,8 @@ let createUser (ctx : HttpContext) =
     ctx.GetFormValue HttpContext.usernameKey
     |> Result.requireSome (sprintf "missing form value %s" HttpContext.usernameKey |> ValidationError |> BrowserError.Validation)
     |> Result.bind (User.create >> Result.mapError BrowserError.Validation)
-    |> Result.map (fun (User username) -> 
-        ctx.SetUsername username
+    |> Result.map (fun (user) -> 
+        ctx.SetUsername user.Val
         Redirect "/")
     |> BrowserResult.handle ctx
     

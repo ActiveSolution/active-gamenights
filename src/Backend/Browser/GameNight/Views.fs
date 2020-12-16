@@ -31,15 +31,15 @@ let private removeVoteButton className dataAttrs (text: string) =
         ]
     ]
     
-let private gameVoteList (gameNightId: GameNightId) (GameName gameName) (currentUser: User) votes = [
-    for (User name) in Set.toList votes do
-        if name = currentUser.Val then
-            removeVoteButton "remove-game-vote-button" [("data-username", currentUser.Val); ("data-game", gameName); ("data-gamenight", gameNightId.Val.ToString())] currentUser.Val
+let private gameVoteList (gameNightId: GameNightId) (gameName: GameName) (currentUser: User) (votes: Set<User>) = [
+    for (user) in Set.toList votes do
+        if user.Val = currentUser.Val then
+            removeVoteButton "remove-game-vote-button" [("data-username", currentUser.Val); ("data-game", gameName.Val); ("data-gamenight", gameNightId.Val.ToString())] currentUser.Val
         else
             Bulma.levelItem [ 
                 Bulma.tag [
                     color.isPrimary
-                    prop.text name
+                    prop.text user.Val
                 ] 
             ]
     ]

@@ -9,7 +9,7 @@ module User =
             Error (ValidationError "User cannot be empty")
         else User str |> Ok
     
-    let value (User username) = username
+    let value (User username) = Helpers.unCanonize username
     
 [<AutoOpen>]
 module UserExtensions =

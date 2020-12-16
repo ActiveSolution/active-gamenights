@@ -45,7 +45,7 @@ let private githubLink =
         ]
     ]
     
-let private navbar user =
+let private navbar (user: User option) =
     Bulma.navbar [
         prop.id "agn-navbar"
         prop.custom ("data-turbolinks-permanent", "")
@@ -77,13 +77,13 @@ let private navbar user =
                     Bulma.navbarEnd.div [
                         githubLink
                         match user with
-                        | Some (User username) ->
+                        | Some (user) ->
                             Bulma.navbarItem.a [
                                 prop.id "logout-button"
-                                prop.custom ("data-username", username)
+                                prop.custom ("data-username", user.Val)
                                 prop.href "#"
                                 prop.children [
-                                    Html.text ("logout " + username)
+                                    Html.text ("logout " + user.Val)
                                 ]
                             ]
                         | None _ -> 

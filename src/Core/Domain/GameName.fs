@@ -8,7 +8,7 @@ module GameName =
         if String.IsNullOrWhiteSpace str then
             Error (ValidationError "GameName cannot be empty")
         else GameName str |> Ok
-    let value (GameName v) = v
+    let value (GameName v) = Helpers.unCanonize v
 
 [<AutoOpen>]
 module GameNameExtensions =
