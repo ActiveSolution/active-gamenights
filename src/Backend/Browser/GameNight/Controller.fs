@@ -9,14 +9,14 @@ open FsToolkit.ErrorHandling
 open Domain
 
 let toMissingUserError (ValidationError err) = BrowserError.MissingUser err
-let getAll env basePath domain (ctx : HttpContext) : HttpFuncResult =
+let getAll env (ctx : HttpContext) : HttpFuncResult =
     taskResult {
         let! proposed = Storage.getAllProposedGameNights env
         let! confirmed = Storage.getAllConfirmedGameNights env
         let! currentUser = ctx.GetUser() |> Result.mapError toMissingUserError
         return 
             Views.gameNightsView currentUser confirmed proposed
-            |> Browser.Common.View.html basePath domain (ctx.GetUser() |> Result.toOption)
+            |> Browser.Common.View.html env (ctx.GetUser() |> Result.toOption)
             |> BrowserResponse.Html
     } 
     |> BrowserTaskResult.handle ctx
@@ -25,9 +25,9 @@ type CreateProposedGameNightDto =
     { Games : string list
       Dates : string list }
 
-let addProposedGameNight basePath domain (ctx : HttpContext) =
+let addProposedGameNight env (ctx : HttpContext) =
     Views.addProposedGameNightView
-    |> Browser.Common.View.html basePath domain None
+    |> Browser.Common.View.html env None
     |> Html
     |> Ok 
     |> BrowserResult.handle ctx
@@ -131,9 +131,9 @@ let dateController env (gameNightId: string) =
         subController "/vote" voteController
     }
     
-let controller env basePath domain = controller {
-    index (getAll env basePath domain)
-    add (addProposedGameNight basePath domain)
+let controller env = controller {
+    index (getAll env)
+    add (addProposedGameNight env)
     create (saveProposedGameNight env)
     
     subController "/game" (gameController env)

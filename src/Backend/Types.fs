@@ -20,7 +20,15 @@ type ApiError =
 
 // Web
 type BasePath = BasePath of string
+    with member this.Val = this |> function BasePath basePath -> basePath
 type Domain = Domain of string
+    with member this.Val = this |> function Domain basePath -> basePath
+type IBrowserSettings =
+    abstract BasePath : BasePath
+    abstract Domain : Domain
+type IBrowser =
+    abstract Settings: IBrowserSettings
+    
 type BrowserResponse =
     | Html of string
     | Redirect of string
@@ -33,3 +41,4 @@ type ApiResponse<'T> =
     | Accepted
 type ApiResult<'T> = Result<ApiResponse<'T>, ApiError>
 type ApiTaskResult<'T> = Task<ApiResult<'T>>
+

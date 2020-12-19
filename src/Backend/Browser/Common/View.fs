@@ -94,7 +94,7 @@ let private navbar (user: User option) =
         ] 
     ]
     
-let private htmlHead (BasePath basePath) (Domain domain) =
+let private htmlHead (env: #IBrowser) =
         Html.head [
             Html.meta [ prop.charset.utf8 ]
             Html.meta [ 
@@ -103,7 +103,7 @@ let private htmlHead (BasePath basePath) (Domain domain) =
             ]
             Html.title "Active Game Night"
             Html.base' [
-                prop.href basePath
+                prop.href env.Settings.BasePath.Val
             ]
             Html.link [
                 prop.rel "apple-touch-icon"
@@ -142,7 +142,7 @@ let private htmlHead (BasePath basePath) (Domain domain) =
             Html.script [
                 prop.async true
                 prop.defer true
-                prop.custom ("data-domain", domain)
+                prop.custom ("data-domain", env.Settings.Domain.Val)
                 prop.src "https://plausible.io/js/plausible.js"
             ]
             Html.script [ prop.src "https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.2.0/turbolinks.js" ]
@@ -155,9 +155,9 @@ let private htmlHead (BasePath basePath) (Domain domain) =
             ]
         ]
 
-let html basePath domain (user: User option) (content : ReactElement) =
+let html env (user: User option) (content : ReactElement) =
     Html.html [
-        htmlHead basePath domain
+        htmlHead env
         Html.body [
             navbar user
             Bulma.section [
@@ -168,9 +168,9 @@ let html basePath domain (user: User option) (content : ReactElement) =
         ]
     ] |> Render.htmlDocument
 
-let versionView basePath domain =
+let versionView env =
     Html.html [
-        htmlHead basePath domain
+        htmlHead env
         Html.body [
             Bulma.section [
                 Html.p (sprintf "Version: %s" Version.version)

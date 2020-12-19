@@ -27,7 +27,7 @@ let requireUsername : HttpHandler =
         | Ok _ -> next ctx
         | Error _ -> redirectTo false "/user/add" next ctx
 
-let about = ((CompositionRoot.config.BasePath, CompositionRoot.config.Domain) ||> Browser.Common.View.versionView |> Render.htmlView |> htmlString)
+let about = Browser.Common.View.versionView CompositionRoot.env |> Render.htmlView |> htmlString
 
 let browserRouter =
     router {
@@ -84,7 +84,7 @@ application {
     use_gzip
     logging configureLogging
     memory_cache
-    use_static "public"
+    use_static CompositionRoot.config.PublicPath
     use_turbolinks
 }
 |> run

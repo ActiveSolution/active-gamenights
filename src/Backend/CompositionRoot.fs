@@ -7,12 +7,17 @@ let config = Configuration.config.Value
 
 type BackendEnv() =
     interface Storage.IStorage with member _.Tables = Storage.live config.ConnectionString
-let backendEnv = BackendEnv()
+    interface IBrowser with 
+        member _.Settings = 
+            { new IBrowserSettings with 
+                member _.BasePath = config.BasePath
+                member _.Domain = config.Domain }
+let env = BackendEnv()
 
 module Browser =
-    let userController : HttpHandler = Browser.User.Controller.controller config.BasePath config.Domain
-    let gameNightController : HttpHandler = Browser.GameNight.Controller.controller backendEnv config.BasePath config.Domain
+    let userController : HttpHandler = Browser.User.Controller.controller env
+    let gameNightController : HttpHandler = Browser.GameNight.Controller.controller env
 
 module Api =
-    let gameNightController : HttpHandler = Api.GameNight.controller backendEnv
+    let gameNightController : HttpHandler = Api.GameNight.controller env
     

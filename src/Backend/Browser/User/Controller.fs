@@ -8,9 +8,9 @@ open Microsoft.AspNetCore.Http
 open FsToolkit.ErrorHandling
 open Domain
 
-let addUser basePath domain (ctx: HttpContext) =
+let addUser env (ctx: HttpContext) =
     Views.addUserView
-    |> Browser.Common.View.html basePath domain None
+    |> Browser.Common.View.html env None
     |> Controller.html ctx
     
 let createUser (ctx : HttpContext) =
@@ -27,8 +27,8 @@ let clearUser (ctx : HttpContext) (_ : string) =
     Ok (Redirect "/user/add")
     |> BrowserResult.handle ctx
         
-let controller basePath domain = controller {
-    add (addUser basePath domain)
+let controller env = controller {
+    add (addUser env)
     create createUser
     delete clearUser
 }
