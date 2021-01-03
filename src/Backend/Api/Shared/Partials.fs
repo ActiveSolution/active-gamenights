@@ -1,7 +1,7 @@
 [<RequireQualifiedAccess>]
 module Backend.Api.Shared.Partials
 
-open Backend.Turbo
+open FsHotWire.Feliz
 open Feliz.ViewEngine
 open Feliz.Bulma.ViewEngine
 open Backend

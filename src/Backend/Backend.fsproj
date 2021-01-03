@@ -6,7 +6,7 @@
     <UserSecretsId>53976580-fec0-49dd-8e4a-64509d07c664</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Turbo.fs" />
+    <Compile Include="FsHotWire.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="Extensions.fs" />
     <Compile Include="Version.fs" />

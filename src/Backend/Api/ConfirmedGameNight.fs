@@ -8,13 +8,15 @@ open Backend
 open Feliz.Bulma.ViewEngine
 open Domain
 open Feliz.ViewEngine
-open Turbo
 open Backend.Api.Shared
+open FsHotWire
+open FsHotWire.Feliz
     
     
 let confirmedGameNightCard currentUser (gn: ConfirmedGameNight) =
+    let turboFrameId = TurboFrameId ("confirmed-game-night-" + gn.Id.AsString)
     Html.turboFrame [
-        prop.id ("confirmed-game-night-" + gn.Id.AsString)
+        prop.turboFrameId turboFrameId 
         prop.children [
             Bulma.card [
                 prop.classes [ "mb-5" ]
@@ -24,12 +26,14 @@ let confirmedGameNightCard currentUser (gn: ConfirmedGameNight) =
                     ]
                     Bulma.cardContent [
                         for gameName, votes in gn.GameVotes |> NonEmptyMap.toList do
+                            let actionUrl = sprintf "/proposedgamenight/%s/game/%s/vote" gn.Id.AsString gameName.Canonized
                             Html.unorderedList [
                                 Html.listItem [
-                                    GameNight.gameCard gn.Id gameName votes currentUser
+                                    GameNight.gameCard gameName votes currentUser actionUrl turboFrameId
                                 ] 
                             ] 
-                        GameNight.dateCard gn.Id gn.Date (gn.Players |> NonEmptySet.toSet) currentUser
+                        let actionUrl = sprintf "/proposedgamenight/%s/game/%s/vote" gn.Id.AsString gn.Date.AsString
+                        GameNight.dateCard gn.Date (gn.Players |> NonEmptySet.toSet) currentUser actionUrl turboFrameId
                     ]
                 ]
             ]

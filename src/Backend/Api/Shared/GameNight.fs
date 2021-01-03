@@ -5,13 +5,15 @@ open Feliz.Bulma.ViewEngine
 open Feliz.ViewEngine
 open Backend.Api.Shared
 open Domain
-open Backend.Turbo
+open FsHotWire
+open FsHotWire.Feliz
 
-let private addVoteButton actionUrl =
+let addVoteButton addVoteUrl (target: TurboFrameId) =
     Bulma.levelItem [
         Html.form [
+            prop.targetTurboFrame target
             prop.method "POST"
-            prop.action actionUrl
+            prop.action addVoteUrl
             prop.children [
                 Partials.fieldControl [
                     Bulma.button.button [
@@ -25,17 +27,13 @@ let private addVoteButton actionUrl =
         ]
     ]
     
-let addGameVoteButton (gameNightId: GameNightId) (gameName: GameName) =
-    addVoteButton (sprintf "/gamenight/%s/game/%s/vote" (gameNightId.Val.ToString()) gameName.Canonized)
     
-let addDateVoteButton (gameNightId: GameNightId) (date: Date) =
-    addVoteButton (sprintf "/gamenight/%s/date/%s/vote" (gameNightId.Val.ToString()) date.AsString)
-    
-let private removeVoteButton actionUrl (user: User) =
+let removeVoteButton removeVoteUrl (user: User) (target: TurboFrameId) =
     Bulma.levelItem [
         Html.form [
+            prop.targetTurboFrame target
             prop.method "POST"
-            prop.action actionUrl
+            prop.action (removeVoteUrl + "/" + user.Canonized)
             prop.children [
                 Html.input [
                     prop.type'.hidden
@@ -56,12 +54,6 @@ let private removeVoteButton actionUrl (user: User) =
         ]
     ]
     
-let removeGameVoteButton (gameNightId : GameNightId) (gameName: GameName) (user: User) =
-    removeVoteButton (sprintf "/gamenight/%s/game/%s/vote/%s" (gameNightId.Val.ToString()) gameName.Canonized user.Canonized) user
-    
-let removeDateVoteButton (gameNightId : GameNightId) (date: Date) (user: User) =
-    removeVoteButton (sprintf "/gamenight/%s/date/%s/vote/%s" (gameNightId.Val.ToString()) date.AsString user.Canonized) user
-    
 let otherUsersVoteButton (user: User) =
     Bulma.levelItem [ 
         Partials.fieldControl [    
@@ -74,18 +66,18 @@ let otherUsersVoteButton (user: User) =
         ]
     ]
     
-let gameVoteButtons (gameNightId: GameNightId) (gameName: GameName) (currentUser: User) (votes: Set<User>) = [
+let gameVoteButtons (currentUser: User) votes removeVoteUrl target = [
     for user in Set.toList votes do
-        if user.Val = currentUser.Val then
-            removeGameVoteButton gameNightId gameName user 
+        if user = currentUser then
+            removeVoteButton removeVoteUrl currentUser target 
         else
             otherUsersVoteButton user
     ]
     
-let private dateVoteButtons (gameNightId: GameNightId) date (currentUser: User) votes = [
+let private dateVoteButtons (currentUser: User) votes removeVoteUrl target = [
     for (user: User) in Set.toList votes do
         if user = currentUser then
-            removeDateVoteButton gameNightId date user
+            removeVoteButton removeVoteUrl currentUser target
         else
             otherUsersVoteButton user
     ]
@@ -94,7 +86,7 @@ let private hasVoted votes user =
     votes
     |> Set.contains user
     
-let gameCard gameNightId (gameName: GameName) votes currentUser =
+let gameCard (gameName: GameName) votes currentUser actionUrl voteUpdateTarget =
     Bulma.media [
         Bulma.mediaLeft [
             Bulma.image [
@@ -112,17 +104,17 @@ let gameCard gameNightId (gameName: GameName) votes currentUser =
             ]
             Bulma.level [
                 Bulma.levelLeft [
-                    yield! gameVoteButtons gameNightId gameName currentUser votes
+                    yield! gameVoteButtons currentUser votes actionUrl voteUpdateTarget 
                     if hasVoted votes currentUser then
                         Html.none
                     else
-                        addGameVoteButton gameNightId gameName 
+                        addVoteButton actionUrl voteUpdateTarget
                 ]
             ]
         ]
     ]
 
-let dateCard gameNightId (date: Date) votes currentUser =
+let dateCard date votes currentUser actionUrl voteUpdateTarget =
     Bulma.media [
         Bulma.mediaLeft [
             Bulma.image [
@@ -140,11 +132,11 @@ let dateCard gameNightId (date: Date) votes currentUser =
             ]
             Bulma.level [
                 Bulma.levelLeft [
-                    yield! dateVoteButtons gameNightId date currentUser votes
+                    yield! dateVoteButtons currentUser votes actionUrl voteUpdateTarget
                     if hasVoted votes currentUser then
                         Html.none
                     else
-                        addDateVoteButton gameNightId date
+                        addVoteButton actionUrl voteUpdateTarget 
                 ]
             ]
         ]

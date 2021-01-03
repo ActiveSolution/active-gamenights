@@ -7,7 +7,7 @@ open Giraffe
 open Domain
 open FsToolkit.ErrorHandling
 open Backend.Extensions
-open Backend.Turbo
+open FsHotWire.Feliz
         
 let private githubLink =
     Bulma.navbarItem.a [
@@ -38,6 +38,7 @@ let private userView (user: User option) =
                     Html.form [
                         prop.action "/user/logout"
                         prop.method "post"
+                        prop.targetTurboFrame.top
                         prop.children [
                             Html.input [
                                 prop.type'.hidden
@@ -68,46 +69,44 @@ let private userView (user: User option) =
     
 let private navbarView user =
     Html.turboFrame [
-    prop.id "navbar"
-    prop.children [
-        Bulma.navbar [
-            prop.id "agn-navbar"
-            prop.custom ("data-turbo-permanent", "")
-            color.isInfo
-            prop.children [ 
-                Bulma.navbarBrand.div [
-                    prop.children [
-                        Bulma.navbarItem.a [
-                            prop.href "/"
-                            prop.children [
-                                Html.img [
-                                    prop.src "/Icons/android-chrome-512x512.png"
-                                    prop.alt "Icon"
-                                    prop.style [ style.width (length.px 28); style.height (length.px 28)]
+        prop.id "navbar"
+        prop.children [
+            Bulma.navbar [
+                color.isInfo
+                prop.children [ 
+                    Bulma.navbarBrand.div [
+                        prop.children [
+                            Bulma.navbarItem.a [
+                                prop.href "/"
+                                prop.children [
+                                    Html.img [
+                                        prop.src "/Icons/android-chrome-512x512.png"
+                                        prop.alt "Icon"
+                                        prop.style [ style.width (length.px 28); style.height (length.px 28)]
+                                    ]
+                                    Html.text "Active Game Night"
                                 ]
-                                Html.text "Active Game Night"
+                            ]            
+                            Bulma.navbarBurger [
+                                prop.id "agn-navbar-burger"
+                                navbarItem.hasDropdown
+                                prop.children [ yield! List.replicate 3 (Html.span []) ] 
                             ]
-                        ]            
-                        Bulma.navbarBurger [
-                            prop.id "agn-navbar-burger"
-                            navbarItem.hasDropdown
-                            prop.children [ yield! List.replicate 3 (Html.span []) ] 
                         ]
                     ]
-                ]
-                Bulma.navbarMenu [
-                    prop.id "agn-navbar-menu"
-                    prop.children [ 
-                        Bulma.navbarEnd.div [
-                            githubLink
-                            userView user
-                        ]
-                    ] 
-                ]
-            ] 
+                    Bulma.navbarMenu [
+                        prop.id "agn-navbar-menu"
+                        prop.children [ 
+                            Bulma.navbarEnd.div [
+                                githubLink
+                                userView user
+                            ]
+                        ] 
+                    ]
+                ] 
+            ]
         ]
     ]
-]
     
 let private navbar env : HttpFunc =
     fun ctx -> 
