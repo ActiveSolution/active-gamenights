@@ -29,11 +29,11 @@ let confirmedGameNightCard currentUser (gn: ConfirmedGameNight) =
                             let actionUrl = sprintf "/proposedgamenight/%s/game/%s/vote" gn.Id.AsString gameName.Canonized
                             Html.unorderedList [
                                 Html.listItem [
-                                    GameNight.gameCard gameName votes currentUser actionUrl turboFrameId
+                                    GameNightViews.gameCard gameName votes currentUser actionUrl turboFrameId
                                 ] 
                             ] 
                         let actionUrl = sprintf "/proposedgamenight/%s/game/%s/vote" gn.Id.AsString gn.Date.AsString
-                        GameNight.dateCard gn.Date (gn.Players |> NonEmptySet.toSet) currentUser actionUrl turboFrameId
+                        GameNightViews.dateCard gn.Date (gn.Players |> NonEmptySet.toSet) currentUser actionUrl turboFrameId
                     ]
                 ]
             ]

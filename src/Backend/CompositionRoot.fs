@@ -14,8 +14,8 @@ type BackendEnv() =
                     member _.BasePath = config.BasePath
                     member _.Domain = config.Domain }
             { new ITemplates with
-                member _.Fragment(content) = Api.Shared.Partials.HtmlPage.fragment settings content 
-                member _.FullPage(content) = Api.Shared.Partials.HtmlPage.fullPage settings content }
+                member _.Fragment(content) = Api.Shared.HtmlViews.fragment settings content 
+                member _.FullPage(content) = Api.Shared.HtmlViews.fullPage settings content }
 let env = BackendEnv()
 
 module Api =
@@ -23,6 +23,6 @@ module Api =
     let confirmedGameNightController : HttpHandler = Api.ConfirmedGameNight.controller env
     let proposedGameNightController : HttpHandler = Api.ProposedGameNight.controller env
     let gameNightController : HttpHandler = Api.GameNight.controller env
-    let navbarController : HttpHandler = Api.Navbar.controller env
-    let versionController : HttpHandler = Api.Version.controller env
+    let navbarPage : HttpHandler = Api.Navbar.handler env
+    let versionPage : HttpHandler = Api.Version.handler env
 

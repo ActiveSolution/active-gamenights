@@ -1,5 +1,5 @@
 [<RequireQualifiedAccess>]
-module Backend.Api.Shared.GameNight
+module Backend.Api.Shared.GameNightViews
 
 open Feliz.Bulma.ViewEngine
 open Feliz.ViewEngine
@@ -15,7 +15,7 @@ let addVoteButton addVoteUrl (target: TurboFrameId) =
             prop.method "POST"
             prop.action addVoteUrl
             prop.children [
-                Partials.fieldControl [
+                Bulma.fieldControl [
                     Bulma.button.button [
                         color.isPrimary
                         prop.type'.submit
@@ -40,7 +40,7 @@ let removeVoteButton removeVoteUrl (user: User) (target: TurboFrameId) =
                     prop.name "_method"
                     prop.value "delete"
                 ]
-                Partials.fieldControl [    
+                Bulma.fieldControl [    
                     Bulma.button.button [
                         color.isInfo
                         prop.type'.submit
@@ -56,7 +56,7 @@ let removeVoteButton removeVoteUrl (user: User) (target: TurboFrameId) =
     
 let otherUsersVoteButton (user: User) =
     Bulma.levelItem [ 
-        Partials.fieldControl [    
+        Bulma.fieldControl [    
             Bulma.button.button [
                 prop.classes [ "no-hover" ]
                 color.isPrimary

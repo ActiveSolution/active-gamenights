@@ -2,7 +2,6 @@ module Backend.Api.Navbar
 
 open Feliz.ViewEngine
 open Feliz.Bulma.ViewEngine
-open Saturn
 open Giraffe
 open Domain
 open FsToolkit.ErrorHandling
@@ -108,11 +107,7 @@ let private navbarView user =
         ]
     ]
     
-let private navbar env : HttpFunc =
-    fun ctx -> 
+let handler env : HttpHandler =
+    fun next ctx -> 
         let user = ctx.GetUser() |> Result.toOption
         ctx.RespondWithHtmlFragment(env, navbarView user)
-
-let controller env = controller {
-    index (navbar env)
-}

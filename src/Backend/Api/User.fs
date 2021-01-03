@@ -17,7 +17,7 @@ let addUserView =
         prop.method "POST"
         prop.children [
             Bulma.title.h1 "Who are you?"
-            Partials.fieldControl [
+            Bulma.fieldControl [
                 Html.input [
                     prop.type'.text
                     prop.classes [ "input" ]

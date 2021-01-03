@@ -31,8 +31,9 @@ let browserRouter =
         forward "/confirmedgamenight" CompositionRoot.Api.confirmedGameNightController
         forward "/proposedgamenight" CompositionRoot.Api.proposedGameNightController
         forward "/gamenight" CompositionRoot.Api.gameNightController
-        forward "/navbar" CompositionRoot.Api.navbarController
-        forward "/version" CompositionRoot.Api.versionController
+        get "/navbar" CompositionRoot.Api.navbarPage
+        get "/version" CompositionRoot.Api.versionPage
+        get "/about" CompositionRoot.Api.versionPage
     }
     
 let notFoundHandler : HttpHandler =

@@ -13,7 +13,8 @@
     <Compile Include="Configuration.fs" />
     <Compile Include="CommonHttpHandlers.fs" />
     <Compile Include="Api\Shared\Partials.fs" />
-    <Compile Include="Api\Shared\GameNight.fs" />
+    <Compile Include="Api\Shared\GameNightViews.fs" />
+    <Compile Include="Api\Shared\HtmlViews.fs" />
     <Compile Include="Api\Navbar.fs" />
     <Compile Include="Api\Version.fs" />
     <Compile Include="Api\User.fs" />

@@ -30,14 +30,14 @@ let proposedGameNightCard currentUser (gn: ProposedGameNight) =
                             let actionUrl = sprintf "/proposedgamenight/%s/game/%s/vote" gn.Id.AsString gameName.Canonized
                             Html.unorderedList [
                                 Html.listItem [
-                                    GameNight.gameCard gameName votes currentUser actionUrl turboFrameId
+                                    GameNightViews.gameCard gameName votes currentUser actionUrl turboFrameId
                                 ] 
                             ] 
                         for date, votes in gn.DateVotes |> NonEmptyMap.toList do
                             let actionUrl = sprintf "/proposedgamenight/%s/date/%s/vote" gn.Id.AsString date.AsString
                             Html.unorderedList [
                                 Html.listItem [
-                                    GameNight.dateCard date votes currentUser actionUrl turboFrameId
+                                    GameNightViews.dateCard date votes currentUser actionUrl turboFrameId
                                 ] 
                             ]
                     ]
@@ -53,7 +53,7 @@ let addProposedGameLink =
         prop.children [
             Html.a [
                 prop.href "/proposedgamenight/add"
-                prop.children [ Partials.plusIcon; Html.text "Add new game night" ]
+                prop.children [ Bulma.Icons.plusIcon; Html.text "Add new game night" ]
             ]
         ]
     ]
@@ -84,7 +84,7 @@ let addProposedGameNightView =
                     prop.method "POST"
                     prop.action "/proposedgamenight"
                     prop.children [
-                        Partials.fieldLabelControl "What do you want to play?" [
+                        Bulma.fieldLabelControl "What do you want to play?" [
                             Html.input [
                                 prop.type'.text
                                 prop.classes [ "input" ]
@@ -92,7 +92,7 @@ let addProposedGameNightView =
                                 prop.placeholder "Enter a game"
                             ]
                         ]
-                        Partials.fieldLabelControl "When?" [
+                        Bulma.fieldLabelControl "When?" [
                             Html.input [
                                 prop.type'.text
                                 prop.classes [ "input" ]
@@ -100,7 +100,7 @@ let addProposedGameNightView =
                                 prop.placeholder "Pick a date"
                             ]
                         ]
-                        Partials.fieldControl [
+                        Bulma.fieldControl [
                             Bulma.button.button [
                                 color.isPrimary
                                 prop.type'.submit
