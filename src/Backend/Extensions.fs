@@ -4,6 +4,9 @@ module Backend.Extensions
 open Microsoft.AspNetCore.Http
 open FsToolkit.ErrorHandling
 open Domain
+open Giraffe
+open Saturn
+open Backend.Turbo
 
 
 type BasePath with
@@ -11,6 +14,35 @@ type BasePath with
 
 module HttpContext = 
     let usernameKey = "username"
+    
+module ApiResultHelpers =
+    let handleResult ctx okFunc res : HttpFuncResult =
+        match res with
+        | Ok value ->
+            okFunc value ctx
+        | Error (ApiError.Validation (ValidationError err)) -> 
+            Response.badRequest ctx err
+        | Error (ApiError.Domain (DomainError err)) -> 
+            Response.badRequest ctx err
+        | Error (ApiError.MissingUser _) -> 
+            Turbo.redirect "/user/add" ctx
+        | Error (ApiError.NotFound _) -> 
+            Response.notFound ctx ()
+        | Error (ApiError.Duplicate)  -> 
+            Response.internalError ctx ()
+        
+    let turboRedirect location ctx = Turbo.redirect location ctx
+    let turboStream ts ctx = TurboStream.writeTurboStreamContent ts ctx
+    
+    let fullPageHtml (env: #ITemplateBuilder) content ctx =
+        content
+        |> env.Templates.FullPage
+        |> Controller.html ctx
+        
+    let fragment (env: #ITemplateBuilder) content ctx =
+        content
+        |> env.Templates.Fragment
+        |> Controller.html ctx
     
 type HttpContext with
     member this.GetUser() =
@@ -20,12 +52,34 @@ type HttpContext with
         |> Result.mapError ValidationError
         |> Result.bind User.create
         
-    member this.SetUsername(name) =
-        this.Session.SetString(HttpContext.usernameKey, name)
+    member this.SetUsername(user: User) =
+        this.Session.SetString(HttpContext.usernameKey, user.Val)
         
     member this.ClearUsername() =
         this.Session.Remove(HttpContext.usernameKey)
 
+    
+    member ctx.RespondWithHtmlFragment (env, content) =
+        ApiResultHelpers.fragment env content ctx
+    member ctx.RespondWithHtml (env, content) =
+        ApiResultHelpers.fullPageHtml env content ctx
+    member ctx.RespondWithHtml (env, contentResult) =
+        contentResult
+        |> ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtml env)
+    member ctx.RespondWithHtml (env, contentTaskResult) =
+        contentTaskResult
+        |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtml env))
+    
+    member ctx.RespondWithRedirect(location) = Turbo.redirect location ctx
+    member ctx.RespondWithRedirect(locationResult) =
+        locationResult 
+        |> ApiResultHelpers.handleResult ctx (ApiResultHelpers.turboRedirect)
+    member ctx.RespondWithRedirect(locationResult) =
+        locationResult
+        |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.turboRedirect))  
+    
+    member ctx.OfTurboStream ts = ApiResultHelpers.turboStream ts ctx
+    
         
 module Map =
     let keys map = map |> Map.toList |> List.map fst

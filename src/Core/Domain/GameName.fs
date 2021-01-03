@@ -14,3 +14,4 @@ module GameName =
 module GameNameExtensions =
     type GameName with
         member this.Val = GameName.value this
+        member this.Canonized = this |> fun (GameName raw) -> raw

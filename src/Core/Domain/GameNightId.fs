@@ -18,5 +18,5 @@ module GameNightIdExtensions =
     
     type GameNightId with
         member this.Val = GameNightId.value this
-        member this.ToString() = this.Val.ToString()
+        member this.AsString = this.Val.ToString()
 

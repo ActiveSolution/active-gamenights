@@ -11,7 +11,7 @@ type Config =
       AzureStorageConnectionString: string
       [<DefaultValue("8085")>]
       ServerPort: uint16
-      [<DefaultValue("../../output/server/public")>]
+      [<DefaultValue("Public")>]
       PublicPath: string
       [<DefaultValue("http://localhost:8085/")>]
       BasePath: string 

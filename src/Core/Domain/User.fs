@@ -15,5 +15,6 @@ module User =
 module UserExtensions =
     type User with    
         member this.Val = this |> User.value
+        member this.Canonized = this |> fun (User raw) -> raw
 
     

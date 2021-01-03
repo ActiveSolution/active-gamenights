@@ -7,17 +7,22 @@ let config = Configuration.config.Value
 
 type BackendEnv() =
     interface Storage.IStorage with member _.Tables = Storage.live config.ConnectionString
-    interface IBrowser with 
-        member _.Settings = 
-            { new IBrowserSettings with 
-                member _.BasePath = config.BasePath
-                member _.Domain = config.Domain }
+    interface ITemplateBuilder with
+        member _.Templates =
+            let settings =
+                { new ITemplateSettings with
+                    member _.BasePath = config.BasePath
+                    member _.Domain = config.Domain }
+            { new ITemplates with
+                member _.Fragment(content) = Api.Shared.Partials.HtmlPage.fragment settings content 
+                member _.FullPage(content) = Api.Shared.Partials.HtmlPage.fullPage settings content }
 let env = BackendEnv()
 
-module Browser =
-    let userController : HttpHandler = Browser.User.Controller.controller env
-    let gameNightController : HttpHandler = Browser.GameNight.Controller.controller env
-
 module Api =
+    let userController : HttpHandler = Api.User.controller env
+    let confirmedGameNightController : HttpHandler = Api.ConfirmedGameNight.controller env
+    let proposedGameNightController : HttpHandler = Api.ProposedGameNight.controller env
     let gameNightController : HttpHandler = Api.GameNight.controller env
-    
+    let navbarController : HttpHandler = Api.Navbar.controller env
+    let versionController : HttpHandler = Api.Version.controller env
+

@@ -1,44 +1,28 @@
 namespace Backend
 
 open Domain
-open System.Threading.Tasks
+open Feliz.ViewEngine
 
 
-type BrowserError =
+type ApiError =
     | Duplicate 
     | NotFound of NotFoundError
     | Validation of ValidationError
     | Domain of DomainError
     | MissingUser of string
     
-type ApiError =
-    | Duplicate 
-    | NotFound of NotFoundError
-    | Validation of ValidationError
-    | Domain of DomainError
-    
-
 // Web
 type BasePath = BasePath of string
     with member this.Val = this |> function BasePath basePath -> basePath
 type Domain = Domain of string
     with member this.Val = this |> function Domain basePath -> basePath
-type IBrowserSettings =
+type ITemplateSettings =
     abstract BasePath : BasePath
     abstract Domain : Domain
-type IBrowser =
-    abstract Settings: IBrowserSettings
+type ITemplates =
+    abstract FullPage : ReactElement -> string
+    abstract Fragment : ReactElement -> string
+type ITemplateBuilder =
+    abstract Templates : ITemplates
     
-type BrowserResponse =
-    | Html of string
-    | Redirect of string
-type BrowserResult = Result<BrowserResponse, BrowserError>
-type BrowserTaskResult = Task<BrowserResult>
-
-type ApiResponse<'T> =
-    | Json of 'T
-    | Created of Location: string
-    | Accepted
-type ApiResult<'T> = Result<ApiResponse<'T>, ApiError>
-type ApiTaskResult<'T> = Task<ApiResult<'T>>
-
+    

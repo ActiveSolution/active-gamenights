@@ -1,13 +1,10 @@
 module Backend.Startup
 
 open System
-open Feliz.ViewEngine
 open Giraffe
 open Microsoft.AspNetCore.Http
 open Saturn
 open Microsoft.Extensions.Logging
-open Turbolinks
-        
         
 let endpointPipe =
     pipeline {
@@ -16,43 +13,34 @@ let endpointPipe =
         plug head
     }
     
-let userRouter =
-    router {
-        forward "" CompositionRoot.Browser.userController
-    }
-    
-let requireUsername : HttpHandler =
+let rewriteHttpMethod : HttpHandler =
     fun next (ctx: HttpContext) ->
-        match ctx.GetUser() with
-        | Ok _ -> next ctx
-        | Error _ -> redirectTo false "/user/add" next ctx
-
-let about = Browser.Common.View.versionView CompositionRoot.env |> Render.htmlView |> htmlString
+        match ctx.GetFormValue("_method") with
+        | Some method when method = "delete" ->
+            printfn "rewriting POST -> DELETE"
+            ctx.Request.Method <- "delete"
+        | _ -> ()
+        next ctx
+    
 
 let browserRouter =
     router {
-        pipe_through requireUsername
         pipe_through endpointPipe
-        forward "" CompositionRoot.Browser.gameNightController
-        forward "/gamenight" CompositionRoot.Browser.gameNightController
+        forward "" CompositionRoot.Api.gameNightController
+        forward "/user" CompositionRoot.Api.userController
+        forward "/confirmedgamenight" CompositionRoot.Api.confirmedGameNightController
+        forward "/proposedgamenight" CompositionRoot.Api.proposedGameNightController
+        forward "/gamenight" CompositionRoot.Api.gameNightController
+        forward "/navbar" CompositionRoot.Api.navbarController
+        forward "/version" CompositionRoot.Api.versionController
     }
     
 let notFoundHandler : HttpHandler =
-    fun next ctx ->
-        (setStatusCode 404 >=> text "Not found") next ctx
+    setStatusCode 404 >=> text "Not found"
         
-let apiRouter =
-    router {
-        forward "/gamenight" CompositionRoot.Api.gameNightController
-        not_found_handler notFoundHandler
-    }
-
 let topRouter =
     router {
-        get "/about" about
-        get "/version" about
-        forward "/user" userRouter
-        forward "/api" apiRouter
+        pipe_through rewriteHttpMethod
         forward "" browserRouter
     }
         
@@ -85,6 +73,5 @@ application {
     logging configureLogging
     memory_cache
     use_static CompositionRoot.config.PublicPath
-    use_turbolinks
 }
 |> run
