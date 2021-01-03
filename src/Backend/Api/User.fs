@@ -28,6 +28,7 @@ let addUserView =
             Bulma.button.button [
                 color.isPrimary
                 prop.type'.submit
+                prop.name "submit"
                 prop.text "OK"
             ]   
         ]

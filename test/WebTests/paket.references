@@ -1,0 +1,4 @@
+group WebTests
+    canopy
+    Selenium.WebDriver.ChromeDriver
+    runtime.osx.10.10-x64.CoreCompat.System.Drawing

@@ -17,9 +17,10 @@ let rewriteHttpMethod : HttpHandler =
     fun next (ctx: HttpContext) ->
         match ctx.GetFormValue("_method") with
         | Some method when method = "delete" ->
-            printfn "rewriting POST -> DELETE"
             ctx.Request.Method <- "delete"
-        | _ -> ()
+        | Some _ ->
+            NotImplementedException("Method not implemented for FORM post") |> raise
+        | None -> ()
         next ctx
     
 

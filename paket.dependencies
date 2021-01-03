@@ -70,3 +70,12 @@ group deploy
     
     nuget FSharp.Core
     nuget Farmer
+    
+group WebTests
+    source https://www.nuget.org/api/v2
+    framework: netcoreapp3.1
+    storage: none
+    
+    nuget canopy
+    nuget Selenium.WebDriver.ChromeDriver
+    nuget runtime.osx.10.10-x64.CoreCompat.System.Drawing

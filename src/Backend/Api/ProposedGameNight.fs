@@ -162,7 +162,6 @@ let getAll env : HttpFunc =
     fun ctx -> 
         taskResult {
             let! proposed = Storage.getAllProposedGameNights env
-            printfn "fetched %i proposed game nights" (proposed |> List.length)
             let! currentUser = ctx.GetUser() |> Result.mapError toMissingUserError
             return gameNightsView currentUser proposed 
         } 
