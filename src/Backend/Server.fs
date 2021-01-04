@@ -18,11 +18,10 @@ let rewriteHttpMethod : HttpHandler =
         match ctx.GetFormValue("_method") with
         | Some method when method = "delete" ->
             ctx.Request.Method <- "delete"
-        | Some _ ->
-            NotImplementedException("Method not implemented for FORM post") |> raise
-        | None -> ()
+        | Some method when method = "put" ->
+            ctx.Request.Method <- "put"
+        | _ -> ()
         next ctx
-    
 
 let browserRouter =
     router {

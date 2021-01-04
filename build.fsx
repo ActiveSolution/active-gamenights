@@ -20,9 +20,11 @@ type DeployEnvironment =
 let sln = "ActiveGameNight.sln"
 let rootPath = __SOURCE_DIRECTORY__
 let src = rootPath @@ "src"
+let test = rootPath @@ "test"
 let srcGlob = src @@ "**/*.??proj"
 let deployGlob = rootPath  @@ "deploy/**/*.??proj"
 let backendPath = src @@ "Backend"
+let webTestsPath = test @@ "WebTests"
 let backendProj = backendPath @@ "Backend.fsproj"
 let functionsPath = src @@ "Functions"
 let functionsProj = functionsPath @@ "Functions.fsproj"
@@ -197,7 +199,6 @@ let waitForDeployment env _ =
                 failwithf "Site %s is not running after %f s" url timeout.TotalSeconds
         waitForResponse'()
 
-
     Trace.tracefn "Waiting 5 seconds before warmup tests..."
     System.Threading.Thread.Sleep 5000
     match env with
@@ -205,6 +206,30 @@ let waitForDeployment env _ =
         waitForResponse (TimeSpan.FromSeconds(120.)) "https://active-game-night-test.azurewebsites.net/"
     | Prod ->
         waitForResponse (TimeSpan.FromSeconds(120.)) "https://active-game-night.azurewebsites.net/"
+
+let runWebTests ctx =
+    Target.activateFinal "KillDotnet"
+
+    let configuration = (configuration ctx.Context.AllExecutingTargets).ToString()
+    let backendProcess =
+        let info = System.Diagnostics.ProcessStartInfo()
+        info.FileName <- "dotnet"
+        info.WorkingDirectory <- backendPath
+        info.Arguments <- sprintf " run --configuration %s --no-restore --no-build" configuration
+        info.UseShellExecute <- false
+        System.Diagnostics.Process.Start info
+
+    System.Threading.Thread.Sleep 2000 |> ignore  // give backend some time to start
+
+    let args = sprintf "--configuration %s --no-restore --no-build -- http://localhost:8085 true" (configuration.ToString())
+    DotNet.exec (fun c ->
+        { c with WorkingDirectory = webTestsPath }) "run" args
+    |> (fun res -> if not res.OK then failwithf "RunWebTests failed")
+
+    backendProcess.Kill()
+
+let killDotnet _ =
+    Process.killAllByName "dotnet"
 
 //-----------------------------------------------------------------------------
 // Build Target Declaration
@@ -224,9 +249,11 @@ Target.create "DeployToProd" (runFarmerDeploy Prod)
 Target.create "GitCheckVersionTag" gitCheckUniqueTag
 Target.create "GitTagProdDeployment" gitTagDeployment
 Target.create "WaitForTestDeployment" (waitForDeployment Test)
+Target.create "RunWebTests" (runWebTests)
 Target.create "WaitForProdDeployment" (waitForDeployment Prod)
 Target.create "CreateTestRelease" ignore
 Target.create "CreateProdRelease" ignore
+Target.createFinal "KillDotnet" killDotnet
 
 
 //-----------------------------------------------------------------------------
@@ -245,6 +272,7 @@ Target.create "CreateProdRelease" ignore
     ==> "WriteVersionToFile"
     ==> "DotnetBuild"
     ==> "Build"
+    ==> "RunWebTests"
     ==> "DotnetPublishBackend" <=> "DotnetPublishFunctions"
     ==> "Package"
 
