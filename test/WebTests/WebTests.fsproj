@@ -5,9 +5,11 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Extensions.fs" />
     <Compile Include="Pages\LoginPage.fs" />
     <Compile Include="Pages\GameNightPage.fs" />
     <Compile Include="Tests\Login.fs" />
+    <Compile Include="Tests\GameNight.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

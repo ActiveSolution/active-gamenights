@@ -9,18 +9,18 @@ open Backend
 open Feliz.Bulma.ViewEngine
 open Domain
 open Feliz.ViewEngine
-open FsHotWire
 open FsHotWire.Feliz
 open Backend.Api.Shared
 
     
 let proposedGameNightCard currentUser (gn: ProposedGameNight) =
-    let turboFrameId = TurboFrameId ("proposed-game-night-" + gn.Id.AsString)
+    let turboFrameId = "proposed-game-night-" + gn.Id.AsString
     Html.turboFrame [
-        prop.turboFrameId turboFrameId
+        prop.id turboFrameId
         prop.children [
             Bulma.card [
-                prop.classes [ "mb-5" ]
+                prop.classes [ "mb-5"; "game-night-card" ]
+                prop.dataGameNightId gn.Id
                 prop.children [
                     Bulma.cardHeader [
                         Bulma.cardHeaderTitle.p (gn.CreatedBy.Val + " wants to play")
@@ -52,6 +52,7 @@ let addProposedGameLink =
         prop.id "add-proposed-game-night"
         prop.children [
             Html.a [
+                prop.id "add-proposed-game-night-link"
                 prop.href "/proposedgamenight/add"
                 prop.children [ Bulma.Icons.plusIcon; Html.text "Add new game night" ]
             ]
@@ -72,8 +73,30 @@ let gameNightsView currentUser proposed =
         ]
     ]
     
+let gameInputView index =
+    Bulma.fieldLabelControl "What do you want to play?" [
+        Html.input [
+            prop.type'.text
+            prop.id (sprintf "game-%i" index)
+            prop.classes [ "input" ]
+            prop.name "Games"
+            prop.placeholder "Enter a game"
+        ]
+    ]
+    
+let dateInputView index =
+    Bulma.fieldLabelControl "When?" [
+        Html.input [
+            prop.type'.text
+            prop.id (sprintf "date-%i" index)
+            prop.classes [ "input" ]
+            prop.name "Dates"
+            prop.placeholder "Pick a date"
+        ]
+    ]
+
 let addProposedGameNightView =
-    let target = TurboFrameId "proposed-game-nights"
+    let target = "proposed-game-nights"
     Bulma.section [
         Bulma.title.h2 "Add proposed game night"
         Html.turboFrame [
@@ -84,22 +107,8 @@ let addProposedGameNightView =
                     prop.method "POST"
                     prop.action "/proposedgamenight"
                     prop.children [
-                        Bulma.fieldLabelControl "What do you want to play?" [
-                            Html.input [
-                                prop.type'.text
-                                prop.classes [ "input" ]
-                                prop.name "Games"
-                                prop.placeholder "Enter a game"
-                            ]
-                        ]
-                        Bulma.fieldLabelControl "When?" [
-                            Html.input [
-                                prop.type'.text
-                                prop.classes [ "input" ]
-                                prop.name "Dates"
-                                prop.placeholder "Pick a date"
-                            ]
-                        ]
+                        gameInputView 1
+                        dateInputView 1
                         Bulma.fieldControl [
                             Bulma.button.button [
                                 color.isPrimary

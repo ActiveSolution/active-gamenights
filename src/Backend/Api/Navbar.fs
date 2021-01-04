@@ -28,10 +28,12 @@ let private userView (user: User option) =
         Bulma.navbarItem.div [
             navbarItem.hasDropdown
             navbarItem.isHoverable
+            prop.id "logout-dropdown"
             prop.children [
                 Bulma.navbarLink.a [
                     navbarLink.isArrowless
-                    prop.text user.Val 
+                    prop.text user.Val
+                    prop.id "username"
                 ] 
                 Bulma.navbarDropdown.div [
                     Html.form [
@@ -48,6 +50,7 @@ let private userView (user: User option) =
                                 prop.children [
                                     Bulma.control.div [
                                         Bulma.button.button [
+                                            prop.id "logout-button"
                                             color.isLink
                                             color.isLight
                                             color.hasBackgroundWhite

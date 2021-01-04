@@ -11,7 +11,7 @@ open Feliz.ViewEngine
 open Feliz.Bulma.ViewEngine
 open Backend.Api.Shared
 
-let addUserView =
+let addUserView (user: User option) =
     Html.form [
         prop.action "/user"
         prop.method "POST"
@@ -23,6 +23,7 @@ let addUserView =
                     prop.classes [ "input" ]
                     prop.name HttpContext.usernameKey
                     prop.autoFocus true
+                    prop.value (user |> Option.map (fun u -> u.Val) |> Option.defaultValue "")
                 ]
             ] 
             Bulma.button.button [
@@ -36,7 +37,8 @@ let addUserView =
 
 let addUser env : HttpFunc =
     fun ctx ->
-        ctx.RespondWithHtml(env, addUserView)
+        let user = ctx.GetUser() |> Result.toOption
+        ctx.RespondWithHtml(env, (addUserView user))
     
 let createUser : HttpFunc =
     fun ctx ->

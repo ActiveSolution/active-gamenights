@@ -5,9 +5,6 @@ open Giraffe
 open FSharp.Control.Tasks
 open Microsoft.AspNetCore.Http
 
-
-type TurboFrameId = TurboFrameId of string
-
 let (|AcceptTurboStream|_|) (req: HttpRequest) =
     if req.Headers.["Accept"].ToString().Contains("turbo-stream") then
         Some AcceptTurboStream
@@ -34,16 +31,9 @@ module Feliz =
         | Replace c -> c
     
     type prop with
-
-        static member turboFrameId (TurboFrameId id) =
-            prop.id id
-        static member id (TurboFrameId id) =
-            prop.id id
-        static member targetTurboFrame (TurboFrameId id) =
+        static member targetTurboFrame (id: string) =
             prop.custom ("data-turbo-frame", id)
-        static member target (TurboFrameId id) =
-            prop.target id
-        static member disableTurbo =
+        static member disableTurboDrive =
             prop.custom("data-turbo", false)
             
     module prop =

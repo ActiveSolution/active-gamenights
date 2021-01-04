@@ -18,18 +18,11 @@ let main args =
 //    start BrowserStartMode.Chrome
     resize (1920, 1080)
     
-    "Root url redirects login page" &&& fun _ ->
-        let loginPage = LoginPage.url rootUrl
-        url rootUrl
-        onn loginPage
+    once (fun _ -> LoginPage.logout())
     
     Login.all rootUrl
-
-//    "Health endpoint returns time in timezone /Europe/Stockholm" &&& fun _ ->
-//        url (rootUrl + "/health")
-//        let actual = read "#healthCheckTime"
-//        let expected = DateTime.Now.ToString("yyyy-MM-dd hh:mm")
-//        contains expected actual
+    
+    GameNight.all rootUrl
         
     run()
     

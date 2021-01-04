@@ -111,3 +111,12 @@ module Result =
         match xResult with 
         | Error _ -> None 
         | Ok v -> Some v
+
+module prop =
+    open Feliz.ViewEngine
+    let dataGameNightId (id: GameNightId) =
+        prop.custom ("data-game-night-id", id.AsString)
+    let dataGameName (name: GameName) =
+        prop.custom ("data-game-name", name.Canonized)
+    let dataDate (date: Date) =
+        prop.custom ("data-date", date.AsString)

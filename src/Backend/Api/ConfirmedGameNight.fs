@@ -9,14 +9,13 @@ open Feliz.Bulma.ViewEngine
 open Domain
 open Feliz.ViewEngine
 open Backend.Api.Shared
-open FsHotWire
 open FsHotWire.Feliz
     
     
 let confirmedGameNightCard currentUser (gn: ConfirmedGameNight) =
-    let turboFrameId = TurboFrameId ("confirmed-game-night-" + gn.Id.AsString)
+    let turboFrameId = "confirmed-game-night-" + gn.Id.AsString
     Html.turboFrame [
-        prop.turboFrameId turboFrameId 
+        prop.id turboFrameId 
         prop.children [
             Bulma.card [
                 prop.classes [ "mb-5" ]
