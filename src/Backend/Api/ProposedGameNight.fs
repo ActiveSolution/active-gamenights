@@ -19,7 +19,7 @@ let proposedGameNightCard currentUser (gn: ProposedGameNight) =
         prop.id turboFrameId
         prop.children [
             Bulma.card [
-                prop.classes [ "mb-5"; "game-night-card" ]
+                prop.classes [ "mb-5" ]
                 prop.dataGameNightId gn.Id
                 prop.children [
                     Bulma.cardHeader [

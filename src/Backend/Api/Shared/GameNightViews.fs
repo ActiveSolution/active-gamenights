@@ -17,6 +17,7 @@ let addVoteButton addVoteUrl target =
             prop.children [
                 Bulma.fieldControl [
                     Bulma.button.button [
+                        prop.addVoteButton
                         color.isPrimary
                         prop.type'.submit
                         button.isSmall
@@ -41,6 +42,7 @@ let removeVoteButton removeVoteUrl (user: User) target =
                 ]
                 Bulma.fieldControl [    
                     Bulma.button.button [
+                        prop.removeVoteButton
                         color.isInfo
                         prop.type'.submit
                         prop.custom ("onmouseover","this.style.backgroundColor='#feecf0';this.style.color='#cc0f35';")
@@ -88,7 +90,6 @@ let private hasVoted votes user =
     
 let gameCard (gameName: GameName) votes currentUser actionUrl voteUpdateTarget =
     Bulma.media [
-        prop.classes [ "game-card" ]
         prop.dataGameName gameName
         prop.children [
             Bulma.mediaLeft [
@@ -120,7 +121,6 @@ let gameCard (gameName: GameName) votes currentUser actionUrl voteUpdateTarget =
 
 let dateCard date votes currentUser actionUrl voteUpdateTarget =
     Bulma.media [
-        prop.classes [ "date-card" ]
         prop.dataDate date
         prop.children [
             Bulma.mediaLeft [

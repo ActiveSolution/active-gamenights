@@ -19,6 +19,7 @@ let confirmedGameNightCard currentUser (gn: ConfirmedGameNight) =
         prop.children [
             Bulma.card [
                 prop.classes [ "mb-5" ]
+                prop.dataGameNightId gn.Id
                 prop.children [
                     Bulma.cardHeader [
                         Bulma.cardHeaderTitle.p (gn.CreatedBy.Val + " wants to play")

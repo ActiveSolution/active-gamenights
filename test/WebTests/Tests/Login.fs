@@ -13,7 +13,7 @@ let all rootUrl =
         let loginPage = _loginUrl rootUrl
         url rootUrl
         onn loginPage
-        url (GameNightPages.gameNightUrl rootUrl)
+        url (GameNightsPages.gameNightUrl rootUrl)
         onn loginPage
     
     

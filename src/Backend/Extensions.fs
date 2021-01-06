@@ -120,3 +120,7 @@ module prop =
         prop.custom ("data-game-name", name.Canonized)
     let dataDate (date: Date) =
         prop.custom ("data-date", date.AsString)
+    let addVoteButton =
+        prop.custom ("data-add-vote-button", "")
+    let removeVoteButton =
+        prop.custom ("data-remove-vote-button", "")

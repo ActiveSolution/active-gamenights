@@ -4,11 +4,10 @@ open System
 open canopy.classic
 open canopy.runner.classic
 open WebTests.Pages
-open GameNightPages
-open WebTests.Extensions
+open GameNightsPages
 
 let all rootUrl =
-    let gameNightUrl = GameNightPages.gameNightUrl rootUrl
+    let gameNightUrl = GameNightsPages.gameNightUrl rootUrl
     let username = "Game Night Tester"
     let username2 = "Game Night Tester2"
     let date = (DateTime.Now.AddDays(5.))
@@ -31,47 +30,53 @@ let all rootUrl =
         displayed (date.ToString("yyyy-MM-dd"))
         
     "Can add game vote" &&& fun _ ->
-        click (_someAddGameVoteButton gameName).Value
-        waitForElementOption (fun _ -> _someRemoveGameVoteButton gameName username)
-        notDisplayedOption (_someAddGameVoteButton gameName)
+        let gameNightId = closestGameNightId gameName
+        click (_addGameVoteButton gameNightId gameName)
+        waitForElement (_removeGameVoteButton gameNightId gameName)
+        notDisplayed (_addGameVoteButton gameNightId gameName)
         
     "Can remove game vote" &&& fun _ ->
-        click (_someRemoveGameVoteButton gameName username).Value
-        waitForElementOption (fun _ -> _someAddGameVoteButton gameName)
-        notDisplayedOption (_someRemoveGameVoteButton gameName username) 
+        let gameNightId = closestGameNightId gameName
+        click (_removeGameVoteButton gameNightId gameName)
+        waitForElement (_addGameVoteButton gameNightId gameName)
+        notDisplayed (_removeGameVoteButton gameNightId gameName)
     
     "Can add date vote" &&& fun _ ->
-        click (_someAddDateVoteButton gameName date).Value
-        waitForElementOption (fun _ -> _someRemoveDateVoteButton gameName date username)
-        notDisplayedOption (_someAddDateVoteButton gameName date)
+        let gameNightId = closestGameNightId gameName
+        click (_addDateVoteButton gameNightId date)
+        waitForElement (_removeDateVoteButton gameNightId date)
+        notDisplayed (_addDateVoteButton gameNightId date)
         
     "Can remove date vote" &&& fun _ ->
-        click (_someRemoveDateVoteButton gameName date username).Value
-        waitForElementOption (fun _ -> _someAddDateVoteButton gameName date)
-        notDisplayedOption (_someRemoveDateVoteButton gameName date username) 
+        let gameNightId = closestGameNightId gameName
+        click (_removeDateVoteButton gameNightId date)
+        waitForElement (_addDateVoteButton gameNightId date)
+        notDisplayed (_removeDateVoteButton gameNightId date)
     
     "Cannot remove game vote for other username" &&& fun _ ->
         // as first user
         LoginPage.login rootUrl username
-        click (_someAddGameVoteButton gameName).Value
-        waitForElementOption (fun _ -> _someRemoveGameVoteButton gameName username)
+        waitForElement LoginPage._loggedInUsername
+        let gameNightId = closestGameNightId gameName
+        click (_addGameVoteButton gameNightId gameName)
+        waitForElement (_removeGameVoteButton gameNightId gameName)
         
         // as second user:
         LoginPage.login rootUrl username2
         waitForElement LoginPage._loggedInUsername
-        let button = (_someRemoveGameVoteButton gameName username).Value
-        containsInsensitive (button.GetProperty "disabled") "true"
+        notDisplayed (_removeGameVoteButton gameNightId gameName)
     
     "Cannot remove date vote for other username" &&& fun _ ->
         // as first user
         LoginPage.login rootUrl username
-        click (_someAddDateVoteButton gameName date).Value
-        waitForElementOption (fun _ -> _someRemoveDateVoteButton gameName date username)
+        waitForElement LoginPage._loggedInUsername
+        let gameNightId = closestGameNightId gameName
+        click (_addDateVoteButton gameNightId date)
+        waitForElement (_removeDateVoteButton gameNightId date)
         
         // as second user:
         LoginPage.login rootUrl username2
         waitForElement LoginPage._loggedInUsername
-        let button = (_someRemoveDateVoteButton gameName date username).Value
-        containsInsensitive (button.GetProperty "disabled") "true"
+        notDisplayed (_removeDateVoteButton gameNightId date)
         
     
