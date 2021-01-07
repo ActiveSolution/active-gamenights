@@ -80,7 +80,7 @@ type HttpContext with
         locationResult
         |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.turboRedirect))  
     
-    member ctx.OfTurboStream ts = ApiResultHelpers.turboStream ts ctx
+    member ctx.RespondWithTurboStream ts = ApiResultHelpers.turboStream ts ctx
     
         
 module Map =

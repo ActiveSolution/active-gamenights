@@ -12,6 +12,7 @@ open Feliz.ViewEngine
 open FsHotWire.Feliz
 open Backend.Api.Shared
 open FSharp.UMX
+open FsHotWire
 
     
 let proposedGameNightCard currentUser (gn: ProposedGameNight) =
@@ -74,26 +75,56 @@ let gameNightsView currentUser proposed =
         ]
     ]
     
-let gameInputView index =
-    Bulma.fieldLabelControl "What do you want to play?" [
-        Html.input [
-            prop.type'.text
-            prop.id (sprintf "game-%i" index)
-            prop.classes [ "input" ]
-            prop.name "Games"
-            prop.placeholder "Enter a game"
+let private addGameInputButton nextIndex =
+    Html.a [
+        prop.id "add-game-input"
+        prop.href (sprintf "/proposedgamenight/fragment/addgame?index=%i" nextIndex)
+        prop.children [
+            Html.span [
+                Bulma.Icons.plusIcon
+                Html.text " add another game"
+            ]
         ]
     ]
     
-let dateInputView index =
-    Bulma.fieldLabelControl "When?" [
-        Html.input [
-            prop.type'.text
-            prop.id (sprintf "date-%i" index)
-            prop.classes [ "input" ]
-            prop.name "Dates"
-            prop.placeholder "Pick a date"
+let gameInputView index =
+    Html.div [
+        Bulma.fieldLabelControl "What do you want to play?" [
+            Html.input [
+                prop.type'.text
+                prop.id (sprintf "game-%i" index)
+                prop.classes [ "input" ]
+                prop.name "Games"
+                prop.placeholder "Enter a game"
+            ]
         ]
+        addGameInputButton (index + 1)
+    ]
+    
+let private addDateInputButton nextIndex =
+    Html.a [
+        prop.id "add-date-input"
+        prop.href (sprintf "/proposedgamenight/fragment/adddate?index=%i" nextIndex)
+        prop.children [
+            Html.span [
+                Bulma.Icons.plusIcon
+                Html.text " add another date"
+            ]
+        ]
+    ]
+
+let dateInputView index =
+    Html.div [
+        Bulma.fieldLabelControl "When?" [
+            Html.input [
+                prop.type'.text
+                prop.id (sprintf "date-%i" index)
+                prop.classes [ "input" ]
+                prop.name "Dates"
+                prop.placeholder "Pick a date"
+            ]
+        ]
+        addDateInputButton (index + 1)
     ]
 
 let addProposedGameNightView =
@@ -271,5 +302,34 @@ let controller env = controller {
     
     subController "/game" (gameController env)
     subController "/date" (dateController env)
-
 }
+
+let addGameInputFragment env : HttpHandler =
+    fun _ ctx ->
+        let index = ctx.TryGetQueryStringValue "index" |> Option.map (fun (i:string) -> int i) |> Option.defaultValue 1
+        let inputView = gameInputView index
+
+        match ctx.Request with
+        | AcceptTurboStream ->
+            inputView
+            |> TurboStream.replace "add-game-input"
+            |> List.singleton
+            |> ctx.RespondWithTurboStream
+        | _ ->
+            ctx.RespondWithHtmlFragment(env, inputView)
+    
+    
+let addDateInputFragment env : HttpHandler =
+    fun _ ctx ->
+        let index = ctx.TryGetQueryStringValue "index" |> Option.map (fun (i:string) -> int i) |> Option.defaultValue 1
+        let inputView = dateInputView index
+
+        match ctx.Request with
+        | AcceptTurboStream ->
+            inputView
+            |> TurboStream.replace "add-date-input"
+            |> List.singleton
+            |> ctx.RespondWithTurboStream
+        | _ ->
+            ctx.RespondWithHtmlFragment(env, inputView)
+    

@@ -29,6 +29,8 @@ let browserRouter =
         forward "" CompositionRoot.Api.gameNightController
         forward "/user" CompositionRoot.Api.userController
         forward "/confirmedgamenight" CompositionRoot.Api.confirmedGameNightController
+        get "/proposedgamenight/fragment/addgame" CompositionRoot.Api.addGameInputFragment
+        get "/proposedgamenight/fragment/adddate" CompositionRoot.Api.addDateInputFragment
         forward "/proposedgamenight" CompositionRoot.Api.proposedGameNightController
         forward "/gamenight" CompositionRoot.Api.gameNightController
         get "/navbar" CompositionRoot.Api.navbarPage

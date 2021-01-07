@@ -23,12 +23,16 @@ module Turbo =
             
 module Feliz =
     type TurboStream =
-        | Append of ReactElement
-        | Replace of ReactElement
-    let private getContent ts =
-        match ts with
-        | Append c
-        | Replace c -> c
+        private 
+            { Action: string
+              Content: ReactElement
+              Target: string }
+        with 
+            static member internal Create(action, target, content) =
+                { Target = target
+                  Action = action
+                  Content = content }
+
     
     type prop with
         static member targetTurboFrame (id: string) =
@@ -49,26 +53,30 @@ module Feliz =
         
     [<RequireQualifiedAccess>]
     module TurboStream =
-        let private render action id (content: ReactElement list) =
-            Html.turboStream [
-                prop.action action
-                prop.target id
-                prop.children (Html.template content)
-            ]
+        let private render (turboStreams: TurboStream list) =
+            Html.body [
+                for ts in turboStreams do
+                    Html.turboStream [
+                        prop.action ts.Action
+                        prop.target ts.Target
+                        prop.children [
+                            Html.template [
+                                ts.Content
+                            ]
+                        ]
+                    ]
+                ]
             
-        let append id (content: ReactElement list) =
-            render "append" id content
-            |> Append
+        let append target content =
+            TurboStream.Create("append", target, content)
             
-        let replace id (content: ReactElement list) =
-            render "replace" id content
-            |> Replace
+        let replace target content =
+            TurboStream.Create("replace", target, content)
             
-        let writeTurboStreamContent (ts: TurboStream) (ctx: HttpContext) =
+        let writeTurboStreamContent (ts: TurboStream list) (ctx: HttpContext) =
             ctx.SetContentType "text/html; turbo-stream"
             
-            ts
-            |> getContent
+            render ts
             |> Render.htmlView
             |> ctx.WriteStringAsync 
         
