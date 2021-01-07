@@ -12,6 +12,7 @@ let all rootUrl =
     let username2 = "Game Night Tester2"
     let date = (DateTime.Now.AddDays(5.))
     let gameName = sprintf "Web Test Game %s" (date.ToString("yyyy-MM-dd-HHmmss"))
+    let mutable gameNightId = null
     
     context "game nights"
     
@@ -26,33 +27,38 @@ let all rootUrl =
     
     "Can add proposed game night" &&& fun _ ->
         addProposedGameNight rootUrl gameName date
-        let gameNightId = closestGameNightId gameName
+        gameNightId <- closestGameNightId gameName
+        read (_gameCardTitle gameNightId gameName) == gameName
+        read (_dateCardTitle gameNightId date) == date.ToString("yyyy-MM-dd")
+        displayed (date.ToString("yyyy-MM-dd"))
+        
+    "Uses username display name in game night header" &&& fun _ ->
         let gnHeader = _gameNightHeader gameNightId 
         let expectedHeader = sprintf "%s wants to play" username 
         expectedHeader == read gnHeader
-        displayed gameName
-        displayed (date.ToString("yyyy-MM-dd"))
         
     "Can add game vote" &&& fun _ ->
-        let gameNightId = closestGameNightId gameName
         click (_addGameVoteButton gameNightId gameName)
         waitForElement (_removeGameVoteButton gameNightId gameName)
         notDisplayed (_addGameVoteButton gameNightId gameName)
         
+    "Uses username display name on remove game vote button" &&& fun _ ->
+        (_removeGameVoteButton gameNightId gameName) == username
+        
     "Can remove game vote" &&& fun _ ->
-        let gameNightId = closestGameNightId gameName
         click (_removeGameVoteButton gameNightId gameName)
         waitForElement (_addGameVoteButton gameNightId gameName)
         notDisplayed (_removeGameVoteButton gameNightId gameName)
     
     "Can add date vote" &&& fun _ ->
-        let gameNightId = closestGameNightId gameName
         click (_addDateVoteButton gameNightId date)
         waitForElement (_removeDateVoteButton gameNightId date)
         notDisplayed (_addDateVoteButton gameNightId date)
         
+    "Uses username display name on remove date vote button" &&& fun _ ->
+        (_removeDateVoteButton gameNightId date) == username
+        
     "Can remove date vote" &&& fun _ ->
-        let gameNightId = closestGameNightId gameName
         click (_removeDateVoteButton gameNightId date)
         waitForElement (_addDateVoteButton gameNightId date)
         notDisplayed (_removeDateVoteButton gameNightId date)
@@ -61,7 +67,6 @@ let all rootUrl =
         // as first user
         LoginPage.login rootUrl username
         waitForElement LoginPage._loggedInUsername
-        let gameNightId = closestGameNightId gameName
         click (_addGameVoteButton gameNightId gameName)
         waitForElement (_removeGameVoteButton gameNightId gameName)
         
@@ -74,7 +79,6 @@ let all rootUrl =
         // as first user
         LoginPage.login rootUrl username
         waitForElement LoginPage._loggedInUsername
-        let gameNightId = closestGameNightId gameName
         click (_addDateVoteButton gameNightId date)
         waitForElement (_removeDateVoteButton gameNightId date)
         

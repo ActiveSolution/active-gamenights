@@ -19,13 +19,13 @@ let private toDateString (date: DateTime) = date.ToString("yyyy-MM-dd")
 let gameNightUrl rootUrl = rootUrl + "/gamenight"
 
 let _addProposedGameNightLink = "#add-proposed-game-night-link"
-let _gameCard gameName = sprintf "[data-game-name=%s]" (canonize gameName)
+let _gameCardTitle gameNightId gameName = sprintf "[data-game-night-id=%s] [data-game-name=%s] .content p" gameNightId (canonize gameName)
 let _addGameVoteButton (gameNightId) (gameName) = sprintf "[data-game-night-id=%s] [data-game-name=%s] [data-add-vote-button]" gameNightId (canonize gameName)
 let _removeGameVoteButton (gameNightId) (gameName) = sprintf "[data-game-night-id=%s] [data-game-name=%s] [data-remove-vote-button]" gameNightId (canonize gameName)
 let _addDateVoteButton gameNightId date = sprintf "[data-game-night-id=%s] [data-date=%s] [data-add-vote-button]" gameNightId (toDateString date)
 let _removeDateVoteButton gameNightId date = sprintf "[data-game-night-id=%s] [data-date=%s] [data-remove-vote-button]" gameNightId (toDateString date)
 let _gameNightHeader gameNightId = sprintf "[data-game-night-id=%s] p.card-header-title" gameNightId
-let _dateCard gameNightId date = sprintf "[data-game-night-id=%s][data-date=%s]" gameNightId (toDateString date) 
+let _dateCardTitle gameNightId date = sprintf "[data-game-night-id=%s] [data-date=%s] .content p" gameNightId (toDateString date)
 
 let addProposedGameNight rootUrl game (date: DateTime) =
     describe (sprintf "Adding proposed game night: game %s for date %s" game (toDateString date))
@@ -38,7 +38,6 @@ let addProposedGameNight rootUrl game (date: DateTime) =
     (AddPropoposedGameNightPage._dateInput 1) << (toDateString date)
     click "Save"
     
-    
 let private tryGetAttribute key (el: IWebElement) =
     let value = el.GetAttribute key
     if String.IsNullOrWhiteSpace value then None else Some value
@@ -49,5 +48,5 @@ let closestGameNightId gameName =
         | Some value -> value
         | None -> el |> parent |> getGameNightId
     
-    element (_gameCard gameName)
+    element (sprintf "[data-game-name=%s]" (gameName |> canonize))
     |> getGameNightId

@@ -49,7 +49,7 @@ let removeVoteButton removeVoteUrl (user: string<CanonizedUsername>) target =
                         prop.custom ("onmouseover","this.style.backgroundColor='#feecf0';this.style.color='#cc0f35';")
                         prop.custom ("onmouseout","this.style.backgroundColor='#3298dc';this.style.color='white'")
                         button.isSmall
-                        prop.text %user
+                        prop.text (user |> Username.toDisplayName)
                     ]
                 ]
             ]
