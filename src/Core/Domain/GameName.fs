@@ -1,17 +1,17 @@
 namespace Domain
 
 open System
+open FSharp.UMX
 
 module GameName =
     let create str =
-        let str = Helpers.canonize str
         if String.IsNullOrWhiteSpace str then
-            Error (ValidationError "GameName cannot be empty")
-        else GameName str |> Ok
-    let value (GameName v) = Helpers.unCanonize v
+            Error ("GameName cannot be empty")
+        else
+            Helpers.canonize str
+            |> UMX.tag<CanonizedGameName> 
+            |> Ok
+        
+    let toDisplayName (name: string<CanonizedGameName>) =
+        %name |> Helpers.unCanonize
 
-[<AutoOpen>]
-module GameNameExtensions =
-    type GameName with
-        member this.Val = GameName.value this
-        member this.Canonized = this |> fun (GameName raw) -> raw

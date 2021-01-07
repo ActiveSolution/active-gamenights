@@ -4,22 +4,23 @@ open System
 open FsToolkit.ErrorHandling
 open Domain
 open FSharpPlus.Data
+open FSharp.UMX
 
 
 type ProposeGameNightRequest =
-    { Games : NonEmptySet<GameName>
-      Dates : NonEmptySet<FutureDate>
-      CreatedBy : User }
+    { Games : NonEmptySet<string<CanonizedGameName>>
+      Dates : NonEmptySet<DateTime<FutureDate>>
+      CreatedBy : string<CanonizedUsername> }
 type ProposeGameNight = ProposeGameNightRequest -> ProposedGameNight
 
 type GameVoteRequest =
     { GameNight : ProposedGameNight
-      GameName : GameName 
-      User : User }
+      GameName : string<CanonizedGameName> 
+      User : string<CanonizedUsername> }
 type DateVoteRequest =
     { GameNight : ProposedGameNight
-      Date : Date 
-      User : User }
+      Date : DateTime 
+      User : string<CanonizedUsername> }
 type AddGameVote = GameVoteRequest -> ProposedGameNight
 type AddDateVote = DateVoteRequest -> ProposedGameNight
 type RemoveGameVote = GameVoteRequest -> ProposedGameNight
@@ -35,9 +36,9 @@ type ConfirmGameNight = ProposedGameNight -> ConfirmGameNightResult
 module ProposeGameNightRequest =
     let create(games, dates, createdBy) =
         if games |> List.length < 1 then
-            ValidationError "Must provide at least one game" |> Error
+            "Must provide at least one game" |> Error
         elif dates |> List.length < 1 then
-            ValidationError "Must provide at least one date" |> Error
+            "Must provide at least one date" |> Error
         else
             result {
                 let! gameNames =
@@ -77,7 +78,7 @@ let proposeGameNight : ProposeGameNight =
             |> NonEmptyMap.ofSeq
         let dates =
             req.Dates
-            |> NonEmptySet.map (fun (FutureDate date) -> date, Set.empty)
+            |> NonEmptySet.map (fun date -> % date, Set.empty)
             |> NonEmptyMap.ofSeq
             
         { ProposedGameNight.Id = GameNightId.newId()

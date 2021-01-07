@@ -26,6 +26,10 @@ let all rootUrl =
     
     "Can add proposed game night" &&& fun _ ->
         addProposedGameNight rootUrl gameName date
+        let gameNightId = closestGameNightId gameName
+        let gnHeader = _gameNightHeader gameNightId 
+        let expectedHeader = sprintf "%s wants to play" username 
+        expectedHeader == read gnHeader
         displayed gameName
         displayed (date.ToString("yyyy-MM-dd"))
         

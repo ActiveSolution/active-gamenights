@@ -7,6 +7,7 @@ open Domain
 open FsToolkit.ErrorHandling
 open Backend.Extensions
 open FsHotWire.Feliz
+open FSharp.UMX
         
 let private githubLink =
     Bulma.navbarItem.a [
@@ -23,8 +24,8 @@ let private githubLink =
         ]
     ]
     
-let private userView (user: User option) =
-    let logoutDropdown (user: User) =
+let private userView (user: string<CanonizedUsername> option) =
+    let logoutDropdown (user: string<CanonizedUsername>) =
         Bulma.navbarItem.div [
             navbarItem.hasDropdown
             navbarItem.isHoverable
@@ -32,7 +33,7 @@ let private userView (user: User option) =
             prop.children [
                 Bulma.navbarLink.a [
                     navbarLink.isArrowless
-                    prop.text user.Val
+                    prop.text (user |> Username.toDisplayName)
                     prop.id "username"
                 ] 
                 Bulma.navbarDropdown.div [
@@ -111,6 +112,6 @@ let private navbarView user =
     ]
     
 let handler env : HttpHandler =
-    fun next ctx -> 
+    fun _ ctx -> 
         let user = ctx.GetUser() |> Result.toOption
         ctx.RespondWithHtmlFragment(env, navbarView user)

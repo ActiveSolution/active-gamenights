@@ -5,7 +5,6 @@ open Giraffe
 open Saturn
 open Backend.Extensions
 open Backend
-open Domain
 open Feliz.Bulma.ViewEngine
 open FsHotWire.Feliz
 
@@ -22,7 +21,6 @@ let gameNightsView =
         ]
     ]
 
-let toMissingUserError (ValidationError err) = ApiError.MissingUser err
 let getAll env : HttpFunc =
     fun ctx ->
         ctx.RespondWithHtml(env, gameNightsView)

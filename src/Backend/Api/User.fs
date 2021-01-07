@@ -10,8 +10,10 @@ open Domain
 open Feliz.ViewEngine
 open Feliz.Bulma.ViewEngine
 open Backend.Api.Shared
+open FSharp.UMX
 
-let addUserView (user: User option) =
+
+let addUserView (user: string<CanonizedUsername> option) =
     Html.form [
         prop.action "/user"
         prop.method "POST"
@@ -23,7 +25,7 @@ let addUserView (user: User option) =
                     prop.classes [ "input" ]
                     prop.name HttpContext.usernameKey
                     prop.autoFocus true
-                    prop.value (user |> Option.map (fun u -> u.Val) |> Option.defaultValue "")
+                    prop.value (user |> Option.map (fun u -> %(Username.toDisplayName u)) |> Option.defaultValue "")
                 ]
             ] 
             Bulma.button.button [
@@ -45,10 +47,10 @@ let createUser : HttpFunc =
         result {
             let! username =
                 ctx.GetFormValue HttpContext.usernameKey
-                |> Result.requireSome (sprintf "missing form value %s" HttpContext.usernameKey |> ValidationError |> ApiError.Validation)
+                |> Result.requireSome (sprintf "missing form value %s" HttpContext.usernameKey |> ApiError.Validation)
             let! user =
                 username
-                |> User.create 
+                |> Username.create 
                 |> Result.mapError ApiError.Validation
             ctx.SetUsername user
             return ctx.TryGetQueryStringValue "redirect" |> Option.defaultValue "/"

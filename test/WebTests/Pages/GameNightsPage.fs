@@ -24,7 +24,7 @@ let _addGameVoteButton (gameNightId) (gameName) = sprintf "[data-game-night-id=%
 let _removeGameVoteButton (gameNightId) (gameName) = sprintf "[data-game-night-id=%s] [data-game-name=%s] [data-remove-vote-button]" gameNightId (canonize gameName)
 let _addDateVoteButton gameNightId date = sprintf "[data-game-night-id=%s] [data-date=%s] [data-add-vote-button]" gameNightId (toDateString date)
 let _removeDateVoteButton gameNightId date = sprintf "[data-game-night-id=%s] [data-date=%s] [data-remove-vote-button]" gameNightId (toDateString date)
-
+let _gameNightHeader gameNightId = sprintf "[data-game-night-id=%s] p.card-header-title" gameNightId
 let _dateCard gameNightId date = sprintf "[data-game-night-id=%s][data-date=%s]" gameNightId (toDateString date) 
 
 let addProposedGameNight rootUrl game (date: DateTime) =

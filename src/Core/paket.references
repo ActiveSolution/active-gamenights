@@ -6,3 +6,4 @@ group Core
     FSharp.Azure.Storage
     Unquote
     Newtonsoft.Json
+    FSharp.UMX

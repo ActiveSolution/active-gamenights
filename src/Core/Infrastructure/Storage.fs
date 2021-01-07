@@ -7,6 +7,8 @@ open Domain
 open FsToolkit.ErrorHandling
 open FSharpPlus.Data
 open Microsoft.Azure.Cosmos.Table
+open FSharp.UMX
+open System
 
 
 type GameEntity = 
@@ -48,34 +50,34 @@ module Implementation =
     
     let okOrFail msg = Result.defaultWith (fun _ -> failwith msg)
     let someOrFail msg = Option.defaultWith (fun _ -> failwith msg)
-    let parseUser entityUser = User.create entityUser |> okOrFail "Entity has invalid CreatedBy"
+    let parseUser entityUser = Username.create entityUser |> okOrFail "Entity has invalid CreatedBy"
     let parseGameNightId entityId =
         GameNightId.parse entityId |> okOrFail "Entity has invalid GameNightId"
     
     [<AutoOpen>]
     module Helpers =
-        let serializeGameVotes (gs: NonEmptyMap<GameName, Set<User>>) =
+        let serializeGameVotes (gs: NonEmptyMap<string<CanonizedGameName>, Set<string<CanonizedUsername>>>) =
             gs
             |> NonEmptyMap.toList
             |> List.map (fun (x, y) -> (x, y |> Set.toList))
             |> Json.serialize
             
-        let deserializeGameVotes (str: string) : NonEmptyMap<GameName, Set<User>> =
+        let deserializeGameVotes (str: string) : NonEmptyMap<string<CanonizedGameName>, Set<string<CanonizedUsername>>> =
             Json.deserialize str
             |> NonEmptyMap.ofList
             
-        let serializeDateVotes (ds: NonEmptyMap<Date, Set<User>>) =
+        let serializeDateVotes (ds: NonEmptyMap<DateTime, Set<string<CanonizedUsername>>>) =
             let result =
                 ds
                 |> NonEmptyMap.toList
-                |> List.map (fun (k,v) -> (k |> Date.toDateTime, v |> Set.toList))
+                |> List.map (fun (k,v) -> (k, v |> Set.toList))
                 |> Json.serialize
             result
             
-        let deserializeDateVotes (str: string) : NonEmptyMap<Date, Set<User>> =
+        let deserializeDateVotes (str: string) : NonEmptyMap<DateTime, Set<string<CanonizedUsername>>> =
             Json.deserialize str
-            |> List.map (fun (k,v) -> 
-                Date.tryParse k |> Result.valueOr (fun (ValidationError d) -> failwithf "date deserialization failed %s" d), v)
+            |> List.map (fun (k, votes) -> 
+                DateTime.tryParse k |> Result.valueOr (failwithf "date deserialization failed %s"), votes)
             |> NonEmptyMap.ofList
         
     let toProposedGameNight (entity: GameNightEntity) =
@@ -110,10 +112,10 @@ open Implementation
 let saveConfirmedGameNight (env: #IStorage) (gn: ConfirmedGameNight) : Async<unit> =
     let dateVotes = (gn.Date, gn.Players |> NonEmptySet.toSet) |> List.singleton |> NonEmptyMap.ofList  
     { PartitionKey = partitionKey
-      Id = gn.Id |> GameNightId.toString
+      Id = gn.Id.ToString()
       GameVotes = serializeGameVotes gn.GameVotes
       DateVotes = serializeDateVotes dateVotes
-      CreatedBy = gn.CreatedBy.Val
+      CreatedBy = %gn.CreatedBy
       Status = confirmedStatus }
     |> InsertOrMerge
     |> env.Tables.InGameNightTable
@@ -121,17 +123,17 @@ let saveConfirmedGameNight (env: #IStorage) (gn: ConfirmedGameNight) : Async<uni
     
 let saveCancelledGameNight (env: #IStorage) (gn: CancelledGameNight) : Async<unit> =
     { PartitionKey = partitionKey
-      Id = gn.Id |> GameNightId.toString
+      Id = gn.Id.ToString()
       GameVotes = serializeGameVotes gn.GameVotes
       DateVotes = serializeDateVotes gn.DateVotes
-      CreatedBy = gn.CreatedBy.Val
+      CreatedBy = %gn.CreatedBy
       Status = cancelledStatus }
     |> InsertOrMerge
     |> env.Tables.InGameNightTable
     |> Async.map ensureSuccessful
     
-let getProposedGameNight (env: #IStorage) id : AsyncResult<ProposedGameNight, NotFoundError> =
-    let stringId = GameNightId.toString id
+let getProposedGameNight (env: #IStorage) (id: Guid<GameNightId>) : AsyncResult<ProposedGameNight, string> =
+    let stringId = id.ToString()
     asyncResult {
         try
             let! result =
@@ -143,7 +145,7 @@ let getProposedGameNight (env: #IStorage) id : AsyncResult<ProposedGameNight, No
                 |> Seq.head 
                 |> fst 
                 |> toProposedGameNight
-        with _ -> return! Error NotFoundError // TODO check status code
+        with _ -> return! Error "not found" // TODO check status code
     }
     
 let getAllProposedGameNights (env: #IStorage) : Async<ProposedGameNight list> =
@@ -187,10 +189,10 @@ let getAllCancelledGameNights (env: #IStorage) : Async<CancelledGameNight list> 
     
 let saveProposedGameNight (env: #IStorage) (gn: ProposedGameNight) : Async<unit> =
     { PartitionKey = partitionKey
-      Id = gn.Id |> GameNightId.toString
+      Id = gn.Id.ToString()
       GameVotes = serializeGameVotes gn.GameVotes
       DateVotes = serializeDateVotes gn.DateVotes
-      CreatedBy = gn.CreatedBy.Val
+      CreatedBy = %gn.CreatedBy
       Status = proposedStatus }
     |> InsertOrMerge
     |> env.Tables.InGameNightTable

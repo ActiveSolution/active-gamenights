@@ -47,6 +47,7 @@ group Core
     nuget FSharp.Azure.Storage
     nuget Unquote 4.0
     nuget Newtonsoft.Json
+    nuget FSharp.UMX
 
 group build
     source https://api.nuget.org/v3/index.json

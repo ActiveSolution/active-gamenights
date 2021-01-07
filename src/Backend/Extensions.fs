@@ -1,6 +1,7 @@
 [<AutoOpen>]
 module Backend.Extensions
 
+open System
 open Microsoft.AspNetCore.Http
 open FsToolkit.ErrorHandling
 open Domain
@@ -8,6 +9,7 @@ open Giraffe
 open Saturn
 open FsHotWire
 open FsHotWire.Feliz
+open FSharp.UMX
 
 
 type BasePath with
@@ -21,9 +23,9 @@ module ApiResultHelpers =
         match res with
         | Ok value ->
             okFunc value ctx
-        | Error (ApiError.Validation (ValidationError err)) -> 
+        | Error (ApiError.Validation err) -> 
             Response.badRequest ctx err
-        | Error (ApiError.Domain (DomainError err)) -> 
+        | Error (ApiError.Domain err) -> 
             Response.badRequest ctx err
         | Error (ApiError.MissingUser _) -> 
             Turbo.redirect "/user/add" ctx
@@ -50,11 +52,10 @@ type HttpContext with
         this.Session.GetString(HttpContext.usernameKey)
         |> Option.ofObj
         |> Result.requireSome "Missing user in HttpContext"
-        |> Result.mapError ValidationError
-        |> Result.bind User.create
+        |> Result.bind Username.create
         
-    member this.SetUsername(user: User) =
-        this.Session.SetString(HttpContext.usernameKey, user.Val)
+    member this.SetUsername(user: string<CanonizedUsername>) =
+        this.Session.SetString(HttpContext.usernameKey, %user)
         
     member this.ClearUsername() =
         this.Session.Remove(HttpContext.usernameKey)
@@ -114,11 +115,11 @@ module Result =
 
 module prop =
     open Feliz.ViewEngine
-    let dataGameNightId (id: GameNightId) =
-        prop.custom ("data-game-night-id", id.AsString)
-    let dataGameName (name: GameName) =
-        prop.custom ("data-game-name", name.Canonized)
-    let dataDate (date: Date) =
+    let dataGameNightId (id: Guid<GameNightId>) =
+        prop.custom ("data-game-night-id", id.ToString())
+    let dataGameName (name: string<CanonizedGameName>) =
+        prop.custom ("data-game-name", %name)
+    let dataDate (date: DateTime) =
         prop.custom ("data-date", date.AsString)
     let addVoteButton =
         prop.custom ("data-add-vote-button", "")

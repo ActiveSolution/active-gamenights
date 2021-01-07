@@ -1,14 +1,13 @@
 namespace Backend
 
-open Domain
 open Feliz.ViewEngine
 
 
 type ApiError =
     | Duplicate 
-    | NotFound of NotFoundError
-    | Validation of ValidationError
-    | Domain of DomainError
+    | NotFound
+    | Validation of string
+    | Domain of string
     | MissingUser of string
     
 // Web

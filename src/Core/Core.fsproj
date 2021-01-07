@@ -10,7 +10,7 @@
     <Compile Include="Domain\Domain.fs" />
     <Compile Include="Domain\Date.fs" />
     <Compile Include="Domain\FutureDate.fs" />
-    <Compile Include="Domain\User.fs" />
+    <Compile Include="Domain\Username.fs" />
     <Compile Include="Domain\GameName.fs" />
     <Compile Include="Domain\GameNightId.fs" />
     <Compile Include="Domain\Workflows\GameNights.fs" />

@@ -2,68 +2,38 @@
 
 open System
 open FSharpPlus.Data
+open FSharp.UMX
 
 [<AutoOpen>]
 module Domain =
 
-    type ValidationError = ValidationError of string
-    type DomainError = DomainError of string
-    type NotFoundError = NotFoundError
-
-    type GameName = GameName of string
+    [<Measure>] type CanonizedGameName
+    [<Measure>] type CanonizedUsername
+    [<Measure>] type FutureDate
+    [<Measure>] type GameNightId
     type NumberOfPlayers = NumberOfPlayers of int
-    [<CustomEquality; CustomComparison>]
-    type User = User of string
-        with
-            override x.Equals(yObj) = 
-                let username (User u) = u 
-                match yObj with
-                | :? User as y ->
-                    let xName = username x
-                    let yName = username y
-                    xName.Equals(yName, StringComparison.InvariantCultureIgnoreCase)
-                | _ -> false
-
-            override x.GetHashCode() = hash (x)
-            
-            interface IComparable with
-                member x.CompareTo yObj =
-                    let username (User u) = u
-                    
-                    match yObj with
-                    | :? User as y ->
-                        let xName = username x
-                        let yName = username y
-                        compare (xName.ToLower()) (yName.ToLower())
-                    | _ -> invalidArg "yObj" "cannot compare value of different types"
                     
     type Game = 
-        { Name : GameName
-          CreatedBy : User
+        { Name : string<CanonizedGameName>
+          CreatedBy : string<CanonizedUsername>
           NumberOfPlayers : NumberOfPlayers option
           Link : Uri option
           ImageUrl : string option
           Notes : string option }
-    type Date =
-        { Year : int
-          Month : int
-          Day : int }
-    type FutureDate = FutureDate of Date
-    type GameNightId = GameNightId of Guid
     type ProposedGameNight =
-        { Id : GameNightId
-          GameVotes : NonEmptyMap<GameName, Set<User>>
-          DateVotes : NonEmptyMap<Date, Set<User>>
-          CreatedBy : User }
+        { Id : Guid<GameNightId>
+          GameVotes : NonEmptyMap<string<CanonizedGameName>, Set<string<CanonizedUsername>>>
+          DateVotes : NonEmptyMap<DateTime, Set<string<CanonizedUsername>>>
+          CreatedBy : string<CanonizedUsername> }
     type ConfirmedGameNight =
-        { Id : GameNightId 
-          GameVotes : NonEmptyMap<GameName, Set<User>>
-          Date : Date
-          Players : NonEmptySet<User>
-          CreatedBy : User }
+        { Id : Guid<GameNightId> 
+          GameVotes : NonEmptyMap<string<CanonizedGameName>, Set<string<CanonizedUsername>>>
+          Date : DateTime
+          Players : NonEmptySet<string<CanonizedUsername>>
+          CreatedBy : string<CanonizedUsername> }
     type CancelledGameNight =
-        { Id : GameNightId
-          GameVotes : NonEmptyMap<GameName, Set<User>>
-          DateVotes : NonEmptyMap<Date, Set<User>>
-          CreatedBy : User }
+        { Id : Guid<GameNightId>
+          GameVotes : NonEmptyMap<string<CanonizedGameName>, Set<string<CanonizedUsername>>>
+          DateVotes : NonEmptyMap<DateTime, Set<string<CanonizedUsername>>>
+          CreatedBy : string<CanonizedUsername> }
           

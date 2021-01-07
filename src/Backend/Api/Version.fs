@@ -13,4 +13,4 @@ let versionView =
     ]
     
 let handler env : HttpHandler =
-    fun next ctx -> ctx.RespondWithHtml(env, versionView)
+    fun _ ctx -> ctx.RespondWithHtml(env, versionView)

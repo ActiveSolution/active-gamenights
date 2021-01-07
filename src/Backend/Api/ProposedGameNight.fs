@@ -11,10 +11,11 @@ open Domain
 open Feliz.ViewEngine
 open FsHotWire.Feliz
 open Backend.Api.Shared
+open FSharp.UMX
 
     
 let proposedGameNightCard currentUser (gn: ProposedGameNight) =
-    let turboFrameId = "proposed-game-night-" + gn.Id.AsString
+    let turboFrameId = "proposed-game-night-" + gn.Id.ToString()
     Html.turboFrame [
         prop.id turboFrameId
         prop.children [
@@ -23,18 +24,18 @@ let proposedGameNightCard currentUser (gn: ProposedGameNight) =
                 prop.dataGameNightId gn.Id
                 prop.children [
                     Bulma.cardHeader [
-                        Bulma.cardHeaderTitle.p (gn.CreatedBy.Val + " wants to play")
+                        Bulma.cardHeaderTitle.p ((gn.CreatedBy |> Username.toDisplayName) + " wants to play")
                     ]
                     Bulma.cardContent [
                         for gameName, votes in gn.GameVotes |> NonEmptyMap.toList do
-                            let actionUrl = sprintf "/proposedgamenight/%s/game/%s/vote" gn.Id.AsString gameName.Canonized
+                            let actionUrl = sprintf "/proposedgamenight/%s/game/%s/vote" (gn.Id.ToString()) %gameName
                             Html.unorderedList [
                                 Html.listItem [
                                     GameNightViews.gameCard gameName votes currentUser actionUrl turboFrameId
                                 ] 
                             ] 
                         for date, votes in gn.DateVotes |> NonEmptyMap.toList do
-                            let actionUrl = sprintf "/proposedgamenight/%s/date/%s/vote" gn.Id.AsString date.AsString
+                            let actionUrl = sprintf "/proposedgamenight/%s/date/%s/vote" (gn.Id.ToString()) date.AsString
                             Html.unorderedList [
                                 Html.listItem [
                                     GameNightViews.dateCard date votes currentUser actionUrl turboFrameId
@@ -126,20 +127,18 @@ let proposedGameNightView currentUser (gn: ProposedGameNight) =
     Bulma.container [
         Bulma.title.h2 "Proposed game night"
         Html.turboFrame [
-            prop.id (sprintf "proposed-game-night-%s" gn.Id.AsString)
+            prop.id (sprintf "proposed-game-night-%s" (gn.Id.ToString()))
             prop.children [
                 proposedGameNightCard currentUser gn
             ]
         ]
     ]
 
-let toMissingUserError (ValidationError err) = ApiError.MissingUser err
-
 let getProposedGameNight env (ctx: HttpContext) stringId =
     taskResult {
         let! id = GameNightId.parse stringId |> Result.mapError ApiError.Validation
-        let! user = ctx.GetUser() |> Result.mapError toMissingUserError
-        let! gn = Storage.getProposedGameNight env id |> AsyncResult.mapError ApiError.NotFound
+        let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
+        let! gn = Storage.getProposedGameNight env id |> AsyncResult.mapError (fun _ -> ApiError.NotFound)
         return proposedGameNightView user gn
     }
     |> (fun view -> ctx.RespondWithHtml(env, view))
@@ -157,7 +156,7 @@ type CreateProposedGameNightForm =
 let saveProposedGameNight env (ctx: HttpContext) : HttpFuncResult =
     taskResult {
         let! dto = ctx.BindFormAsync<CreateProposedGameNightForm>()
-        let! user = ctx.GetUser() |> Result.mapError toMissingUserError
+        let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
         
         let! req = Workflows.GameNights.ProposeGameNightRequest.create (dto.Games, dto.Dates, user) |> Result.mapError ApiError.Validation
         let gn = Workflows.GameNights.proposeGameNight req
@@ -171,7 +170,7 @@ let getAll env : HttpFunc =
     fun ctx -> 
         taskResult {
             let! proposed = Storage.getAllProposedGameNights env
-            let! currentUser = ctx.GetUser() |> Result.mapError toMissingUserError
+            let! currentUser = ctx.GetUser() |> Result.mapError ApiError.MissingUser
             return gameNightsView currentUser proposed 
         } 
         |> (fun view -> ctx.RespondWithHtml(env, view))
@@ -182,30 +181,30 @@ let gameController env (gameNightId: string) =
         let saveGameVote (ctx: HttpContext) = 
             taskResult {
                 let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.Validation
-                let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
+                let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError (fun _ -> ApiError.NotFound)
                 
                 let! gameName = gameName |> GameName.create |> Result.mapError ApiError.Validation
-                let! user = ctx.GetUser() |> Result.mapError toMissingUserError
+                let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
                 let req = Workflows.GameNights.GameVoteRequest.create (gameNight, gameName, user)
                 let updated = Workflows.GameNights.addGameVote req
                 
                 let! _ = Storage.saveProposedGameNight env updated
-                return sprintf "/proposedgamenight/%s" gameNightId.AsString
+                return sprintf "/proposedgamenight/%s" (gameNightId.ToString())
             }
             |> ctx.RespondWithRedirect
                 
         let deleteGameVote (ctx: HttpContext) (_: string) =
             taskResult {
                 let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.Validation
-                let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
+                let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError (fun _ -> ApiError.NotFound)
                 
                 let! gameName = gameName |> GameName.create |> Result.mapError ApiError.Validation
-                let! user = ctx.GetUser() |> Result.mapError toMissingUserError
+                let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
                 let req = Workflows.GameNights.GameVoteRequest.create (gameNight, gameName, user)
                 let updated = Workflows.GameNights.removeGameVote req
                 
                 let! _ = Storage.saveProposedGameNight env updated
-                return sprintf "/proposedgamenight/%s" gameNightId.AsString
+                return sprintf "/proposedgamenight/%s" (gameNightId.ToString())
                 
             } |> ctx.RespondWithRedirect
     
@@ -224,30 +223,30 @@ let dateController env (gameNightId: string) =
             taskResult {
                 
                 let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.Validation
-                let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
+                let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError (fun _ -> ApiError.NotFound)
                 
-                let! date = date |> Date.tryParse |> Result.mapError ApiError.Validation
-                let! user = ctx.GetUser() |> Result.mapError toMissingUserError
+                let! date = date |> DateTime.tryParse |> Result.mapError ApiError.Validation
+                let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
                 let req = Workflows.GameNights.DateVoteRequest.create (gameNight, date, user)
                 let updated = Workflows.GameNights.addDateVote req
                 
                 let! _ = Storage.saveProposedGameNight env updated
-                return sprintf "/proposedgamenight/%s" gameNightId.AsString
+                return sprintf "/proposedgamenight/%s" (gameNightId.ToString())
             }
             |> ctx.RespondWithRedirect
                 
         let deleteDateVote (ctx: HttpContext) (_: string) =
             taskResult {
                 let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.Validation
-                let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError ApiError.NotFound
+                let! gameNight = Storage.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError (fun _ -> ApiError.NotFound)
                 
-                let! date = date |> Date.tryParse |> Result.mapError ApiError.Validation
-                let! user = ctx.GetUser() |> Result.mapError toMissingUserError
+                let! date = date |> DateTime.tryParse |> Result.mapError ApiError.Validation
+                let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
                 let req = Workflows.GameNights.DateVoteRequest.create (gameNight, date, user)
                 let updated = Workflows.GameNights.removeDateVote req
                 
                 let! _ = Storage.saveProposedGameNight env updated
-                return sprintf "/proposedgamenight/%s" gameNightId.AsString
+                return sprintf "/proposedgamenight/%s" (gameNightId.ToString())
                 
             } |> ctx.RespondWithRedirect
     

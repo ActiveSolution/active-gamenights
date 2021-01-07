@@ -7,7 +7,6 @@ open Microsoft.Extensions.Logging
 open Domain
 open FsToolkit.ErrorHandling
 open Functions
-open Domain.Date.Operators
 open FSharpPlus.Data
 open Microsoft.Azure.WebJobs.Extensions.Http
 open Microsoft.AspNetCore.Mvc
@@ -34,7 +33,7 @@ module Functions =
                     Storage.saveCancelledGameNight env gn
         
             async {
-                let dueDate = Date.today() + TimeSpan.FromDays(1.)
+                let dueDate = DateTime.Today.AddDays(1.)
                 let! gameNights = Storage.getAllProposedGameNights env
                 return!
                     gameNights

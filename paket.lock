@@ -1290,6 +1290,8 @@ NUGET
       TaskBuilder.fs (>= 2.1)
       Unquote (>= 4.0)
     FSharp.Core (5.0)
+    FSharp.UMX (1.0)
+      FSharp.Core (>= 4.3.4)
     FSharpPlus (1.2.0-CI01568)
       FSharp.Core (>= 4.6.2)
     FsToolkit.ErrorHandling (2.0)

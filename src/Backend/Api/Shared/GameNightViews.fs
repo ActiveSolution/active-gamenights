@@ -7,6 +7,7 @@ open Backend.Api.Shared
 open Domain
 open FsHotWire.Feliz
 open Backend.Extensions
+open FSharp.UMX
 
 let addVoteButton addVoteUrl target =
     Bulma.levelItem [
@@ -28,12 +29,12 @@ let addVoteButton addVoteUrl target =
         ]
     ]
     
-let removeVoteButton removeVoteUrl (user: User) target =
+let removeVoteButton removeVoteUrl (user: string<CanonizedUsername>) target =
     Bulma.levelItem [
         Html.form [
             prop.targetTurboFrame target
             prop.method "POST"
-            prop.action (removeVoteUrl + "/" + user.Canonized)
+            prop.action (removeVoteUrl + "/" + %user)
             prop.children [
                 Html.input [
                     prop.type'.hidden
@@ -48,14 +49,14 @@ let removeVoteButton removeVoteUrl (user: User) target =
                         prop.custom ("onmouseover","this.style.backgroundColor='#feecf0';this.style.color='#cc0f35';")
                         prop.custom ("onmouseout","this.style.backgroundColor='#3298dc';this.style.color='white'")
                         button.isSmall
-                        prop.text user.Val
+                        prop.text %user
                     ]
                 ]
             ]
         ]
     ]
     
-let otherUsersVoteButton (user: User) =
+let otherUsersVoteButton (user: string<CanonizedUsername>) =
     Bulma.levelItem [ 
         Bulma.fieldControl [    
             Bulma.button.button [
@@ -63,12 +64,12 @@ let otherUsersVoteButton (user: User) =
                 prop.disabled true
                 color.isPrimary
                 button.isSmall
-                prop.text user.Val
+                prop.text %user
             ]
         ]
     ]
     
-let gameVoteButtons (currentUser: User) votes removeVoteUrl target = [
+let gameVoteButtons (currentUser: string<CanonizedUsername>) votes removeVoteUrl target = [
     for user in Set.toList votes do
         if user = currentUser then
             removeVoteButton removeVoteUrl currentUser target 
@@ -76,8 +77,8 @@ let gameVoteButtons (currentUser: User) votes removeVoteUrl target = [
             otherUsersVoteButton user
     ]
     
-let private dateVoteButtons (currentUser: User) votes removeVoteUrl target = [
-    for (user: User) in Set.toList votes do
+let private dateVoteButtons (currentUser: string<CanonizedUsername>) votes removeVoteUrl target = [
+    for user in Set.toList votes do
         if user = currentUser then
             removeVoteButton removeVoteUrl currentUser target
         else
@@ -88,7 +89,7 @@ let private hasVoted votes user =
     votes
     |> Set.contains user
     
-let gameCard (gameName: GameName) votes currentUser actionUrl voteUpdateTarget =
+let gameCard (gameName: string<CanonizedGameName>) votes currentUser actionUrl voteUpdateTarget =
     Bulma.media [
         prop.dataGameName gameName
         prop.children [
@@ -104,7 +105,7 @@ let gameCard (gameName: GameName) votes currentUser actionUrl voteUpdateTarget =
             ]
             Bulma.mediaContent [
                 Bulma.content [
-                    Html.p gameName.Val
+                    Html.p (GameName.toDisplayName gameName)
                 ]
                 Bulma.level [
                     Bulma.levelLeft [
@@ -135,7 +136,7 @@ let dateCard date votes currentUser actionUrl voteUpdateTarget =
             ]
             Bulma.mediaContent [
                 Bulma.content [
-                    Html.p (date |> Date.asString)
+                    Html.p (date.AsString)
                 ]
                 Bulma.level [
                     Bulma.levelLeft [
