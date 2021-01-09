@@ -2,7 +2,10 @@ module Backend.Startup
 
 open System
 open Giraffe
+open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
+open Microsoft.Extensions.Configuration
+open Microsoft.Extensions.DependencyInjection
 open Saturn
 open Microsoft.Extensions.Logging
         
@@ -23,9 +26,16 @@ let rewriteHttpMethod : HttpHandler =
         | _ -> ()
         next ctx
         
+        
+let privateCachingWithQueries duration queryParams : HttpHandler =
+    responseCaching
+        (Private duration)
+        (Some "Accept, Accept-Encoding")
+        (Some queryParams)
+        
 let fragments = router {
-    get "/proposedgamenight/addgame" CompositionRoot.Api.Fragments.addGameInput
-    get "/proposedgamenight/adddate" CompositionRoot.Api.Fragments.addDateInput
+    get "/proposedgamenight/addgame" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "index" |] >=> CompositionRoot.Api.Fragments.addGameInput)
+    get "/proposedgamenight/adddate" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "index" |] >=> CompositionRoot.Api.Fragments.addDateInput)
 }
 
 let browserRouter =
@@ -65,6 +75,12 @@ let errorHandler: ErrorHandler =
 let configureLogging (log:ILoggingBuilder) =
     log.ClearProviders() |> ignore
     log.AddConsole() |> ignore
+let configureServices (s: IServiceCollection) =
+    s.AddResponseCaching() |> ignore
+    s
+let configureApp (a: IApplicationBuilder) =
+    a.UseResponseCaching() |> ignore
+    a
     
 application {
     url ("http://*:" + CompositionRoot.config.ServerPort.ToString() + "/")
@@ -72,6 +88,8 @@ application {
     pipe_through endpointPipe
     use_router webApp
     use_gzip
+    service_config configureServices
+    app_config configureApp
     logging configureLogging
     memory_cache
     use_static CompositionRoot.config.PublicPath
