@@ -25,6 +25,38 @@ module Bulma =
                 ]
             ]
         ]
+        
+    let submitButton (text: string) =
+        Bulma.field.div [
+            Bulma.control.div [
+                Bulma.button.button [
+                    color.isPrimary
+                    prop.type'.submit
+                    prop.text text
+                ]
+            ]
+        ]
+        
+    let submitButtonWithCancel (okText: string) (cancelText: string) cancelHref =
+        Bulma.field.div [
+            field.isGrouped
+            prop.children [
+                Bulma.control.div [
+                    Bulma.button.button [
+                        color.isPrimary
+                        prop.type'.submit
+                        prop.text okText
+                    ]
+                ]
+                Bulma.control.div [
+                    Bulma.button.a [
+                        color.isLight
+                        prop.href cancelHref
+                        prop.text cancelText
+                    ]
+                ]
+            ]
+        ]
 
     module Icons =
         let plusIcon = 

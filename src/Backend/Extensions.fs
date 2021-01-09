@@ -15,6 +15,12 @@ open FSharp.UMX
 type BasePath with
     member this.Val = this |> fun (BasePath bp) -> bp
 
+module bool =
+    let tryParse (input: string) =
+        match bool.TryParse input with
+        | true, value -> Some value
+        | false, _ -> None
+        
 module HttpContext = 
     let usernameKey = "username"
     

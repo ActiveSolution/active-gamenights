@@ -22,9 +22,12 @@ module Api =
     let userController : HttpHandler = Api.User.controller env
     let confirmedGameNightController : HttpHandler = Api.ConfirmedGameNight.controller env
     let proposedGameNightController : HttpHandler = Api.ProposedGameNight.controller env
-    let addGameInputFragment : HttpHandler = Api.ProposedGameNight.addGameInputFragment env
-    let addDateInputFragment : HttpHandler = Api.ProposedGameNight.addDateInputFragment env
     let gameNightController : HttpHandler = Api.GameNight.controller env
     let navbarPage : HttpHandler = Api.Navbar.handler env
     let versionPage : HttpHandler = Api.Version.handler env
+    
+    module Fragments =
+        let addGameInput : HttpHandler = Api.ProposedGameNight.Fragments.addGameInputFragment env
+        let addDateInput : HttpHandler = Api.ProposedGameNight.Fragments.addDateInputFragment env
+            
 

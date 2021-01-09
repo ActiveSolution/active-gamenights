@@ -22,15 +22,20 @@ let rewriteHttpMethod : HttpHandler =
             ctx.Request.Method <- "put"
         | _ -> ()
         next ctx
+        
+let fragments = router {
+    get "/proposedgamenight/addgame" CompositionRoot.Api.Fragments.addGameInput
+    get "/proposedgamenight/adddate" CompositionRoot.Api.Fragments.addDateInput
+}
 
 let browserRouter =
     router {
+        pipe_through rewriteHttpMethod
         pipe_through endpointPipe
         forward "" CompositionRoot.Api.gameNightController
         forward "/user" CompositionRoot.Api.userController
+        forward "/fragments" fragments
         forward "/confirmedgamenight" CompositionRoot.Api.confirmedGameNightController
-        get "/proposedgamenight/fragment/addgame" CompositionRoot.Api.addGameInputFragment
-        get "/proposedgamenight/fragment/adddate" CompositionRoot.Api.addDateInputFragment
         forward "/proposedgamenight" CompositionRoot.Api.proposedGameNightController
         forward "/gamenight" CompositionRoot.Api.gameNightController
         get "/navbar" CompositionRoot.Api.navbarPage
@@ -41,14 +46,8 @@ let browserRouter =
 let notFoundHandler : HttpHandler =
     setStatusCode 404 >=> text "Not found"
         
-let topRouter =
-    router {
-        pipe_through rewriteHttpMethod
-        forward "" browserRouter
-    }
-        
 let webApp =
-    choose [ topRouter
+    choose [ browserRouter
              notFoundHandler ]
 
 let errorHandler: ErrorHandler =
