@@ -14,7 +14,7 @@ open Backend.Api.Shared
 open FSharp.UMX
 open FsHotWire
 
-module Views =    
+module private Views =    
     let proposedGameNightCard currentUser (gn: ProposedGameNight) =
         let turboFrameId = "proposed-game-night-" + gn.Id.ToString()
         Html.turboFrame [
@@ -49,7 +49,7 @@ module Views =
         ]
     
 
-    let private addProposedGameNightLink =
+    let addProposedGameNightLink =
         Html.turboFrame [
             prop.id "add-proposed-game-night"
             prop.children [
@@ -75,21 +75,9 @@ module Views =
             ]
         ]
         
-    let private addGameInputButton nextIndex =
-        Bulma.button.a [
-            prop.id "add-game-input-button"
-            color.isLink
-            color.isLight
-            color.hasBackgroundWhite
-            prop.href (sprintf "fragments/proposedgamenight/addgame?index=%i" nextIndex)
-            prop.children [
-                Bulma.Icons.plusIcon
-            ]
-        ]
-        
     let gameInputView index =
         let placeholder = if index > 1 then "Enter another game name" else "Enter a game game"
-        Html.div [
+        [
             Bulma.field.div [
                 Html.input [
                     prop.type'.text
@@ -98,25 +86,26 @@ module Views =
                     prop.name "Games"
                     prop.placeholder placeholder
                 ]
-                addGameInputButton (index + 1)
             ]
-        ]
-        
-    let private addDateInputButton nextIndex =
-        Bulma.button.a [
-            prop.id "add-date-input-button"
-            color.isLink
-            color.isLight
-            color.hasBackgroundWhite
-            prop.href (sprintf "/fragments/proposedgamenight/adddate?index=%i" nextIndex)
-            prop.children [
-                Bulma.Icons.plusIcon
+            Bulma.field.div [
+                Bulma.control.div [
+                    Bulma.button.a [
+                        prop.id "add-game-input-button"
+                        color.isLink
+                        button.isOutlined
+                        button.isSmall
+                        prop.href (sprintf "fragments/proposedgamenight/addgame?index=%i" (index + 1))
+                        prop.children [
+                            Bulma.Icons.plusIcon
+                        ]
+                    ]
+                ]
             ]
         ]
 
     let dateInputView index =
         let placeholder = if index > 1 then "Pick an additional date" else "Pick a date"
-        Html.div [
+        [
             Bulma.field.div [
                 Html.input [
                     prop.type'.text
@@ -125,7 +114,20 @@ module Views =
                     prop.name "Dates"
                     prop.placeholder placeholder
                 ]
-                addDateInputButton (index + 1)
+            ]
+            Bulma.field.div [
+                Bulma.control.div [
+                    Bulma.button.a [
+                        prop.id "add-date-input-button"
+                        color.isLink
+                        button.isOutlined
+                        button.isSmall
+                        prop.href (sprintf "/fragments/proposedgamenight/adddate?index=%i" (index + 1))
+                        prop.children [
+                            Bulma.Icons.plusIcon
+                        ]
+                    ]
+                ]
             ]
         ]
 
@@ -155,9 +157,9 @@ module Views =
                         prop.action "/proposedgamenight"
                         prop.children [
                             gameInputTitle
-                            gameInputView 1
+                            yield! gameInputView 1
                             dateInputTitle
-                            dateInputView 1
+                            yield! dateInputView 1
                             if withCancelButton then Bulma.submitButtonWithCancel "Save" "Cancel" "/proposedgamenight" else Bulma.submitButton "Save"
                         ]
                     ]
@@ -328,11 +330,12 @@ module Fragments =
             match ctx.Request with
             | AcceptTurboStream ->
                 inputView
+                |> Html.span
                 |> TurboStream.replace "add-game-input-button"
                 |> List.singleton
                 |> ctx.RespondWithTurboStream
             | _ ->
-                ctx.RespondWithHtmlFragment(env, inputView)
+                ctx.RespondWithHtmlFragment(env, Html.span inputView)
         
         
     let addDateInputFragment env : HttpHandler =
@@ -343,8 +346,9 @@ module Fragments =
             match ctx.Request with
             | AcceptTurboStream ->
                 inputView
+                |> Html.span
                 |> TurboStream.replace "add-date-input-button"
                 |> List.singleton
                 |> ctx.RespondWithTurboStream
             | _ ->
-                ctx.RespondWithHtmlFragment(env, inputView)
+                ctx.RespondWithHtmlFragment(env, Html.span inputView)
