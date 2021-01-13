@@ -47,11 +47,11 @@ let createUser : HttpFunc =
         result {
             let! username =
                 ctx.GetFormValue HttpContext.usernameKey
-                |> Result.requireSome (sprintf "missing form value %s" HttpContext.usernameKey |> ApiError.Validation)
+                |> Result.requireSome (sprintf "missing form value %s" HttpContext.usernameKey |> ApiError.BadRequest)
             let! user =
                 username
                 |> Username.create 
-                |> Result.mapError ApiError.Validation
+                |> Result.mapError ApiError.BadRequest
             ctx.SetUsername user
             return ctx.TryGetQueryStringValue "redirect" |> Option.defaultValue "/"
         }

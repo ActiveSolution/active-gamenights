@@ -4,7 +4,6 @@ open System
 open Giraffe
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
-open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Saturn
 open Microsoft.Extensions.Logging

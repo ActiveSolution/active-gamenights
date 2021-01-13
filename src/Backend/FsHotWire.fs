@@ -67,14 +67,15 @@ module Feliz =
                     ]
                 ]
             
-        let append target content =
-            TurboStream.Create("append", target, content)
+        let append targetId content =
+            TurboStream.Create("append", targetId, content)
             
-        let replace target content =
-            TurboStream.Create("replace", target, content)
+        let replace targetId content =
+            TurboStream.Create("replace", targetId, content)
             
-        let writeTurboStreamContent (ts: TurboStream list) (ctx: HttpContext) =
+        let writeTurboStreamContent statusCode (ts: TurboStream list) (ctx: HttpContext) =
             ctx.SetContentType "text/html; turbo-stream"
+            ctx.SetStatusCode statusCode
             
             render ts
             |> Render.htmlView

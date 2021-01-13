@@ -2,6 +2,7 @@
 module Backend.Extensions
 
 open System
+open Feliz.ViewEngine
 open Microsoft.AspNetCore.Http
 open FsToolkit.ErrorHandling
 open Domain
@@ -29,7 +30,7 @@ module ApiResultHelpers =
         match res with
         | Ok value ->
             okFunc value ctx
-        | Error (ApiError.Validation err) -> 
+        | Error (ApiError.BadRequest err) -> 
             Response.badRequest ctx err
         | Error (ApiError.Domain err) -> 
             Response.badRequest ctx err
@@ -39,10 +40,12 @@ module ApiResultHelpers =
             Response.notFound ctx ()
         | Error (ApiError.Duplicate)  -> 
             Response.internalError ctx ()
+        | Error (ApiError.FormValidationError ts) ->
+            match ctx.Request with
+            | AcceptTurboStream ->
+                TurboStream.writeTurboStreamContent 422 ts ctx
+            | _ -> Response.badRequest ctx ""
         
-    let turboRedirect location ctx = Turbo.redirect location ctx
-    let turboStream ts ctx = TurboStream.writeTurboStreamContent ts ctx
-    
     let fullPageHtml (env: #ITemplateBuilder) content ctx =
         content
         |> env.Templates.FullPage
@@ -52,6 +55,11 @@ module ApiResultHelpers =
         content
         |> env.Templates.Fragment
         |> Controller.html ctx
+        
+[<RequireQualifiedAccess>]
+type ApiFormResponse =
+    | Redirect of string
+    | TurboStream of TurboStream list
     
 type HttpContext with
     member this.GetUser() =
@@ -81,13 +89,27 @@ type HttpContext with
     member ctx.RespondWithRedirect(location) = Turbo.redirect location ctx
     member ctx.RespondWithRedirect(locationResult) =
         locationResult 
-        |> ApiResultHelpers.handleResult ctx (ApiResultHelpers.turboRedirect)
-    member ctx.RespondWithRedirect(locationResult) =
-        locationResult
-        |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.turboRedirect))  
+        |> ApiResultHelpers.handleResult ctx (Turbo.redirect)
+    member ctx.RespondWithRedirect(locationTaskResult) =
+        locationTaskResult
+        |> Task.bind (ApiResultHelpers.handleResult ctx (Turbo.redirect))  
     
-    member ctx.RespondWithTurboStream ts = ApiResultHelpers.turboStream ts ctx
+    member ctx.RespondWithTurboStream ts = TurboStream.writeTurboStreamContent 200 ts ctx
+    member ctx.RespondWithTurboStream tsResult =
+        tsResult
+        |> ApiResultHelpers.handleResult ctx (TurboStream.writeTurboStreamContent 200)
+    member ctx.RespondWithTurboStream tsTaskResult =
+        tsTaskResult
+        |> Task.bind (ApiResultHelpers.handleResult ctx (TurboStream.writeTurboStreamContent 200))
     
+    member ctx.Respond formTaskResult =
+        let handleFormResponse value ctx =
+            match value with
+            | ApiFormResponse.Redirect location -> Turbo.redirect location ctx
+            | ApiFormResponse.TurboStream ts -> TurboStream.writeTurboStreamContent 200 ts ctx
+            
+        formTaskResult
+        |> Task.bind (ApiResultHelpers.handleResult ctx handleFormResponse)
         
 module Map =
     let keys map = map |> Map.toList |> List.map fst
@@ -120,7 +142,6 @@ module Result =
         | Ok v -> Some v
 
 module prop =
-    open Feliz.ViewEngine
     let dataGameNightId (id: Guid<GameNightId>) =
         prop.custom ("data-game-night-id", id.ToString())
     let dataGameName (name: string<CanonizedGameName>) =
