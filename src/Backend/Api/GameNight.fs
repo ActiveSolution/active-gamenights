@@ -1,24 +1,18 @@
 module Backend.Api.GameNight
 
-open Feliz.ViewEngine
+open Giraffe.ViewEngine
+open FsHotWire.Giraffe
 open Giraffe
 open Saturn
 open Backend.Extensions
 open Backend
-open Feliz.Bulma.ViewEngine
-open FsHotWire.Feliz
+
 
     
 let gameNightsView =
-    Bulma.container [
-        Html.turboFrame [
-            prop.id "confirmed-game-nights"
-            prop.src "/confirmedgamenight"
-        ]
-        Html.turboFrame [
-            prop.id "proposed-game-nights"
-            prop.src "/proposedgamenight"
-        ]
+    [
+        turboFrame [ _id "confirmed-game-nights"; _src "/confirmedgamenight" ] []
+        turboFrame [ _id "proposed-game-nights"; _src "/proposedgamenight" ] []
     ]
 
 let getAll env : HttpFunc =

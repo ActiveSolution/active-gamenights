@@ -1,117 +1,80 @@
 module Backend.Api.Navbar
 
-open Feliz.ViewEngine
-open Feliz.Bulma.ViewEngine
 open Giraffe
 open Domain
 open FsToolkit.ErrorHandling
 open Backend.Extensions
-open FsHotWire.Feliz
 open FSharp.UMX
         
-let private githubLink =
-    Bulma.navbarItem.a [
-        prop.href "https://github.com/ActiveSolution/ActiveGameNight/blob/master/CHANGELOG.md"
-        prop.target.blank
-        prop.children [
-            Bulma.icon [
-                prop.children [
-                    Html.i [
-                        prop.classes [ "fab fa-fw fa-github" ]
-                    ]
-                ]
-            ]
-        ]
-    ]
-    
-let private userView (user: string<CanonizedUsername> option) =
-    let logoutDropdown (user: string<CanonizedUsername>) =
-        Bulma.navbarItem.div [
-            navbarItem.hasDropdown
-            navbarItem.isHoverable
-            prop.id "logout-dropdown"
-            prop.children [
-                Bulma.navbarLink.a [
-                    navbarLink.isArrowless
-                    prop.text (user |> Username.toDisplayName)
-                    prop.id "username"
-                ] 
-                Bulma.navbarDropdown.div [
-                    Html.form [
-                        prop.action "/user/logout"
-                        prop.method "post"
-                        prop.targetTurboFrame.top
-                        prop.children [
-                            Html.input [
-                                prop.type'.hidden
-                                prop.name "_method"
-                                prop.value "delete"
-                            ]
-                            Bulma.field.div [
-                                prop.children [
-                                    Bulma.control.div [
-                                        Bulma.button.button [
-                                            prop.id "logout-button"
-                                            color.isLink
-                                            color.isLight
-                                            color.hasBackgroundWhite
-                                            prop.text "logout"
-                                        ]
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ]
+
+module private Views =
+    open Giraffe.ViewEngine
+    open FsHotWire.Giraffe
+    let private githubLink =
+        a [ 
+            _class "navbar-item"
+            _href "https://github.com/ActiveSolution/ActiveGameNight/blob/master/CHANGELOG.md"
+            _target "blank"
+        ] [
+            span [ _class "icon" ] [ i [ _class "fab fa-fw fa-github" ] [ ] ]
         ]
         
-    match user with
-    | Some u -> logoutDropdown u
-    | None -> Html.none
-    
-let private navbarView user =
-    Html.turboFrame [
-        prop.id "navbar"
-        prop.children [
-            Bulma.navbar [
-                color.isInfo
-                prop.children [ 
-                    Bulma.navbarBrand.div [
-                        prop.children [
-                            Bulma.navbarItem.a [
-                                prop.href "/"
-                                prop.children [
-                                    Html.img [
-                                        prop.src "/Icons/android-chrome-512x512.png"
-                                        prop.alt "Icon"
-                                        prop.style [ style.width (length.px 28); style.height (length.px 28)]
-                                    ]
-                                    Html.text "Active Game Night"
-                                ]
-                            ]            
-                            Bulma.navbarBurger [
-                                prop.id "agn-navbar-burger"
-                                navbarItem.hasDropdown
-                                prop.children [ yield! List.replicate 3 (Html.span []) ] 
+    let private userView (user: string<CanonizedUsername> option) =
+        let logoutDropdown (user: string<CanonizedUsername>) =
+            div [ _class "navbar-item has-dropdown is-hoverable"; _id "logout-dropdown" ] [
+                a [ _class "navbar-link"; _id "username" ] [ str (user |> Username.toDisplayName) ]
+                div [ _class "navbar-dropdown" ] [
+                    form [
+                        _action "/user/logout"
+                        _method "POST"
+                        _targetTurboFrame "_top"
+                    ] [
+                        input [ 
+                            _type "hidden"
+                            _name "_method"
+                            _value "delete"
+                        ]
+                        div [ _class "field" ] [
+                            div [ _class "control" ] [
+                                button [
+                                    _class "button is-link is-light has-background-white"  
+                                    _id "logout-button"
+                                    _type "submit"
+                                ] [ str "logout" ]
                             ]
                         ]
                     ]
-                    Bulma.navbarMenu [
-                        prop.id "agn-navbar-menu"
-                        prop.children [ 
-                            Bulma.navbarEnd.div [
-                                githubLink
-                                userView user
-                            ]
-                        ] 
+
+                ]
+            ]
+            
+        match user with
+        | Some u -> logoutDropdown u
+        | None -> emptyText
+    
+    let navbarView user =
+        turboFrame [ _id "navbar" ] [
+            nav [ _class "navbar is-info"; Accessibility._roleNavigation ] [
+                div [ _class "navbar-brand" ] [
+                    a [ _class "navbar-item"; _href "/" ] [
+                        img [ 
+                            _src "/Icons/android-chrome-512x512.png"
+                            _alt "Icon"
+                            _style "width: 28px; height: 28px;"
+                        ]
+                        str "Active Game Night"
                     ]
-                ] 
+                    div [ _class "navbar-burger"; _id "agn-navbar-burger" ] [
+                        yield! List.replicate 3 (span [] [])
+                    ]
+                ]
+                div [ _class "navbar-menu"; _id "agn-navbar-menu" ] [
+                    div [ _class "navbar-end" ] [ githubLink; userView user]
+                ]
             ]
         ]
-    ]
     
 let handler env : HttpHandler =
     fun _ ctx -> 
         let user = ctx.GetUser() |> Result.toOption
-        ctx.RespondWithHtmlFragment(env, navbarView user)
+        ctx.RespondWithHtmlFragment(env, Views.navbarView user)

@@ -7,40 +7,46 @@ open Saturn
 open Microsoft.AspNetCore.Http
 open FsToolkit.ErrorHandling
 open Domain
-open Feliz.ViewEngine
-open Feliz.Bulma.ViewEngine
-open Backend.Api.Shared
 open FSharp.UMX
 
 
-let addUserView (user: string<CanonizedUsername> option) =
-    Html.form [
-        prop.action "/user"
-        prop.method "POST"
-        prop.children [
-            Bulma.title.h1 "Who are you?"
-            Bulma.fieldControl [
-                Html.input [
-                    prop.type'.text
-                    prop.classes [ "input" ]
-                    prop.name HttpContext.usernameKey
-                    prop.autoFocus true
-                    prop.value (user |> Option.map (fun u -> %(Username.toDisplayName u)) |> Option.defaultValue "")
+module private Views =
+    open Giraffe.ViewEngine
+    let addUserView (user: string<CanonizedUsername> option) =
+        section [ _class "section" ] [
+            div [ _class "container" ] [
+                form [
+                    _action "/user"
+                    _method "POST"
+                ] [
+                    h1 [ _class "title is-1" ] [ str "Who are you?" ]
+                    div [ _class "field" ] [
+                        div [ _class "control has-icons-left" ] [
+                            input [
+                                _type "text"
+                                _class "input"
+                                _name HttpContext.usernameKey
+                                _autofocus
+                                _value (user |> Option.map (fun u -> %(Username.toDisplayName u)) |> Option.defaultValue "")
+                            ]
+                            span [ _class "icon is-small is-left" ] [
+                                i [ _class "fas fa-user" ] [ ]
+                            ]
+                        ]
+                    ]
+                    div [ _class "field" ] [
+                        div [ _class "control" ] [
+                            button [ _class "button is-primary"; _type "submit"; _name "submit" ] [ str "OK" ]
+                        ]
+                    ]
                 ]
-            ] 
-            Bulma.button.button [
-                color.isPrimary
-                prop.type'.submit
-                prop.name "submit"
-                prop.text "OK"
-            ]   
+            ]
         ]
-    ]
 
 let addUser env : HttpFunc =
     fun ctx ->
         let user = ctx.GetUser() |> Result.toOption
-        ctx.RespondWithHtml(env, (addUserView user))
+        ctx.RespondWithHtml(env, (Views.addUserView user))
     
 let createUser : HttpFunc =
     fun ctx ->

@@ -1,6 +1,5 @@
 module FsHotWire
 
-open Feliz.ViewEngine
 open Giraffe
 open FSharp.Control.Tasks
 open Microsoft.AspNetCore.Http
@@ -20,12 +19,16 @@ module Turbo =
                 ctx.SetHttpHeader "Location" uri
                 return Some ctx
             }
+
+module Giraffe =
+    open Giraffe.ViewEngine
+    let turboFrame = tag "turbo-frame"
+    let turboStream = tag "turbo-stream"
             
-module Feliz =
     type TurboStream =
         private 
             { Action: string
-              Content: ReactElement
+              Content: XmlNode option
               Target: string }
         with 
             static member internal Create(action, target, content) =
@@ -34,50 +37,41 @@ module Feliz =
                   Content = content }
 
     
-    type prop with
-        static member targetTurboFrame (id: string) =
-            prop.custom ("data-turbo-frame", id)
-        static member disableTurboDrive =
-            prop.custom("data-turbo", false)
+    let _targetTurboFrame = attr "data-turbo-frame"
+    let _disableTurboDrive = attr "data-turbo" "false"
             
-    module prop =
-        [<Erase>]
-        type targetTurboFrame =
-            static member inline top = Interop.mkAttr "data-turbo-frame" "_top"
-
-    type Html with 
-        static member inline turboFrame xs = Interop.createElement "turbo-frame" xs
-        static member inline turboFrame (children: #seq<ReactElement>) = Interop.reactElementWithChildren "turbo-frame" children
-        static member inline turboStream xs = Interop.createElement "turbo-stream" xs
-        static member inline turboStream (children: #seq<ReactElement>) = Interop.reactElementWithChildren "turbo-stream" children
-        
     [<RequireQualifiedAccess>]
     module TurboStream =
+        let private template = tag "template"
         let private render (turboStreams: TurboStream list) =
-            Html.body [
+            body [] [
                 for ts in turboStreams do
-                    Html.turboStream [
-                        prop.action ts.Action
-                        prop.target ts.Target
-                        prop.children [
-                            Html.template [
-                                ts.Content
+                    turboStream [
+                        _action ts.Action
+                        _target ts.Target 
+                        ] [
+                            template [] [
+                                match ts.Content with
+                                | Some c -> c
+                                | None -> ()
                             ]
                         ]
                     ]
-                ]
             
         let append targetId content =
-            TurboStream.Create("append", targetId, content)
+            TurboStream.Create("append", targetId, Some content)
             
         let replace targetId content =
-            TurboStream.Create("replace", targetId, content)
+            TurboStream.Create("replace", targetId, Some content)
+
+        let remove targetId =
+            TurboStream.Create("remove", targetId, None)
             
         let writeTurboStreamContent statusCode (ts: TurboStream list) (ctx: HttpContext) =
             ctx.SetContentType "text/html; turbo-stream"
             ctx.SetStatusCode statusCode
             
             render ts
-            |> Render.htmlView
+            |> RenderView.AsString.htmlDocument
             |> ctx.WriteStringAsync 
         

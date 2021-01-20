@@ -13,11 +13,10 @@ group Backend
     nuget FsToolkit.ErrorHandling.TaskResult
     nuget FsConfig
     nuget Microsoft.Extensions.Configuration.UserSecrets 
-    nuget Feliz.ViewEngine
-    nuget Feliz.Bulma.ViewEngine
     nuget FSharp.Azure.Storage
     nuget Unquote 4.0
     nuget Microsoft.AspNetCore.Authentication.JwtBearer 3.1.10 
+    nuget Giraffe.ViewEngine 1.2.0
     
 group Functions
 

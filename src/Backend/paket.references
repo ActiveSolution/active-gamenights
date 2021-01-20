@@ -6,7 +6,6 @@ group Backend
     FsToolkit.ErrorHandling.TaskResult
     FsConfig
     Microsoft.Extensions.Configuration.UserSecrets 
-    Feliz.ViewEngine
-    Feliz.Bulma.ViewEngine
     FSharp.Azure.Storage
     Unquote
+    Giraffe.ViewEngine

@@ -5,61 +5,85 @@ open FSharpPlus.Data
 open Saturn
 open FsToolkit.ErrorHandling
 open Backend
-open Feliz.Bulma.ViewEngine
 open Domain
-open Feliz.ViewEngine
 open Backend.Api.Shared
-open FsHotWire.Feliz
 open FSharp.UMX
     
     
-let confirmedGameNightCard currentUser (gn: ConfirmedGameNight) =
-    let turboFrameId = "confirmed-game-night-" + gn.Id.ToString()
-    Html.turboFrame [
-        prop.id turboFrameId 
-        prop.children [
-            Bulma.card [
-                prop.classes [ "mb-5" ]
-                prop.dataGameNightId gn.Id
-                prop.children [
-                    Bulma.cardHeader [
-                        Bulma.cardHeaderTitle.p (%gn.CreatedBy + " wants to play")
+module private Views =
+    open Giraffe.ViewEngine
+    open FsHotWire.Giraffe
+
+    let private confirmedGameCard (gameName: string<CanonizedGameName>) votes currentUser actionUrl voteUpdateTarget =
+        article [ 
+            _class "media" 
+            _dataGameName %gameName ] [
+            figure [ _class "media-left" ] [ 
+                p [ _class "image is-64x64" ] [ 
+                    img [ _src "http://via.placeholder.com/64" ] 
+                ] 
+            ]
+            div [ _class "media-content" ] [
+                div [ _class "content" ] [
+                    p [] [ gameName |> GameName.toDisplayName |> str ]
+                ]
+                nav [ _class "level" ] [ 
+                    div [ _class "level-left" ] [
+                        yield! GameNightViews.gameVoteButtons currentUser votes actionUrl voteUpdateTarget
+                        if GameNightViews.hasVoted votes currentUser then
+                            ()
+                        else 
+                            GameNightViews.addVoteButton actionUrl voteUpdateTarget
                     ]
-                    Bulma.cardContent [
-                        for gameName, votes in gn.GameVotes |> NonEmptyMap.toList do
-                            let actionUrl = sprintf "/proposedgamenight/%s/game/%s/vote" (gn.Id.ToString()) %gameName
-                            Html.unorderedList [
-                                Html.listItem [
-                                    GameNightViews.gameCard gameName votes currentUser actionUrl turboFrameId
-                                ] 
+                ]
+            ]
+        ]
+
+    let private confirmedGameNightCard currentUser (gn: ConfirmedGameNight) =
+        let turboFrameId = "confirmed-game-night-" + gn.Id.ToString()
+        turboFrame [ _id turboFrameId ] [
+            div [ _class "card mb-5"; _dataGameNightId (gn.Id.ToString()) ] [
+                header [ _class "card-header" ] [ 
+                    p [ _class "card-header-title" ] [ (gn.CreatedBy |> Username.toDisplayName) + " wants to play" |> str ]
+                ]
+                div [ _class "card-content" ] [ 
+                    for gameName, votes in gn.GameVotes |> NonEmptyMap.toList do
+                        let actionUrl = sprintf "/confirmedgamenight/%s/game/%s/vote" (gn.Id.ToString()) %gameName
+                        ul [] [
+                            li [ ] [
+                                confirmedGameCard gameName votes currentUser actionUrl turboFrameId
                             ] 
-                        let actionUrl = sprintf "/proposedgamenight/%s/game/%s/vote" (gn.Id.ToString()) gn.Date.AsString
-                        GameNightViews.dateCard gn.Date (gn.Players |> NonEmptySet.toSet) currentUser actionUrl turboFrameId
+                        ] 
+                    let actionUrl = sprintf "/confirmedgamenight/%s/date/%s/vote" (gn.Id.ToString()) gn.Date.AsString
+                    GameNightViews.dateCard gn.Date (gn.Players |> NonEmptySet.toSet) currentUser actionUrl turboFrameId
+                ]
+            ]
+        ]
+        
+    let gameNightsView currentUser confirmed =
+        turboFrame [ _id "confirmed-game-nights" ] [
+            section [ _class "section" ] [
+                div [ _class "container" ] [
+                    h2 [ _class "title is-2" ] [ str "Confirmed game nights" ]
+                    div [] [
+                        for gameNight in confirmed do confirmedGameNightCard currentUser gameNight
                     ]
                 ]
             ]
+            
         ]
-    ]
     
-let gameNightsView currentUser confirmed =
-    Html.turboFrame [
-        prop.id "confirmed-game-nights"
-        prop.children [
-            Bulma.container [
-                Bulma.title.h2 "Confirmed game nights"
-                Bulma.section [
-                    for gameNight in confirmed do confirmedGameNightCard currentUser gameNight
-                ]
-            ]
-        ]
-    ]
+    let empty = emptyText
 
 let getAll env : HttpFunc =
     fun ctx -> 
         taskResult {
-            let! confirmed = Storage.getAllConfirmedGameNights env
-            let! currentUser = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-            return gameNightsView currentUser confirmed 
+            match! Storage.getAllConfirmedGameNights env with
+            | [] -> 
+                return Views.empty
+            | confirmed ->
+                let! currentUser = ctx.GetUser() |> Result.mapError ApiError.MissingUser
+                return Views.gameNightsView currentUser confirmed 
         } 
         |> (fun view -> ctx.RespondWithHtml(env, view))
         

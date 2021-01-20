@@ -5,11 +5,6 @@ STORAGE: NONE
 RESTRICTION: == netcoreapp3.1
 NUGET
   remote: https://api.nuget.org/v3/index.json
-    Feliz.Bulma.ViewEngine (0.25)
-      Feliz.ViewEngine (>= 0.24)
-      FSharp.Core (>= 4.7)
-    Feliz.ViewEngine (0.24)
-      FSharp.Core (>= 4.7)
     FsConfig (2.1.6)
       FSharp.Core (>= 4.2.3)
       Microsoft.Extensions.Configuration
@@ -34,6 +29,8 @@ NUGET
       Newtonsoft.Json (>= 12.0.2)
       TaskBuilder.fs (>= 2.1)
       Utf8Json (>= 1.3.7)
+    Giraffe.ViewEngine (1.2)
+      FSharp.Core (>= 4.7.1)
     Microsoft.AspNetCore.Authentication.JwtBearer (3.1.10)
       Microsoft.IdentityModel.Protocols.OpenIdConnect (>= 5.5)
     Microsoft.Azure.Cosmos.Table (1.0.8)

@@ -1,7 +1,6 @@
 namespace Backend
 
-open Feliz.ViewEngine
-
+open Giraffe.ViewEngine
 
 type ApiError =
     | Duplicate 
@@ -9,9 +8,12 @@ type ApiError =
     | BadRequest of string
     | Domain of string
     | MissingUser of string
-    | FormValidationError of FsHotWire.Feliz.TurboStream list
+    | FormValidationError of FsHotWire.Giraffe.TurboStream list
+
+type InputData =
+    | Valid of string
+    | Invalid of Value: string * ErrorMsg: string
     
-// Web
 type BasePath = BasePath of string
     with member this.Val = this |> function BasePath basePath -> basePath
 type Domain = Domain of string
@@ -20,9 +22,8 @@ type ITemplateSettings =
     abstract BasePath : BasePath
     abstract Domain : Domain
 type ITemplates =
-    abstract FullPage : ReactElement -> string
-    abstract Fragment : ReactElement -> string
+    abstract FullPage : XmlNode seq -> string
+    abstract Fragment : XmlNode -> string
 type ITemplateBuilder =
     abstract Templates : ITemplates
-    
     

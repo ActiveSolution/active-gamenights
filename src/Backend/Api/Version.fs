@@ -1,15 +1,14 @@
 module Backend.Api.Version
 
-open Feliz.ViewEngine
-open Feliz.Bulma.ViewEngine
+open Giraffe.ViewEngine
 open Giraffe
 open Backend.Extensions
 open Backend
 
 
 let versionView =
-    Bulma.section [
-        Html.p (sprintf "Version: %s" Version.version)
+    section [ _class "section"  ] [
+        p [] [ str (sprintf "Version: %s" Version.version) ]
     ]
     
 let handler env : HttpHandler =

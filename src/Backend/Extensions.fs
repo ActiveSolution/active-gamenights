@@ -2,14 +2,13 @@
 module Backend.Extensions
 
 open System
-open Feliz.ViewEngine
 open Microsoft.AspNetCore.Http
 open FsToolkit.ErrorHandling
 open Domain
 open Giraffe
 open Saturn
 open FsHotWire
-open FsHotWire.Feliz
+open FsHotWire.Giraffe
 open FSharp.UMX
 
 
@@ -50,6 +49,13 @@ module ApiResultHelpers =
         content
         |> env.Templates.FullPage
         |> Controller.html ctx
+
+        
+    let fullPageHtmlMultiple (env: #ITemplateBuilder) content ctx =
+        content
+        |> Seq.singleton
+        |> env.Templates.FullPage
+        |> Controller.html ctx
         
     let fragment (env: #ITemplateBuilder) content ctx =
         content
@@ -85,6 +91,14 @@ type HttpContext with
     member ctx.RespondWithHtml (env, contentTaskResult) =
         contentTaskResult
         |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtml env))
+    member ctx.RespondWithHtml (env, content) =
+        ApiResultHelpers.fullPageHtmlMultiple env content ctx
+    member ctx.RespondWithHtml (env, contentResult) =
+        contentResult
+        |> ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtmlMultiple env)
+    member ctx.RespondWithHtml (env, contentTaskResult) =
+        contentTaskResult
+        |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtmlMultiple env))
     
     member ctx.RespondWithRedirect(location) = Turbo.redirect location ctx
     member ctx.RespondWithRedirect(locationResult) =
@@ -141,14 +155,12 @@ module Result =
         | Error _ -> None 
         | Ok v -> Some v
 
-module prop =
-    let dataGameNightId (id: Guid<GameNightId>) =
-        prop.custom ("data-game-night-id", id.ToString())
-    let dataGameName (name: string<CanonizedGameName>) =
-        prop.custom ("data-game-name", %name)
-    let dataDate (date: DateTime) =
-        prop.custom ("data-date", date.AsString)
-    let addVoteButton =
-        prop.custom ("data-add-vote-button", "")
-    let removeVoteButton =
-        prop.custom ("data-remove-vote-button", "")
+module Giraffe =
+    module ViewEngine =
+        open Giraffe.ViewEngine
+        let _dataGameNightId = attr "data-game-night-id"
+        let _targetTurboFrame = attr "data-turbo-frame"
+        let _addVoteButton = flag "data-add-vote-button"
+        let _removeVoteButton = flag "data-remove-vote-button"
+        let _dataGameName = attr "data-game-name"
+        let _dataDate = attr "data-date"

@@ -7,127 +7,118 @@ open Microsoft.AspNetCore.Http
 open Saturn
 open FsToolkit.ErrorHandling
 open Backend
-open Feliz.Bulma.ViewEngine
 open Domain
-open Feliz.ViewEngine
-open FsHotWire.Feliz
 open Backend.Api.Shared
 open FSharp.UMX
 open FsHotWire
 
 module private Views =    
+
+    open Giraffe.ViewEngine
+    open FsHotWire.Giraffe
+
     let proposedGameNightCard currentUser (gn: ProposedGameNight) =
         let turboFrameId = "proposed-game-night-" + gn.Id.ToString()
-        Html.turboFrame [
-            prop.id turboFrameId
-            prop.children [
-                Bulma.card [
-                    prop.classes [ "mb-5" ]
-                    prop.dataGameNightId gn.Id
-                    prop.children [
-                        Bulma.cardHeader [
-                            Bulma.cardHeaderTitle.p ((gn.CreatedBy |> Username.toDisplayName) + " wants to play")
-                        ]
-                        Bulma.cardContent [
-                            for gameName, votes in gn.GameVotes |> NonEmptyMap.toList do
-                                let actionUrl = sprintf "/proposedgamenight/%s/game/%s/vote" (gn.Id.ToString()) %gameName
-                                Html.unorderedList [
-                                    Html.listItem [
-                                        GameNightViews.gameCard gameName votes currentUser actionUrl turboFrameId
-                                    ] 
+        turboFrame [ _id turboFrameId ] [
+            div [ _class "card mb-5"; _dataGameNightId (gn.Id.ToString()) ] [
+                header [ _class "card-header" ] [ 
+                    p [ _class "card-header-title" ] [ (gn.CreatedBy |> Username.toDisplayName) + " wants to play" |> str ]
+                ]
+                div [ _class "card-content" ] [ 
+                    div [ _class "block" ] [
+                        for gameName, votes in gn.GameVotes |> NonEmptyMap.toList do
+                            let actionUrl = sprintf "/proposedgamenight/%s/game/%s/vote" (gn.Id.ToString()) %gameName
+                            ul [] [
+                                li [ ] [
+                                    GameNightViews.gameCard gameName votes currentUser actionUrl turboFrameId
                                 ] 
-                            for date, votes in gn.DateVotes |> NonEmptyMap.toList do
-                                let actionUrl = sprintf "/proposedgamenight/%s/date/%s/vote" (gn.Id.ToString()) date.AsString
-                                Html.unorderedList [
-                                    Html.listItem [
-                                        GameNightViews.dateCard date votes currentUser actionUrl turboFrameId
-                                    ] 
-                                ]
-                        ]
+                            ] 
+                    ]
+                    div [ _class "block" ] [
+                        for date, votes in gn.DateVotes |> NonEmptyMap.toList do
+                            let actionUrl = sprintf "/proposedgamenight/%s/date/%s/vote" (gn.Id.ToString()) date.AsString
+                            ul [] [
+                                li [] [
+                                    GameNightViews.dateCard date votes currentUser actionUrl turboFrameId
+                                ] 
+                            ]
                     ]
                 ]
             ]
         ]
-    
 
     let addProposedGameNightLink =
-        Html.turboFrame [
-            prop.id "add-proposed-game-night"
-            prop.children [
-                Html.a [
-                    prop.id "add-proposed-game-night-link"
-                    prop.href "/proposedgamenight/add?withCancel=true"
-                    prop.children [ Bulma.Icons.plusIcon; Html.text "Add new game night" ]
+        turboFrame 
+            [ _id "add-proposed-game-night" ]
+            [
+                a [ 
+                    _id "add-proposed-game-night-link"
+                    _href "/proposedgamenight/add?withCancel=true" 
+                ] [ 
+                    Icons.plusIcon
+                    str "Add new game night"
                 ]
             ]
-        ]
         
     let gameNightsView currentUser proposed =
-        Html.turboFrame [
-            prop.id "proposed-game-nights"
-            prop.children [
-                Bulma.container [
-                    Bulma.title.h2 "Proposed game nights"
-                    Bulma.section [
-                        prop.children [ for gameNight in proposed do proposedGameNightCard currentUser gameNight ]
-                    ]
+        turboFrame [ _id "proposed-game-nights"] [ 
+            section [ _class "section"] [ 
+                div [ _class "container"] [ 
+                    h2 [ _class "title is-2" ] [ str "Proposed game nights" ]
+                    for gameNight in proposed do proposedGameNightCard currentUser gameNight 
                     addProposedGameNightLink
                 ]
             ]
         ]
-        
-    let gameInputView index =
-        let placeholder = if index > 1 then "Enter another game name" else "Enter a game game"
-        [
-            Bulma.field.div [
-                Html.input [
-                    prop.type'.text
-                    prop.id (sprintf "game-%i" index)
-                    prop.classes [ "input" ]
-                    prop.name "Games"
-                    prop.placeholder placeholder
-                ]
-            ]
-            Bulma.field.div [
-                Bulma.control.div [
-                    Bulma.button.a [
-                        prop.id "add-game-input-button"
-                        color.isLink
-                        button.isOutlined
-                        button.isSmall
-                        prop.href (sprintf "fragments/proposedgamenight/addgame?index=%i" (index + 1))
-                        prop.children [
-                            Bulma.Icons.plusIcon
-                        ]
+
+    let addGameInputButton nextIndex =
+        div [ _class "field" ] [
+            div [ _class "control" ] [
+                a [ 
+                    _id "add-game-input-button"
+                    _class "button is-link is-outlined is-small"
+                    _href (sprintf "fragments/proposedgamenight/addgame?index=%i" nextIndex) ] [
+                        Icons.plusIcon
                     ]
+            ]
+        ]
+
+    let emptyGameInput index = 
+        let placeholder =
+            if index > 1 then "Enter another game name" else "Enter a game game"
+        div [ _class "field" ] [
+            div [ _class "control" ] [
+                input [
+                    _type "text"
+                    _id (sprintf "game-input-%i" index)
+                    _class "input"
+                    _name "Games"
+                    _placeholder placeholder
                 ]
             ]
         ]
 
-    let dateInputView index =
-        let placeholder = if index > 1 then "Pick an additional date" else "Pick a date"
-        [
-            Bulma.field.div [
-                Html.input [
-                    prop.type'.text
-                    prop.id (sprintf "date-%i" index)
-                    prop.classes [ "input" ]
-                    prop.name "Dates"
-                    prop.placeholder placeholder
-                ]
+    let addDateInputButton nextIndex =
+        div [ _class "field" ] [
+            div [ _class "control" ] [
+                a [
+                    _id "add-date-input-button"
+                    _class "button is-link is-outlined is-small"
+                    _href (sprintf "/fragments/proposedgamenight/adddate?index=%i" nextIndex)
+                ] [ Icons.plusIcon]
             ]
-            Bulma.field.div [
-                Bulma.control.div [
-                    Bulma.button.a [
-                        prop.id "add-date-input-button"
-                        color.isLink
-                        button.isOutlined
-                        button.isSmall
-                        prop.href (sprintf "/fragments/proposedgamenight/adddate?index=%i" (index + 1))
-                        prop.children [
-                            Bulma.Icons.plusIcon
-                        ]
-                    ]
+        ]
+
+    let emptyDateInput index =
+        let placeholder = if index > 1 then "Pick an additional date" else "Pick a date"
+        div [ _class "field" ] [
+            div [ _class "control" ] [
+                input [
+                    _type "text"
+                    _id (sprintf "date-input-%i" index)
+                    _class "input"
+                    _name "Dates"
+                    _placeholder placeholder
                 ]
             ]
         ]
@@ -135,49 +126,59 @@ module private Views =
     let addProposedGameNightView withCancelButton =
         let target = "proposed-game-nights"
         let gameInputTitle =
-            Bulma.field.div [
-                Bulma.control.div [
-                    Bulma.title.h5 "What do you want to play?"
+            div [ _class "field" ] [
+                div [ _class "control" ] [
+                    h5 [ _class "title is-5" ] [ str "What do you want to play?"]
                 ]
             ]
         let dateInputTitle =
-            Bulma.field.div [
-                Bulma.control.div [
-                    Bulma.title.h5 "When?"
+            div [ _class "field" ] [
+                div [ _class "control" ] [
+                    h5 [ _class "title is-5" ] [ str "When?"]
                 ]
             ]
-            
-        Bulma.section [
-            Bulma.title.h2 "Add proposed game night"
-            Html.turboFrame [
-                prop.id "add-proposed-game-night"
-                prop.children [
-                    Html.form [
-                        prop.targetTurboFrame target
-                        prop.method "POST"
-                        prop.action "/proposedgamenight"
-                        prop.children [
+
+        section [ _class "section" ] [
+            div [ _class "container" ] [
+                h2 [ _class "title is-2" ] [ str "Add proposed game night"]
+                turboFrame [ _id "add-proposed-game-night" ] [ 
+                    form [
+                        _targetTurboFrame target
+                        _method "POST"
+                        _action "/proposedgamenight" 
+                    ] [
+                        span [
+                            _id "game-inputs"
+                            _style "display:block; margin-top: 10px;" 
+                        ] [
                             gameInputTitle
-                            yield! gameInputView 1
-                            dateInputTitle
-                            yield! dateInputView 1
-                            if withCancelButton then Bulma.submitButtonWithCancel "Save" "Cancel" "/proposedgamenight" else Bulma.submitButton "Save"
+                            emptyGameInput 1
+                            addGameInputButton 2
                         ]
+                        span [
+                            _id "date-inputs"
+                            _style "display:block; margin-top: 10px;" 
+                        ] [
+                            dateInputTitle
+                            emptyDateInput 1
+                            addDateInputButton 2
+                        ]
+                        if withCancelButton then 
+                            Partials.submitButtonWithCancel "Save" "Cancel" "/proposedgamenight"
+                        else
+                            Partials.submitButton "Save"
                     ]
                 ]
             ]
         ]
-        
+
     let proposedGameNightView currentUser (gn: ProposedGameNight) =
-        Bulma.container [
-            Bulma.title.h2 "Proposed game night"
-            Html.turboFrame [
-                prop.id (sprintf "proposed-game-night-%s" (gn.Id.ToString()))
-                prop.children [
-                    proposedGameNightCard currentUser gn
-                ]
+        section [ _class "section" ] [
+            h2 [ _class "title is-2" ] [ str "Proposed game night" ]
+            turboFrame [ _id (sprintf "proposed-game-night-%s" (gn.Id.ToString())) ] [
+                proposedGameNightCard currentUser gn
             ]
-        ]
+        ] 
 
 let getProposedGameNight env (ctx: HttpContext) stringId =
     taskResult {
@@ -202,68 +203,44 @@ type CreateProposedGameNightForm =
     { Games : string list
       Dates : string list }
 
-type CreateProposedGameNightValidationError =
-    | MissingGame
-    | DuplicateGame of int * string
-    | MissingDate
-    | DuplicateDate of int * string
-    | NotFutureDate of int * string
-    | InvalidDate of int * string
+type InvalidInput = 
+    { Value: string option
+      Msg: string
+      Id: string }
+
     
+// From https://blog.ploeh.dk/2020/12/28/an-f-demo-of-validation-with-partial-data-round-trip/
+module Result =
+    // Result<'a       ,(('b -> 'b) * 'c list)> ->
+    // Result<'d       ,(('b -> 'b) * 'c list)> ->
+    // Result<('a * 'd),(('b -> 'b) * 'c list)>
+    let merge x y =
+        match x, y with
+        | Ok xres, Ok yres -> Ok (xres, yres)
+        | Error (f, e1s), Error (g, e2s)  -> Error (f >> g, e2s @ e1s)
+        | Error e, Ok _ -> Error e
+        | Ok _, Error e -> Error e
+
+module Validations =
+    type ValidationBuilder () =
+        member _.BindReturn (x, f) = Result.map f x
+        member _.MergeSources (x, y) = Result.merge x y
+
+    [<AutoOpen>]
+    module ComputationExpressions =
+        let validation = ValidationBuilder ()
+
+
 let saveProposedGameNight env (ctx: HttpContext) : HttpFuncResult =
     
-    let validate (dto: CreateProposedGameNightForm) : CreateProposedGameNightValidationError list =
-        let games = dto.Games |> List.filter (String.IsNullOrWhiteSpace >> not)
-        let dates = dto.Dates |> List.filter (String.IsNullOrWhiteSpace >> not)
-        let getDuplicates items =
-            items
-            |> List.mapi (fun index item ->
-                if List.contains item items then Some (index + 1, item) else None)
-            |> List.choose id
-            |> function
-                | [] -> None
-                | xs -> Some xs
-                
-        let gameError =
-            match games.Length, getDuplicates games with
-            | 0, _ -> [ MissingGame ]
-            | _, Some duplicates -> duplicates |> List.map DuplicateGame
-            | _, None -> []
-            
-        let dateError =
-            match dates.Length, getDuplicates dates with
-            | 0, _ -> [ MissingDate ]
-            | _, Some duplicates -> duplicates |> List.map DuplicateDate
-            | _, None -> []
-            
-        gameError @ dateError
-        
-    let errorView (error: CreateProposedGameNightValidationError) =
-        match error with
-        | MissingGame -> TurboStream.replace "game-1" (Html.p "Missing game")
-        | MissingDate -> TurboStream.replace "date-1" (Html.p "Missing game")
-        | DuplicateGame (index, game) -> TurboStream.replace (sprintf "game-%i" index) (Html.p "Duplicate game")
-        | DuplicateDate (index, date) -> TurboStream.replace (sprintf "date-%i" index) (Html.p "Duplicate date")
-        | NotFutureDate (index, date) -> TurboStream.replace (sprintf "date-%i" index) (Html.p "Date must be in the future")
-        | InvalidDate (index, date) -> TurboStream.replace (sprintf "date-%i" index) (Html.p "Not a valid date")
-    
+
     taskResult {
         let! dto = ctx.BindFormAsync<CreateProposedGameNightForm>()
-        match validate dto with
-        | [] -> 
-            let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-            
-            let! req = Workflows.GameNights.ProposeGameNightRequest.create (dto.Games, dto.Dates, user) |> Result.mapError ApiError.BadRequest
-            let gn = Workflows.GameNights.proposeGameNight req
-            
-            let! _ = Storage.saveProposedGameNight env gn
-            return "/proposedgamenight"
-        | errors ->
-            return!
-                errors
-                |> List.map errorView
-                |> ApiError.FormValidationError
-                |> Error
+        let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
+        let! req = Workflows.GameNights.ProposeGameNightRequest.create (dto.Games, dto.Dates, user) |> Result.mapError BadRequest
+        let gn = Workflows.GameNights.proposeGameNight req
+        let! _ = Storage.saveProposedGameNight env gn
+        return "/proposedgamenight"
             
     } |> ctx.RespondWithRedirect
     
@@ -359,8 +336,6 @@ let dateController env (gameNightId: string) =
     controller {
         subController "/vote" voteController
     }
-
-
         
 let controller env = controller {
     plug [ All ] CommonHttpHandlers.requireUsername
@@ -375,33 +350,41 @@ let controller env = controller {
 }
 
 module Fragments =
+    open Giraffe.ViewEngine
+    open FsHotWire.Giraffe
+
     let addGameInputFragment env : HttpHandler =
         fun _ ctx ->
-            let index = ctx.TryGetQueryStringValue "index" |> Option.map (fun (i:string) -> int i) |> Option.defaultValue 1
-            let inputView = Views.gameInputView index
+            let index = ctx.TryGetQueryStringValue "index" |> Option.map int |> Option.defaultValue 1
 
             match ctx.Request with
             | AcceptTurboStream ->
-                inputView
-                |> Html.span
-                |> TurboStream.replace "add-game-input-button"
-                |> List.singleton
+                [ TurboStream.remove "add-game-input-button"
+                  TurboStream.append "game-inputs" (Views.emptyGameInput index)
+                  TurboStream.append "game-inputs" (Views.addGameInputButton (index + 1)) ]
                 |> ctx.RespondWithTurboStream
             | _ ->
-                ctx.RespondWithHtmlFragment(env, Html.span inputView)
-        
+                let view =
+                    span [] [
+                        Views.emptyGameInput index
+                        Views.addGameInputButton (index + 1)
+                    ]
+                ctx.RespondWithHtmlFragment(env, view)
         
     let addDateInputFragment env : HttpHandler =
         fun _ ctx ->
-            let index = ctx.TryGetQueryStringValue "index" |> Option.map (fun (i:string) -> int i) |> Option.defaultValue 1
-            let inputView = Views.dateInputView index
+            let index = ctx.TryGetQueryStringValue "index" |> Option.map int |> Option.defaultValue 1
 
             match ctx.Request with
             | AcceptTurboStream ->
-                inputView
-                |> Html.span
-                |> TurboStream.replace "add-date-input-button"
-                |> List.singleton
+                [ TurboStream.remove "add-date-input-button"
+                  TurboStream.append "date-inputs" (Views.emptyDateInput index)
+                  TurboStream.append "date-inputs" (Views.addDateInputButton (index + 1)) ]
                 |> ctx.RespondWithTurboStream
             | _ ->
-                ctx.RespondWithHtmlFragment(env, Html.span inputView)
+                let view =
+                    span [] [
+                        Views.emptyDateInput index
+                        Views.addDateInputButton (index + 1)
+                    ]
+                ctx.RespondWithHtmlFragment(env, view)
