@@ -36,7 +36,7 @@ module Metadata =
 module private Views =
     open Giraffe.ViewEngine
 
-    let gameCard (game: Game) =
+    let gameCard isInline (game: Game) =
         let imageStr = game.ImageUrl |> Option.map (fun x -> x.ToString()) |> Option.defaultValue "http://via.placeholder.com/64"
         let notes = match game.Notes with Some n -> str n | None -> emptyText
         let numPlayers = match game.NumberOfPlayers with Some num -> str ("Number of players: " + num) | None -> emptyText
@@ -62,16 +62,16 @@ module private Views =
                         ]
                     ]
                     div [ _class "media-right" ] [ 
-                        a [ _href (sprintf "/game/%s/edit" %game.Name) ] [ str "edit" ] 
+                        a [ _href (sprintf "/game/%s/edit?inline=%b" %game.Name isInline) ] [ str "edit" ] 
                     ]
                 ]
             ]
         ]
 
-    let showGameView (game: Game) =
+    let showGameView isInline (game: Game) =
         section [ _class "section" ] [
             div [ _class "container" ] [
-                gameCard game
+                gameCard isInline game
             ]
         ]
 
@@ -102,7 +102,7 @@ module private Views =
             turboFrame [ _id "games"] [ 
                 section [ _class "section"] [ 
                     div [ _class "container"] [ 
-                        for game in games do gameCard game
+                        for game in games do gameCard true game
                         addGameLink
                     ]
                 ]
@@ -115,6 +115,7 @@ module private Views =
                 h2 [ _class "title is-2" ] [ str "Add a new game"]
                 turboFrame [ _id "add-game" ] [ 
                     form [
+                        _class "box"
                         _method "POST"
                         _action "/game" 
                         _targetTurboFrame target
@@ -128,7 +129,7 @@ module private Views =
                         div [ _class "field" ] [
                             div [ _class "control" ] [
                                 if isInline then 
-                                    Partials.submitButtonWithCancel "Save" "Cancel" "/fragments/game/addgamelink"
+                                    Partials.submitButtonWithCancel "Save" "Cancel" "/fragments/game/addgamelink" target 
                                 else
                                     Partials.submitButton "Save"
                             ]
@@ -138,8 +139,9 @@ module private Views =
             ]
         ]
 
-    let editGameView (game: Game) =
+    let editGameView isInline (game: Game) =
         let id = "game-" + %game.Name
+        let target = if isInline then id else "_top"
         section [ _class "section" ] [
             div [ _class "container" ] [
                 h2 [ _class "title is-2" ] [ str "Edit game"]
@@ -157,7 +159,7 @@ module private Views =
 
                         div [ _class "field" ] [
                             div [ _class "control" ] [
-                                Partials.submitButtonWithCancel "Save" "Cancel" (sprintf "/game/%s" %game.Name)
+                                Partials.submitButtonWithCancel "Save" "Cancel" (sprintf "/game/%s?inline=%b" %game.Name isInline) target
                             ]
                         ]
                     ]
@@ -279,9 +281,13 @@ let getAll env : HttpFunc =
 
 let showGame env (ctx: HttpContext) gameNameStr =
     taskResult {
+        let isInline = 
+            ctx.TryGetQueryStringValue "inline" 
+            |> Option.bind bool.tryParse 
+            |> Option.defaultValue false
         let! gameName = GameName.create gameNameStr |> Result.mapError ApiError.BadRequest
         let! game = Storage.Games.getGame env gameName
-        return Views.showGameView game
+        return Views.showGameView isInline game
     }
     |> (fun view -> ctx.RespondWithHtml(env, view))
 
@@ -295,9 +301,13 @@ let addGame env : HttpFunc =
 
 let editGame env (ctx: HttpContext) gameNameStr =
     taskResult {
+        let isInline = 
+            ctx.TryGetQueryStringValue "inline" 
+            |> Option.bind bool.tryParse 
+            |> Option.defaultValue false
         let! gameName = GameName.create gameNameStr |> Result.mapError ApiError.BadRequest
         let! game = Storage.Games.getGame env gameName
-        return Views.editGameView game 
+        return Views.editGameView isInline game 
     }
     |> (fun view -> ctx.RespondWithHtml(env, view))
 

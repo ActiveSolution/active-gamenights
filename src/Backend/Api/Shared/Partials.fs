@@ -18,7 +18,7 @@ module Partials =
             ]
         ]
 
-    let submitButtonWithCancel (okText: string) (cancelText: string) cancelHref =
+    let submitButtonWithCancel (okText: string) (cancelText: string) cancelHref cancelTarget =
         div [ 
             _class "field is-grouped" 
             _style "margin-top: 10px;"
@@ -33,6 +33,7 @@ module Partials =
                 a [
                     _class "button is-light"
                     _href cancelHref
+                    _target cancelTarget
                 ] [ str cancelText]
             ]
         ]

@@ -170,6 +170,7 @@ module Views =
                 h2 [ _class "title is-2" ] [ str "Add proposed game night"]
                 turboFrame [ _id "add-proposed-game-night" ] [ 
                     form [
+                        _class "box"
                         _targetTurboFrame target
                         _method "POST"
                         _action "/proposedgamenight" 
@@ -191,7 +192,7 @@ module Views =
                             addDateInputButton 2
                         ]
                         if isInline then 
-                            Partials.submitButtonWithCancel "Save" "Cancel" "/fragments/proposedgamenight/addgamenightlink"
+                            Partials.submitButtonWithCancel "Save" "Cancel" "/fragments/proposedgamenight/addgamenightlink" target
                         else
                             Partials.submitButton "Save"
                     ]
@@ -336,6 +337,7 @@ let dateController env (gameNightId: string) =
         
 let controller env = controller {
     plug [ All ] CommonHttpHandlers.requireUsername
+    plug [ Add ] (CommonHttpHandlers.privateCaching (TimeSpan.FromHours 24.))
     
     index (getAll env)
     show (getProposedGameNight env)
