@@ -102,36 +102,6 @@ let hasVoted votes user =
     votes
     |> Set.contains user
     
-let gameCard (gameName: string<CanonizedGameName>) votes currentUser actionUrl voteUpdateTarget =
-    article 
-        [ 
-            _class "media" 
-            _dataGameName %gameName
-        ]
-        [
-            figure [ _class "media-left" ]
-                [ p [ _class "image is-64x64" ]
-                    [ img [ _src "http://via.placeholder.com/64" ]  ] 
-                ]
-            div [ _class "media-content" ]
-                [
-                    div [ _class "content" ]
-                        [
-                            p [] [ gameName |> GameName.toDisplayName |> str ]
-                        ]
-                    nav [ _class "level" ]
-                        [ div 
-                            [ _class "level-left" ]
-                            [
-                                yield! gameVoteButtons currentUser votes actionUrl voteUpdateTarget
-                                if hasVoted votes currentUser then
-                                    ()
-                                else 
-                                    addVoteButton actionUrl voteUpdateTarget
-                            ]
-                        ]
-                ]
-        ]
 
 let dateCard (date: DateTime) votes currentUser actionUrl voteUpdateTarget =
     article [

@@ -11,13 +11,12 @@ module Domain =
     [<Measure>] type CanonizedUsername
     [<Measure>] type FutureDate
     [<Measure>] type GameNightId
-    type NumberOfPlayers = NumberOfPlayers of int
                     
     type Game = 
         { Name : string<CanonizedGameName>
           CreatedBy : string<CanonizedUsername>
-          NumberOfPlayers : NumberOfPlayers option
-          Link : Uri option
+          NumberOfPlayers : string option
+          Link : string option
           ImageUrl : string option
           Notes : string option }
     type ProposedGameNight =

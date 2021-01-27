@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <UserSecretsId>53976580-fec0-49dd-8e4a-64509d07c664</UserSecretsId>
   </PropertyGroup>
@@ -11,13 +11,15 @@
     <Compile Include="Extensions.fs" />
     <Compile Include="Version.fs" />
     <Compile Include="Configuration.fs" />
+    <Compile Include="Validation.fs" />
     <Compile Include="CommonHttpHandlers.fs" />
     <Compile Include="Api\Shared\Partials.fs" />
     <Compile Include="Api\Shared\GameNightViews.fs" />
-    <Compile Include="Api\Shared\HtmlViews.fs" />
     <Compile Include="Api\Navbar.fs" />
+    <Compile Include="Api\Shared\HtmlViews.fs" />
     <Compile Include="Api\Version.fs" />
     <Compile Include="Api\User.fs" />
+    <Compile Include="Api\Game.fs" />
     <Compile Include="Api\ConfirmedGameNight.fs" />
     <Compile Include="Api\ProposedGameNight.fs" />
     <Compile Include="Api\GameNight.fs" />

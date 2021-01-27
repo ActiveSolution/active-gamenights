@@ -2,9 +2,8 @@ module Backend.Api.Shared.HtmlViews
 
 open FsHotWire.Giraffe
 open Backend
+open Backend.Api
 open Giraffe.ViewEngine
-let navbar =
-    turboFrame [ _id "navbar"; _src "/navbar" ] []
 
 let htmlHead (settings: ITemplateSettings) =
     head [ _title "Active Game Night" ] [ 
@@ -69,11 +68,11 @@ let fragment env content =
     |> RenderView.AsString.htmlDocument
         
 
-let fullPage env content =
+let fullPage env user content =
     html [] [
         htmlHead env
         body [] [
-            navbar 
+            Navbar.navbarView user
             yield! content
         ]
     ] 

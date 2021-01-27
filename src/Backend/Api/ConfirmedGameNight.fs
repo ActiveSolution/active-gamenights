@@ -10,7 +10,7 @@ open Backend.Api.Shared
 open FSharp.UMX
     
     
-module private Views =
+module Views =
     open Giraffe.ViewEngine
     open FsHotWire.Giraffe
 
@@ -62,28 +62,26 @@ module private Views =
         
     let gameNightsView currentUser confirmed =
         turboFrame [ _id "confirmed-game-nights" ] [
-            section [ _class "section" ] [
-                div [ _class "container" ] [
-                    h2 [ _class "title is-2" ] [ str "Confirmed game nights" ]
-                    div [] [
-                        for gameNight in confirmed do confirmedGameNightCard currentUser gameNight
+            match confirmed with
+            | [] -> 
+                emptyText
+            | confirmed ->
+                section [ _class "section" ] [
+                    div [ _class "container" ] [
+                        h2 [ _class "title is-2" ] [ str "Confirmed game nights" ]
+                        div [] [
+                            for gameNight in confirmed do confirmedGameNightCard currentUser gameNight
+                        ]
                     ]
                 ]
-            ]
-            
         ]
     
-    let empty = emptyText
-
 let getAll env : HttpFunc =
     fun ctx -> 
         taskResult {
-            match! Storage.getAllConfirmedGameNights env with
-            | [] -> 
-                return Views.empty
-            | confirmed ->
-                let! currentUser = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-                return Views.gameNightsView currentUser confirmed 
+            let! confirmed = Storage.GameNights.getAllConfirmedGameNights env
+            let! currentUser = ctx.GetUser() |> Result.mapError ApiError.MissingUser
+            return Views.gameNightsView currentUser confirmed 
         } 
         |> (fun view -> ctx.RespondWithHtml(env, view))
         

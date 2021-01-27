@@ -7,6 +7,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
 open Saturn
 open Microsoft.Extensions.Logging
+open Backend.CommonHttpHandlers
         
 let endpointPipe =
     pipeline {
@@ -26,15 +27,11 @@ let rewriteHttpMethod : HttpHandler =
         next ctx
         
         
-let privateCachingWithQueries duration queryParams : HttpHandler =
-    responseCaching
-        (Private duration)
-        (Some "Accept, Accept-Encoding")
-        (Some queryParams)
-        
 let fragments = router {
-    get "/proposedgamenight/addgame" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "index" |] >=> CompositionRoot.Api.Fragments.addGameInput)
-    get "/proposedgamenight/adddate" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "index" |] >=> CompositionRoot.Api.Fragments.addDateInput)
+    get "/proposedgamenight/addgameinput" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "*" |] >=> CompositionRoot.Api.Fragments.addGameInput)
+    get "/proposedgamenight/adddateinput" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "*" |] >=> CompositionRoot.Api.Fragments.addDateInput)
+    get "/proposedgamenight/addgamenightlink" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "*" |] >=> CompositionRoot.Api.Fragments.addGameNightLink)
+    get "/game/addgamelink" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "*" |] >=> CompositionRoot.Api.Fragments.addGameLink)
 }
 
 let browserRouter =
@@ -47,7 +44,7 @@ let browserRouter =
         forward "/confirmedgamenight" CompositionRoot.Api.confirmedGameNightController
         forward "/proposedgamenight" CompositionRoot.Api.proposedGameNightController
         forward "/gamenight" CompositionRoot.Api.gameNightController
-        get "/navbar" CompositionRoot.Api.navbarPage
+        forward"/game" CompositionRoot.Api.gameController
         get "/version" CompositionRoot.Api.versionPage
         get "/about" CompositionRoot.Api.versionPage
     }

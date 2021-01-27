@@ -28,13 +28,13 @@ module Functions =
             let confirmGameNight gn =
                 match Workflows.GameNights.confirmGameNight gn with
                 | Workflows.GameNights.Confirmed gn ->
-                    Storage.saveConfirmedGameNight env gn
+                    Storage.GameNights.saveConfirmedGameNight env gn
                 | Workflows.GameNights.Cancelled gn ->
-                    Storage.saveCancelledGameNight env gn
+                    Storage.GameNights.saveCancelledGameNight env gn
         
             async {
                 let dueDate = DateTime.Today.AddDays(1.)
-                let! gameNights = Storage.getAllProposedGameNights env
+                let! gameNights = Storage.GameNights.getAllProposedGameNights env
                 return!
                     gameNights
                     |> List.filter (isDueForConfirmation dueDate)

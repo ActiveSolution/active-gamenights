@@ -13,6 +13,7 @@
     <Compile Include="Domain\Username.fs" />
     <Compile Include="Domain\GameName.fs" />
     <Compile Include="Domain\GameNightId.fs" />
+    <Compile Include="Domain\Workflows\Game.fs" />
     <Compile Include="Domain\Workflows\GameNights.fs" />
     <Compile Include="Infrastructure\Types.fs" />
     <Compile Include="Infrastructure\Json.fs" />

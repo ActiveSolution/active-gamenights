@@ -35,6 +35,7 @@ module Giraffe =
                 { Target = target
                   Action = action
                   Content = content }
+            member this.TargetId = this.Target
 
     
     let _targetTurboFrame = attr "data-turbo-frame"
@@ -43,7 +44,7 @@ module Giraffe =
     [<RequireQualifiedAccess>]
     module TurboStream =
         let private template = tag "template"
-        let private render (turboStreams: TurboStream list) =
+        let private render (turboStreams: seq<TurboStream>) =
             body [] [
                 for ts in turboStreams do
                     turboStream [
@@ -67,7 +68,7 @@ module Giraffe =
         let remove targetId =
             TurboStream.Create("remove", targetId, None)
             
-        let writeTurboStreamContent statusCode (ts: TurboStream list) (ctx: HttpContext) =
+        let writeTurboStreamContent statusCode (ts: seq<TurboStream>) (ctx: HttpContext) =
             ctx.SetContentType "text/html; turbo-stream"
             ctx.SetStatusCode statusCode
             

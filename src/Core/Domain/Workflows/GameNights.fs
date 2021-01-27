@@ -32,7 +32,6 @@ type ConfirmGameNightResult =
 
 type ConfirmGameNight = ProposedGameNight -> ConfirmGameNightResult
 
-
 module ProposeGameNightRequest =
     let create(games, dates, createdBy) =
         if games |> List.length < 1 then

@@ -145,7 +145,8 @@ let watchApp _ =
     let server() = dotNetWatch "run" backendPath ""
     let functions() = dotNetWatch "msbuild" functionsPath "/t:RunFunctions"
 
-    [ server; functions ]
+    // [ server; functions ]
+    [ server ]
     |> Seq.iter (invokeAsync >> Async.Catch >> Async.Ignore >> Async.Start)
     printfn "Press Ctrl+C (or Ctrl+Break) to stop..."
     let cancelEvent = Console.CancelKeyPress |> Async.AwaitEvent |> Async.RunSynchronously

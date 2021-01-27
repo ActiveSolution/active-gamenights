@@ -10,10 +10,17 @@ open Saturn
 open FsHotWire
 open FsHotWire.Giraffe
 open FSharp.UMX
+open System.Threading.Tasks
 
 
 type BasePath with
     member this.Val = this |> fun (BasePath bp) -> bp
+
+module Result =
+    let toOption xResult = 
+        match xResult with 
+        | Error _ -> None 
+        | Ok v -> Some v
 
 module bool =
     let tryParse (input: string) =
@@ -45,16 +52,20 @@ module ApiResultHelpers =
                 TurboStream.writeTurboStreamContent 422 ts ctx
             | _ -> Response.badRequest ctx ""
         
+
+    let getUser (ctx: HttpContext) =
+        ctx.Session.GetString(HttpContext.usernameKey)
+        |> Username.create
+        |> Result.toOption
     let fullPageHtml (env: #ITemplateBuilder) content ctx =
         content
-        |> env.Templates.FullPage
+        |> Seq.singleton
+        |> env.Templates.FullPage (getUser ctx)
         |> Controller.html ctx
 
-        
     let fullPageHtmlMultiple (env: #ITemplateBuilder) content ctx =
         content
-        |> Seq.singleton
-        |> env.Templates.FullPage
+        |> env.Templates.FullPage (getUser ctx)
         |> Controller.html ctx
         
     let fragment (env: #ITemplateBuilder) content ctx =
@@ -79,7 +90,6 @@ type HttpContext with
         
     member this.ClearUsername() =
         this.Session.Remove(HttpContext.usernameKey)
-
     
     member ctx.RespondWithHtmlFragment (env, content) =
         ApiResultHelpers.fragment env content ctx
@@ -149,12 +159,6 @@ module Async =
             return f x
         }
 
-module Result =
-    let toOption xResult = 
-        match xResult with 
-        | Error _ -> None 
-        | Ok v -> Some v
-
 module Giraffe =
     module ViewEngine =
         open Giraffe.ViewEngine
@@ -164,3 +168,10 @@ module Giraffe =
         let _removeVoteButton = flag "data-remove-vote-button"
         let _dataGameName = attr "data-game-name"
         let _dataDate = attr "data-date"
+
+module Option =
+    let ofString str =
+        if String.IsNullOrWhiteSpace str then
+            None
+        else 
+            Some str

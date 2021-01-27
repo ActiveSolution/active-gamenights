@@ -7,12 +7,11 @@ open Saturn
 open Microsoft.AspNetCore.Http
 open FsToolkit.ErrorHandling
 open Domain
-open FSharp.UMX
 
 
 module private Views =
     open Giraffe.ViewEngine
-    let addUserView (user: string<CanonizedUsername> option) =
+    let addUserView =
         section [ _class "section" ] [
             div [ _class "container" ] [
                 form [
@@ -27,7 +26,6 @@ module private Views =
                                 _class "input"
                                 _name HttpContext.usernameKey
                                 _autofocus
-                                _value (user |> Option.map (fun u -> %(Username.toDisplayName u)) |> Option.defaultValue "")
                             ]
                             span [ _class "icon is-small is-left" ] [
                                 i [ _class "fas fa-user" ] [ ]
@@ -45,8 +43,7 @@ module private Views =
 
 let addUser env : HttpFunc =
     fun ctx ->
-        let user = ctx.GetUser() |> Result.toOption
-        ctx.RespondWithHtml(env, (Views.addUserView user))
+        ctx.RespondWithHtml(env, Views.addUserView)
     
 let createUser : HttpFunc =
     fun ctx ->
@@ -69,6 +66,7 @@ let clearUser (ctx : HttpContext) (_ : string) =
         
 let controller env = controller {
     plug [ Delete ] CommonHttpHandlers.requireUsername
+    plug [ Add ] (CommonHttpHandlers.privateCaching (System.TimeSpan.FromHours 1.))
     
     add (addUser env)
     create createUser

@@ -1,9 +1,8 @@
-version 5.249.0
-
+version 5.251.0
 
 group Backend
     source https://api.nuget.org/v3/index.json
-    framework: netcoreapp3.1
+    framework: net5.0
     storage: none
 
     nuget Giraffe
