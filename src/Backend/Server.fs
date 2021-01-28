@@ -28,8 +28,9 @@ let rewriteHttpMethod : HttpHandler =
         
         
 let fragments = router {
-    get "/proposedgamenight/addgameinput" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "*" |] >=> CompositionRoot.Api.Fragments.addGameInput)
-    get "/proposedgamenight/adddateinput" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "*" |] >=> CompositionRoot.Api.Fragments.addDateInput)
+    get "/proposedgamenight/gameselect" CompositionRoot.Api.Fragments.gameSelect
+    get "/proposedgamenight/addgameselect" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "index" |] >=> CompositionRoot.Api.Fragments.addGameSelect)
+    get "/proposedgamenight/adddateinput" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "index" |] >=> CompositionRoot.Api.Fragments.addDateInput)
     get "/proposedgamenight/addgamenightlink" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "*" |] >=> CompositionRoot.Api.Fragments.addGameNightLink)
     get "/game/addgamelink" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "*" |] >=> CompositionRoot.Api.Fragments.addGameLink)
 }

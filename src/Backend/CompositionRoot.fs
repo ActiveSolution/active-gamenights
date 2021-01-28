@@ -27,7 +27,8 @@ module Api =
     let versionPage : HttpHandler = Api.Version.handler env
     
     module Fragments =
-        let addGameInput : HttpHandler = Api.ProposedGameNight.Fragments.addGameInputFragment env
+        let gameSelect : HttpHandler = Api.ProposedGameNight.Fragments.gameSelectFragment env
+        let addGameSelect : HttpHandler = Api.ProposedGameNight.Fragments.addGameSelectFragment env
         let addDateInput : HttpHandler = Api.ProposedGameNight.Fragments.addDateInputFragment env
         let addGameNightLink : HttpHandler = Api.ProposedGameNight.Fragments.addGameNightLinkFragment env
         let addGameLink : HttpHandler = Api.Game.Fragments.addGameLinkFragment env

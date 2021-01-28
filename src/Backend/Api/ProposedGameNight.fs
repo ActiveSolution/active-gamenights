@@ -40,33 +40,44 @@ module Views =
             ]
         ]
 
-    let proposedGameNightCard currentUser (gn: ProposedGameNight) =
+    let proposedGameNightView isInline currentUser (gn: ProposedGameNight) =
         let turboFrameId = "proposed-game-night-" + gn.Id.ToString()
         turboFrame [ _id turboFrameId ] [
-            div [ _class "card mb-5"; _dataGameNightId (gn.Id.ToString()) ] [
-                header [ _class "card-header" ] [ 
-                    p [ _class "card-header-title" ] [ (gn.CreatedBy |> Username.toDisplayName) + " wants to play" |> str ]
-                ]
-                div [ _class "card-content" ] [ 
-                    div [ _class "block" ] [
-                        for gameName, votes in gn.GameVotes |> NonEmptyMap.toList do
-                            let actionUrl = sprintf "/proposedgamenight/%s/game/%s/vote" (gn.Id.ToString()) %gameName
-                            ul [] [
-                                li [ ] [
-                                    gameCard gameName votes currentUser actionUrl turboFrameId
+            div [ _class "box mb-5"; _dataGameNightId (gn.Id.ToString()) ] [
+                div [ _class "media" ] [
+                    div [ _class "media-content" ] [
+                        h5 [ _class "title is-5" ] [ (gn.CreatedBy |> Username.toDisplayName) + " wants to play" |> str ]
+                        div [ _class "block" ] [
+                            for gameName, votes in gn.GameVotes |> NonEmptyMap.toList do
+                                let actionUrl = sprintf "/proposedgamenight/%s/game/%s/vote" (gn.Id.ToString()) %gameName
+                                ul [] [
+                                    li [ ] [
+                                        gameCard gameName votes currentUser actionUrl turboFrameId
+                                    ] 
                                 ] 
-                            ] 
+                        ]
+                        div [ _class "block" ] [
+                            for date, votes in gn.DateVotes |> NonEmptyMap.toList do
+                                let actionUrl = sprintf "/proposedgamenight/%s/date/%s/vote" (gn.Id.ToString()) date.AsString
+                                ul [] [
+                                    li [] [
+                                        GameNightViews.dateCard date votes currentUser actionUrl turboFrameId
+                                    ] 
+                                ]
+                        ]
                     ]
-                    div [ _class "block" ] [
-                        for date, votes in gn.DateVotes |> NonEmptyMap.toList do
-                            let actionUrl = sprintf "/proposedgamenight/%s/date/%s/vote" (gn.Id.ToString()) date.AsString
-                            ul [] [
-                                li [] [
-                                    GameNightViews.dateCard date votes currentUser actionUrl turboFrameId
-                                ] 
-                            ]
+                    div [ _class "media-right" ] [ 
+                        a [ _href (sprintf "/proposedgamenight/%s/edit?inline=%b" (gn.Id.ToString()) isInline) ] [ str "edit" ] 
                     ]
                 ]
+            ]
+        ]
+
+
+    let showGameNightView isInline user (gn: ProposedGameNight) =
+        section [ _class "section" ] [
+            div [ _class "container" ] [
+                proposedGameNightView isInline user gn
             ]
         ]
 
@@ -92,35 +103,73 @@ module Views =
                 section [ _class "section"] [ 
                     div [ _class "container"] [ 
                         h2 [ _class "title is-2" ] [ str "Proposed game nights" ]
-                        for gameNight in proposed do proposedGameNightCard currentUser gameNight 
+                        for gameNight in proposed do proposedGameNightView true currentUser gameNight 
                         addProposedGameNightLink
                     ]
                 ]
         ]
 
-    let addGameInputButton nextIndex =
+    let addGameButton nextIndex =
         div [ _class "field" ] [
             div [ _class "control" ] [
                 a [ 
-                    _id "add-game-input-button"
+                    _id "add-game-button"
                     _class "button is-link is-outlined is-small"
-                    _href (sprintf "fragments/proposedgamenight/addgameinput?index=%i" nextIndex) ] [
+                    _href (sprintf "fragments/proposedgamenight/addgameselect?index=%i" nextIndex) ] [
                         Icons.plusIcon
                     ]
             ]
         ]
 
-    let emptyGameInput index = 
-        let placeholder =
-            if index > 1 then "Enter another game name" else "Enter a game game"
+    let gameSelect (allGames: Set<string<CanonizedGameName>>) index = 
+        let placeholder = if index > 1 then "Pick another game" else "Pick a game"
+        turboFrame [ _id (sprintf "game-select-%i" index) ] [
+            div [ _class "select" ] [
+                select [ 
+                    _id (sprintf "game-input-%i" index)
+                    _name "Games"
+                ] [
+                    option [] [ str placeholder ]
+                    for game in allGames do option [] [ game |> GameName.toDisplayName |> str ]
+                ]
+            ]
+        ]
+
+    let gameSelectTurboFrame index =
+        let placeholder = if index > 1 then "Pick another game" else "Pick a game"
         div [ _class "field" ] [
             div [ _class "control" ] [
-                input [
-                    _type "text"
-                    _id (sprintf "game-input-%i" index)
-                    _class "input"
-                    _name "Games"
-                    _placeholder placeholder
+                turboFrame [
+                    _id (sprintf "game-select-%i" index)
+                    _src (sprintf "/fragments/proposedgamenight/gameselect?index=%i" index)
+                ] [ 
+                    div [ _class "select" ] [
+                        select [ 
+                            _id (sprintf "game-input-%i" index)
+                            _name "Games"
+                        ] [
+                            option [] [ str placeholder ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
+    let gameSelectTurboFrame_old index =
+        turboFrame [
+            _id (sprintf "game-select-%i" index)
+            _src (sprintf "/fragments/proposedgamenight/gameselect?index=%i" index)
+        ] [ 
+            div [ _class "field" ] [
+                div [ _class "control" ] [
+                    div [ _class "select" ] [
+                        select [ 
+                            _id (sprintf "game-input-%i" index)
+                            _name "Games"
+                        ] [
+                            option [] [ str "Pick a game" ]
+                        ]
+                    ]
                 ]
             ]
         ]
@@ -180,8 +229,8 @@ module Views =
                             _style "display:block; margin-top: 10px;" 
                         ] [
                             gameInputTitle
-                            emptyGameInput 1
-                            addGameInputButton 2
+                            gameSelectTurboFrame 1
+                            addGameButton 2
                         ]
                         span [
                             _id "date-inputs"
@@ -200,20 +249,16 @@ module Views =
             ]
         ]
 
-    let proposedGameNightView currentUser (gn: ProposedGameNight) =
-        section [ _class "section" ] [
-            h2 [ _class "title is-2" ] [ str "Proposed game night" ]
-            turboFrame [ _id (sprintf "proposed-game-night-%s" (gn.Id.ToString())) ] [
-                proposedGameNightCard currentUser gn
-            ]
-        ] 
-
 let getProposedGameNight env (ctx: HttpContext) stringId =
     taskResult {
+        let isInline = 
+            ctx.TryGetQueryStringValue "inline" 
+            |> Option.bind bool.tryParse 
+            |> Option.defaultValue false
         let! id = GameNightId.parse stringId |> Result.mapError ApiError.BadRequest
         let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
         let! gn = Storage.GameNights.getProposedGameNight env id |> AsyncResult.mapError (fun _ -> ApiError.NotFound)
-        return Views.proposedGameNightView user gn
+        return Views.showGameNightView isInline user gn
     }
     |> (fun view -> ctx.RespondWithHtml(env, view))
         
@@ -224,7 +269,8 @@ let addProposedGameNight env : HttpFunc =
             ctx.TryGetQueryStringValue "inline" 
             |> Option.bind bool.tryParse 
             |> Option.defaultValue false
-        ctx.RespondWithHtml(env, Views.addProposedGameNightView isInline)
+        Views.addProposedGameNightView isInline 
+        |> (fun view -> ctx.RespondWithHtml(env, view))
 
 [<CLIMutable>]
 type CreateProposedGameNightForm =
@@ -258,12 +304,10 @@ let gameController env (gameNightId: string) =
             taskResult {
                 let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.BadRequest
                 let! gameNight = Storage.GameNights.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError (fun _ -> ApiError.NotFound)
-                
                 let! gameName = gameName |> GameName.create |> Result.mapError ApiError.BadRequest
                 let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
                 let req = Workflows.GameNights.GameVoteRequest.create (gameNight, gameName, user)
                 let updated = Workflows.GameNights.addGameVote req
-                
                 let! _ = Storage.GameNights.saveProposedGameNight env updated
                 return sprintf "/proposedgamenight/%s" (gameNightId.ToString())
             }
@@ -356,21 +400,30 @@ module Fragments =
         fun _ ctx -> 
             ctx.RespondWithHtmlFragment(env, Views.addProposedGameNightLink)
 
-    let addGameInputFragment env : HttpHandler =
+    let gameSelectFragment env : HttpHandler =
+        fun _ ctx ->
+            let index = ctx.TryGetQueryStringValue "index" |> Option.map int |> Option.defaultValue 1
+            taskResult {
+                let! allGames = Storage.Games.getAllGames env
+                return Views.gameSelect (allGames |> Set.map (fun g -> g.Name)) index 
+            }
+            |> (fun view -> ctx.RespondWithHtmlFragment(env, view))
+
+    let addGameSelectFragment env : HttpHandler =
         fun _ ctx ->
             let index = ctx.TryGetQueryStringValue "index" |> Option.map int |> Option.defaultValue 1
 
             match ctx.Request with
             | AcceptTurboStream ->
-                [ TurboStream.remove "add-game-input-button"
-                  TurboStream.append "game-inputs" (Views.emptyGameInput index)
-                  TurboStream.append "game-inputs" (Views.addGameInputButton (index + 1)) ]
+                [ TurboStream.remove "add-game-button"
+                  TurboStream.append "game-inputs" (Views.gameSelectTurboFrame index)
+                  TurboStream.append "game-inputs" (Views.addGameButton (index + 1)) ]
                 |> ctx.RespondWithTurboStream
             | _ ->
                 let view =
                     span [] [
-                        Views.emptyGameInput index
-                        Views.addGameInputButton (index + 1)
+                        Views.gameSelectTurboFrame index
+                        Views.addGameButton (index + 1)
                     ]
                 ctx.RespondWithHtmlFragment(env, view)
         

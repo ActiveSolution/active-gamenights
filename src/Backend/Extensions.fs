@@ -93,6 +93,9 @@ type HttpContext with
     
     member ctx.RespondWithHtmlFragment (env, content) =
         ApiResultHelpers.fragment env content ctx
+    member ctx.RespondWithHtmlFragment (env, contentTaskResult) =
+        contentTaskResult
+        |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.fragment env))
     member ctx.RespondWithHtml (env, content) =
         ApiResultHelpers.fullPageHtml env content ctx
     member ctx.RespondWithHtml (env, contentResult) =
