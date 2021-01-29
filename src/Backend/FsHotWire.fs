@@ -69,6 +69,7 @@ module Giraffe =
             TurboStream.Create("remove", targetId, None)
             
         let writeTurboStreamContent statusCode (ts: seq<TurboStream>) (ctx: HttpContext) =
+            printfn "writing turbostream"
             ctx.SetContentType "text/html; turbo-stream"
             ctx.SetStatusCode statusCode
             

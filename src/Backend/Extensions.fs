@@ -12,7 +12,6 @@ open FsHotWire.Giraffe
 open FSharp.UMX
 open System.Threading.Tasks
 
-
 type BasePath with
     member this.Val = this |> fun (BasePath bp) -> bp
 
@@ -153,6 +152,14 @@ module Map =
         map
         |> Map.tryFind key
         |> Option.defaultValue defaultValue
+
+module TurboStream =
+    let mergeByTargetId okInputs errors : seq<TurboStream> =
+        okInputs @ errors 
+        |> List.map (fun (ts: TurboStream) -> ts.TargetId, ts) 
+        |> Map.ofList 
+        |> Map.values :> _
+
         
 
 module Async =

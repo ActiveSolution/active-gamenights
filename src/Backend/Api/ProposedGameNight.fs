@@ -12,6 +12,12 @@ open Backend.Api.Shared
 open FSharp.UMX
 open FsHotWire
 
+[<CLIMutable>]
+type CreateProposedGameNightForm =
+    { Games : string list
+      Dates : string list }
+
+
 module Views =    
 
     open Giraffe.ViewEngine
@@ -126,7 +132,6 @@ module Views =
         turboFrame [ _id (sprintf "game-select-%i" index) ] [
             div [ _class "select" ] [
                 select [ 
-                    _id (sprintf "game-input-%i" index)
                     _name "Games"
                 ] [
                     option [] [ str placeholder ]
@@ -135,9 +140,25 @@ module Views =
             ]
         ]
 
+    let errorGameSelect (allGames: Set<string<CanonizedGameName>>) index errorMsg = 
+        let placeholder = if index > 1 then "Pick another game" else "Pick a game"
+        div [ _class "field"; _id (sprintf "game-input-%i-field" index) ] [
+            div [ _class "control" ] [
+                div [ _class "select is-danger" ] [
+                    select [ 
+                        _name "Games"
+                    ] [
+                        option [] [ str placeholder ]
+                        for game in allGames do option [] [ game |> GameName.toDisplayName |> str ]
+                    ]
+                ]
+                p [ _class "help is-danger" ] [ str errorMsg ] 
+            ]
+        ]
+
     let gameSelectTurboFrame index =
         let placeholder = if index > 1 then "Pick another game" else "Pick a game"
-        div [ _class "field" ] [
+        div [ _class "field"; _id (sprintf "game-input-%i-field" index) ] [
             div [ _class "control" ] [
                 turboFrame [
                     _id (sprintf "game-select-%i" index)
@@ -145,29 +166,9 @@ module Views =
                 ] [ 
                     div [ _class "select" ] [
                         select [ 
-                            _id (sprintf "game-input-%i" index)
                             _name "Games"
                         ] [
                             option [] [ str placeholder ]
-                        ]
-                    ]
-                ]
-            ]
-        ]
-
-    let gameSelectTurboFrame_old index =
-        turboFrame [
-            _id (sprintf "game-select-%i" index)
-            _src (sprintf "/fragments/proposedgamenight/gameselect?index=%i" index)
-        ] [ 
-            div [ _class "field" ] [
-                div [ _class "control" ] [
-                    div [ _class "select" ] [
-                        select [ 
-                            _id (sprintf "game-input-%i" index)
-                            _name "Games"
-                        ] [
-                            option [] [ str "Pick a game" ]
                         ]
                     ]
                 ]
@@ -186,17 +187,32 @@ module Views =
         ]
 
     let emptyDateInput index =
-        let placeholder = if index > 1 then "Pick an additional date" else "Pick a date"
-        div [ _class "field" ] [
+        div [ _class "field"; _id (sprintf "date-input-%i-field" index) ] [
             div [ _class "control" ] [
                 input [
-                    _type "text"
-                    _id (sprintf "date-input-%i" index)
+                    _type "date"
                     _class "input"
                     _name "Dates"
-                    _placeholder placeholder
+                    _placeholder "yyyy-mm-dd"
                 ]
             ]
+        ]
+
+    open Backend.Extensions
+    let errorDateInput index value errorMsg =
+        let value = if String.IsNullOrWhiteSpace value then None else Some value
+        div [ _class "field"; _id (sprintf "date-input-%i-field" index) ] [
+            div [ _class "control" ] [
+                input [
+                    _type "date"
+                    _class "input is-danger"
+                    _name "Dates"
+                    match value with
+                    | Some v -> _value v
+                    | None -> _placeholder "yyyy-mm-dd"
+                ]
+            ]
+            p [ _class "help is-danger" ] [ str errorMsg ]
         ]
 
     let addProposedGameNightView isInline =
@@ -249,6 +265,59 @@ module Views =
             ]
         ]
 
+    let gameErrorTurboStream existingGames index msg =
+        let id = (sprintf "game-input-%i-field" index)
+        errorGameSelect existingGames index msg
+        |> TurboStream.replace id 
+
+    let dateErrorTurboStream index value msg =
+        errorDateInput index value msg
+        |> TurboStream.replace (sprintf "date-input-%i-field" index) 
+
+
+module private Validation =
+    let validateGameNames existingGames games =
+        let isValid existingGameNames gameStr =
+            result {
+                let! gameName = GameName.create gameStr
+                return! 
+                    if existingGameNames |> Set.contains gameName then Ok gameName
+                    elif (gameStr = "Pick a game" || gameStr = "Pick another game") then Error "You must pick a game"
+                    else Error (sprintf "'%s' is not a valid game" gameStr)
+            }
+        match games with
+        | [] -> Error ( Views.gameErrorTurboStream existingGames 1 "You must pick a game" )
+        | gs -> gs |> List.mapi (fun i g -> isValid existingGames g |> Result.mapError (Views.gameErrorTurboStream existingGames (i + 1))) |> List.sequenceResultM
+        |> Result.map (fun gs -> NonEmptySet.create gs.Head gs.Tail)
+        |> Result.mapError List.singleton
+
+    let validateDates dates =
+        match dates with
+        | [] -> Error (Views.dateErrorTurboStream 1 "" "Missing date")
+        | ds -> ds |> List.mapi (fun i d -> FutureDate.tryParse d |> Result.mapError (Views.dateErrorTurboStream (i + 1) d)) |> List.sequenceResultM
+        |> Result.map (fun ds -> NonEmptySet.create ds.Head ds.Tail)
+        |> Result.mapError List.singleton
+
+    let validateCreateGameNightForm user existingGames (form: CreateProposedGameNightForm) : Result<Workflows.GameNights.ProposeGameNightRequest, ApiError> =
+        let formValidationError errors =
+            // TODO missing okInputs
+            let okInputs = []
+
+            TurboStream.mergeByTargetId okInputs errors
+            |> FormValidationError 
+            
+        validation {
+            let! games = validateGameNames existingGames form.Games
+            and! dates = validateDates form.Dates
+
+            return 
+                { Workflows.GameNights.ProposeGameNightRequest.CreatedBy = user
+                  Workflows.GameNights.ProposeGameNightRequest.Games = games
+                  Workflows.GameNights.ProposeGameNightRequest.Dates = dates }
+        }
+        |> Result.mapError formValidationError
+
+
 let getProposedGameNight env (ctx: HttpContext) stringId =
     taskResult {
         let isInline = 
@@ -272,16 +341,13 @@ let addProposedGameNight env : HttpFunc =
         Views.addProposedGameNightView isInline 
         |> (fun view -> ctx.RespondWithHtml(env, view))
 
-[<CLIMutable>]
-type CreateProposedGameNightForm =
-    { Games : string list
-      Dates : string list }
-
 let saveProposedGameNight env (ctx: HttpContext) : HttpFuncResult =
     taskResult {
-        let! dto = ctx.BindFormAsync<CreateProposedGameNightForm>()
+        let! form = ctx.BindFormAsync<CreateProposedGameNightForm>()
         let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-        let! req = Workflows.GameNights.ProposeGameNightRequest.create (dto.Games, dto.Dates, user) |> Result.mapError BadRequest
+        let! existingGames = Storage.Games.getAllGames env
+        let existingGameNames = existingGames |> Set.map (fun g -> g.Name)
+        let! req = Validation.validateCreateGameNightForm user existingGameNames form
         let gn = Workflows.GameNights.proposeGameNight req
         let! _ = Storage.GameNights.saveProposedGameNight env gn
         return "/proposedgamenight"
@@ -403,9 +469,11 @@ module Fragments =
     let gameSelectFragment env : HttpHandler =
         fun _ ctx ->
             let index = ctx.TryGetQueryStringValue "index" |> Option.map int |> Option.defaultValue 1
+
             taskResult {
                 let! allGames = Storage.Games.getAllGames env
-                return Views.gameSelect (allGames |> Set.map (fun g -> g.Name)) index 
+                let allGameNames = allGames |> Set.map (fun g -> g.Name)
+                return Views.gameSelect allGameNames index
             }
             |> (fun view -> ctx.RespondWithHtmlFragment(env, view))
 

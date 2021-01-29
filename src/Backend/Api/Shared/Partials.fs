@@ -45,6 +45,9 @@ module Inputs =
           Label: string
           Name: string }
 
+    module Metadata =
+        let create (id, label, name) = { Id = id; Label = label; Name = name }
+
 
     let textInput { Id = id; Label = labelText; Name = name } value =
         div [ _class "field"; _id id ] [

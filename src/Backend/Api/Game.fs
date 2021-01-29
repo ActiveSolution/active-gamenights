@@ -11,7 +11,6 @@ open FSharp.UMX
 open FsToolkit.ErrorHandling
 open Backend.Api.Shared
 open Backend.Validation
-open Backend.Extensions
 open Microsoft.AspNetCore.Http
 
 [<CLIMutable>]
@@ -24,13 +23,12 @@ type CreateGameForm =
 
 module Metadata =
     open Inputs
-    let create (id, label, name) = { Id = id; Label = label; Name = name }
 
-    let name = create("game-name-input", "Name (*)", "Name")
-    let imageUrl = create("game-image-input", "Thumbnail image url", "ImageUrl")
-    let link = create ("game-link-input", "External link", "Link")
-    let numberOfPlayers = create ("game-number-of-players", "Number of players", "NumberOfPlayers")
-    let notes = create ("game-notes-input", "Notes", "Notes")
+    let name = Metadata.create("game-name-input", "Name (*)", "Name")
+    let imageUrl = Metadata.create("game-image-input", "Thumbnail image url", "ImageUrl")
+    let link = Metadata.create ("game-link-input", "External link", "Link")
+    let numberOfPlayers = Metadata.create ("game-number-of-players", "Number of players", "NumberOfPlayers")
+    let notes = Metadata.create ("game-notes-input", "Notes", "Notes")
 
     
 module private Views =
@@ -168,7 +166,6 @@ module private Views =
         ]
 
 module private Validation =
-
     let private validateGameName existing gameName : Result<string<CanonizedGameName>, TurboStream list> =
         let validateDuplicate onError items item = if Seq.contains item items then Error onError else Ok item
         gameName
@@ -212,12 +209,6 @@ module private Validation =
                 |> TurboStream.replace Metadata.imageUrl.Id 
                 |> List.singleton))
 
-    let mergeByTargetId okInputs errors : seq<TurboStream> =
-        okInputs @ errors 
-        |> List.map (fun (ts: TurboStream) -> ts.TargetId, ts) 
-        |> Map.ofList 
-        |> Map.values :> _
-
     let validateCreateGameForm user existingGameNames (form: CreateGameForm) : Result<Workflows.Game.AddGameRequest, ApiError> =
         let formValidationError errors =
             let okInputs = 
@@ -227,7 +218,7 @@ module private Validation =
                   Inputs.okTextInput Metadata.numberOfPlayers form.NumberOfPlayers |> TurboStream.replace Metadata.numberOfPlayers.Id
                   Inputs.okTextareaInput Metadata.notes form.Notes |> TurboStream.replace Metadata.notes.Id ]
 
-            mergeByTargetId okInputs errors
+            TurboStream.mergeByTargetId okInputs errors
             |> FormValidationError 
             
         validation {
@@ -254,7 +245,7 @@ module private Validation =
                   Inputs.okTextInput Metadata.numberOfPlayers form.NumberOfPlayers |> TurboStream.replace Metadata.numberOfPlayers.Id
                   Inputs.okTextareaInput Metadata.notes form.Notes |> TurboStream.replace Metadata.notes.Id ]
 
-            mergeByTargetId okInputs errors
+            TurboStream.mergeByTargetId okInputs errors
             |> FormValidationError 
             
         validation {
@@ -276,7 +267,7 @@ let getAll env : HttpFunc =
         taskResult {
             let! games = Storage.Games.getAllGames env
             return Views.games games 
-        } 
+        }
         |> (fun view -> ctx.RespondWithHtml(env, view))
 
 let showGame env (ctx: HttpContext) gameNameStr =
@@ -316,7 +307,7 @@ let saveGame env (ctx: HttpContext): HttpFuncResult =
         let! form = ctx.BindFormAsync<CreateGameForm>()
         let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
         let! existingGames = Storage.Games.getAllGames env |> Async.map (Set.map (fun x -> x.Name))
-        let! request = Validation.validateCreateGameForm user existingGames form 
+        let! request = Validation.validateCreateGameForm user existingGames form
         let! game = Workflows.Game.addGame request |> Result.mapError ApiError.BadRequest
         let! _ = Storage.Games.addGame env game
         return "/game"
