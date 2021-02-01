@@ -7,11 +7,17 @@ open FSharpPlus.Data
 open FSharp.UMX
 
 
-type ProposeGameNightRequest =
+type CreateProposedGameNightRequest =
     { Games : NonEmptySet<string<CanonizedGameName>>
       Dates : NonEmptySet<DateTime<FutureDate>>
       CreatedBy : string<CanonizedUsername> }
-type ProposeGameNight = ProposeGameNightRequest -> ProposedGameNight
+type CreateProposedGameNight = CreateProposedGameNightRequest -> ProposedGameNight
+
+type UpdateProposedGameNightRequest =
+    { Games : NonEmptySet<string<CanonizedGameName>>
+      Dates : NonEmptySet<DateTime<FutureDate>> 
+      OriginalGameNight : ProposedGameNight }
+type UpdateProposedGameNight = UpdateProposedGameNightRequest -> ProposedGameNight
 
 type GameVoteRequest =
     { GameNight : ProposedGameNight
@@ -52,7 +58,7 @@ module ProposeGameNightRequest =
                     |> List.sequenceResultM
                     
                 return
-                    { ProposeGameNightRequest.Games = NonEmptySet.create gameNames.Head gameNames.Tail
+                    { CreateProposedGameNightRequest.Games = NonEmptySet.create gameNames.Head gameNames.Tail
                       Dates = NonEmptySet.create dates.Head dates.Tail
                       CreatedBy = createdBy } 
             }
@@ -69,7 +75,7 @@ module DateVoteRequest =
           Date = date
           User = user }
 
-let proposeGameNight : ProposeGameNight =
+let createProposedGameNight : CreateProposedGameNight =
     fun req ->
         let games =
             req.Games
@@ -84,6 +90,20 @@ let proposeGameNight : ProposeGameNight =
           GameVotes = games
           DateVotes = dates
           CreatedBy = req.CreatedBy }
+let updateProposedGameNight : UpdateProposedGameNight = 
+    fun req ->
+        let games =
+            req.Games
+            |> NonEmptySet.map (fun g -> g, Set.empty)
+            |> NonEmptyMap.ofSeq
+        let dates =
+            req.Dates
+            |> NonEmptySet.map (fun date -> % date, Set.empty)
+            |> NonEmptyMap.ofSeq
+            
+        { req.OriginalGameNight with GameVotes = games 
+                                     DateVotes = dates }
+
 
 let addGameVote : AddGameVote =
     fun req ->

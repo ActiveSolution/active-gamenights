@@ -5,7 +5,7 @@ open Backend
 
         
 module Partials =
-
+    open FsHotWire.Giraffe 
     let submitButton (text: string) =
         div [ 
             _class "field" 
@@ -33,7 +33,7 @@ module Partials =
                 a [
                     _class "button is-light"
                     _href cancelHref
-                    _target cancelTarget
+                    _targetTurboFrame cancelTarget
                 ] [ str cancelText]
             ]
         ]

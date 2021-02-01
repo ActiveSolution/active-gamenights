@@ -56,15 +56,15 @@ module ApiResultHelpers =
         ctx.Session.GetString(HttpContext.usernameKey)
         |> Username.create
         |> Result.toOption
-    let fullPageHtml (env: #ITemplateBuilder) content ctx =
+    let fullPageHtml (env: #ITemplateBuilder) page content ctx =
         content
         |> Seq.singleton
-        |> env.Templates.FullPage (getUser ctx)
+        |> env.Templates.FullPage (getUser ctx) page
         |> Controller.html ctx
 
-    let fullPageHtmlMultiple (env: #ITemplateBuilder) content ctx =
+    let fullPageHtmlMultiple (env: #ITemplateBuilder) page content ctx =
         content
-        |> env.Templates.FullPage (getUser ctx)
+        |> env.Templates.FullPage (getUser ctx) page
         |> Controller.html ctx
         
     let fragment (env: #ITemplateBuilder) content ctx =
@@ -95,22 +95,22 @@ type HttpContext with
     member ctx.RespondWithHtmlFragment (env, contentTaskResult) =
         contentTaskResult
         |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.fragment env))
-    member ctx.RespondWithHtml (env, content) =
-        ApiResultHelpers.fullPageHtml env content ctx
-    member ctx.RespondWithHtml (env, contentResult) =
+    member ctx.RespondWithHtml (env, page, content) =
+        ApiResultHelpers.fullPageHtml env page content ctx
+    member ctx.RespondWithHtml (env, page, contentResult) =
         contentResult
-        |> ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtml env)
-    member ctx.RespondWithHtml (env, contentTaskResult) =
+        |> ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtml env page)
+    member ctx.RespondWithHtml (env, page, contentTaskResult) =
         contentTaskResult
-        |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtml env))
-    member ctx.RespondWithHtml (env, content) =
-        ApiResultHelpers.fullPageHtmlMultiple env content ctx
-    member ctx.RespondWithHtml (env, contentResult) =
+        |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtml env page))
+    member ctx.RespondWithHtml (env, page, content) =
+        ApiResultHelpers.fullPageHtmlMultiple env page content ctx
+    member ctx.RespondWithHtml (env, page, contentResult) =
         contentResult
-        |> ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtmlMultiple env)
-    member ctx.RespondWithHtml (env, contentTaskResult) =
+        |> ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtmlMultiple env page)
+    member ctx.RespondWithHtml (env, page, contentTaskResult) =
         contentTaskResult
-        |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtmlMultiple env))
+        |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtmlMultiple env page))
     
     member ctx.RespondWithRedirect(location) = Turbo.redirect location ctx
     member ctx.RespondWithRedirect(locationResult) =
@@ -173,7 +173,6 @@ module Giraffe =
     module ViewEngine =
         open Giraffe.ViewEngine
         let _dataGameNightId = attr "data-game-night-id"
-        let _targetTurboFrame = attr "data-turbo-frame"
         let _addVoteButton = flag "data-add-vote-button"
         let _removeVoteButton = flag "data-remove-vote-button"
         let _dataGameName = attr "data-game-name"

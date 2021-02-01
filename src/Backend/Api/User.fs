@@ -18,7 +18,7 @@ module private Views =
                     _action "/user"
                     _method "POST"
                 ] [
-                    h1 [ _class "title is-1" ] [ str "Who are you?" ]
+                    h1 [ _class "title is-1" ] [ str "What's your name?" ]
                     div [ _class "field" ] [
                         div [ _class "control has-icons-left" ] [
                             input [
@@ -43,7 +43,7 @@ module private Views =
 
 let addUser env : HttpFunc =
     fun ctx ->
-        ctx.RespondWithHtml(env, Views.addUserView)
+        ctx.RespondWithHtml(env, Page.User, Views.addUserView)
     
 let createUser : HttpFunc =
     fun ctx ->

@@ -13,14 +13,6 @@ open Backend.Api.Shared
 open Backend.Validation
 open Microsoft.AspNetCore.Http
 
-[<CLIMutable>]
-type CreateGameForm =
-    { Name : string
-      NumberOfPlayers : string
-      Link : string
-      ImageUrl : string
-      Notes : string }
-
 module Metadata =
     open Inputs
 
@@ -30,7 +22,27 @@ module Metadata =
     let numberOfPlayers = Metadata.create ("game-number-of-players", "Number of players", "NumberOfPlayers")
     let notes = Metadata.create ("game-notes-input", "Notes", "Notes")
 
-    
+
+[<CLIMutable>]
+type CreateGameForm =
+    { Name : string
+      NumberOfPlayers : string
+      Link : string
+      ImageUrl : string
+      Notes : string }
+
+    with 
+        member private this.OkInputs = 
+            [ Inputs.okTextInput Metadata.name this.Name |> TurboStream.replace Metadata.name.Id
+              Inputs.okTextInput Metadata.imageUrl this.ImageUrl |> TurboStream.replace Metadata.imageUrl.Id
+              Inputs.okTextInput Metadata.link this.Link |> TurboStream.replace Metadata.link.Id
+              Inputs.okTextInput Metadata.numberOfPlayers this.NumberOfPlayers |> TurboStream.replace Metadata.numberOfPlayers.Id
+              Inputs.okTextareaInput Metadata.notes this.Notes |> TurboStream.replace Metadata.notes.Id ]
+        member this.FormValidationError(errors) =
+
+            TurboStream.mergeByTargetId this.OkInputs errors
+            |> FormValidationError 
+
 module private Views =
     open Giraffe.ViewEngine
 
@@ -50,17 +62,23 @@ module private Views =
                         p [ _class "image is-64x64" ] [ img [ _src imageStr ]  ] 
                     ]
                     div [ _class "media-content" ] [
-                        div [ _class "content" ] [
-                            p [ ] [
-                                strong [] [ str (GameName.toDisplayName game.Name) ]
-                            ]
-                            p [] [ numPlayers ]
-                            p [] [ notes ]
-                            p [] [ link ]
+                        p [] [ strong [] [ str (GameName.toDisplayName game.Name) ] ]
+                        p [] [ numPlayers ]
+                        p [] [ i [] [ notes ] ]
+                        p [] [ link ]
+                        a [ 
+                            _class "button is-primary is-small" 
+                            _href (sprintf "/proposedgamenight/add?game=%s" %game.Name)
+                            _targetTurboFrame "_top"
+                        ] [ 
+                            str "I wanna play this!"
                         ]
                     ]
                     div [ _class "media-right" ] [ 
-                        a [ _href (sprintf "/game/%s/edit?inline=%b" %game.Name isInline) ] [ str "edit" ] 
+                        a [ 
+                            _href (sprintf "/game/%s/edit?inline=%b" %game.Name isInline) 
+                            if not isInline then _targetTurboFrame "_top"
+                        ] [ str "edit" ] 
                     ]
                 ]
             ]
@@ -107,16 +125,16 @@ module private Views =
             ]
 
     let addGameView isInline =
-        let target = if isInline then "games" else "_top"
+        // let target = if isInline then "games" else "_top"
         section [ _class "section" ] [
             div [ _class "container" ] [
                 h2 [ _class "title is-2" ] [ str "Add a new game"]
-                turboFrame [ _id "add-game" ] [ 
+                turboFrame [ _id "add-game"; _autoscroll ] [ 
                     form [
                         _class "box"
                         _method "POST"
                         _action "/game" 
-                        _targetTurboFrame target
+                        _targetTurboFrame (if isInline then "games" else "_top")
                     ] [
                         Inputs.textInput Metadata.name None
                         Inputs.textInput Metadata.imageUrl None
@@ -127,7 +145,7 @@ module private Views =
                         div [ _class "field" ] [
                             div [ _class "control" ] [
                                 if isInline then 
-                                    Partials.submitButtonWithCancel "Save" "Cancel" "/fragments/game/addgamelink" target 
+                                    Partials.submitButtonWithCancel "Save" "Cancel" "/fragments/game/addgamelink" (if isInline then "add-game" else "_top") 
                                 else
                                     Partials.submitButton "Save"
                             ]
@@ -143,21 +161,34 @@ module private Views =
         section [ _class "section" ] [
             div [ _class "container" ] [
                 h2 [ _class "title is-2" ] [ str "Edit game"]
-                turboFrame [ _id id ] [ 
-                    form [
-                        _class "box mb-5"
-                        _method "POST"
-                        _action (sprintf "/game/%s/edit" %game.Name) 
-                    ] [
-                        Inputs.textInput Metadata.name (game.Name |> GameName.toDisplayName |> Some)
-                        Inputs.textInput Metadata.imageUrl game.ImageUrl
-                        Inputs.textInput Metadata.link game.Link
-                        Inputs.textInput Metadata.numberOfPlayers game.NumberOfPlayers
-                        Inputs.textareaInput Metadata.notes game.Notes
+                turboFrame [ _id id; _autoscroll ] [ 
+                    article [ _class "box media mb-5" ] [
+                        div [ _class "media-content" ] [
+                            form [
+                                _method "POST"
+                                _action (sprintf "/game/%s/edit" %game.Name) 
+                            ] [
+                                Inputs.textInput Metadata.name (game.Name |> GameName.toDisplayName |> Some)
+                                Inputs.textInput Metadata.imageUrl game.ImageUrl
+                                Inputs.textInput Metadata.link game.Link
+                                Inputs.textInput Metadata.numberOfPlayers game.NumberOfPlayers
+                                Inputs.textareaInput Metadata.notes game.Notes
 
-                        div [ _class "field" ] [
-                            div [ _class "control" ] [
-                                Partials.submitButtonWithCancel "Save" "Cancel" (sprintf "/game/%s?inline=%b" %game.Name isInline) target
+                                div [ _class "field" ] [
+                                    div [ _class "control" ] [
+                                        Partials.submitButtonWithCancel "Save" "Cancel" (sprintf "/game/%s?inline=%b" %game.Name isInline) target
+                                    ]
+                                ]
+                            ]
+                        ]
+                        div [ _class "media-right" ] [
+                            a [ 
+                                  _href (sprintf "/game/%s?inline=%b" %game.Name isInline) 
+                                  if not isInline then _targetTurboFrame "_top"
+                            ] [ 
+                                span [ _class "icon" ] [ 
+                                    i [ _class "fas fa-times-circle fa-lg has-text-grey-lighter" ] [ ] 
+                                ]
                             ]
                         ]
                     ]
@@ -209,17 +240,8 @@ module private Validation =
                 |> TurboStream.replace Metadata.imageUrl.Id 
                 |> List.singleton))
 
+    open Workflows.Game
     let validateCreateGameForm user existingGameNames (form: CreateGameForm) : Result<Workflows.Game.AddGameRequest, ApiError> =
-        let formValidationError errors =
-            let okInputs = 
-                [ Inputs.okTextInput Metadata.name form.Name |> TurboStream.replace Metadata.name.Id
-                  Inputs.okTextInput Metadata.imageUrl form.ImageUrl |> TurboStream.replace Metadata.imageUrl.Id
-                  Inputs.okTextInput Metadata.link form.Link |> TurboStream.replace Metadata.link.Id
-                  Inputs.okTextInput Metadata.numberOfPlayers form.NumberOfPlayers |> TurboStream.replace Metadata.numberOfPlayers.Id
-                  Inputs.okTextareaInput Metadata.notes form.Notes |> TurboStream.replace Metadata.notes.Id ]
-
-            TurboStream.mergeByTargetId okInputs errors
-            |> FormValidationError 
             
         validation {
             let! gameName = validateGameName existingGameNames form.Name
@@ -227,26 +249,16 @@ module private Validation =
             and! imageUrl = validateImageUrl form.ImageUrl
             return 
                 { Workflows.Game.AddGameRequest.GameName = gameName
-                  Workflows.Game.AddGameRequest.CreatedBy = user
-                  Workflows.Game.AddGameRequest.ImageUrl = imageUrl
-                  Workflows.Game.AddGameRequest.Link = link
-                  Workflows.Game.AddGameRequest.Notes = form.Notes |> Option.ofString
-                  Workflows.Game.AddGameRequest.NumberOfPlayers = form.NumberOfPlayers |> Option.ofString
-                  Workflows.Game.AddGameRequest.ExistingGames = existingGameNames }
+                  CreatedBy = user
+                  ImageUrl = imageUrl
+                  Link = link
+                  Notes = form.Notes |> Option.ofString
+                  NumberOfPlayers = form.NumberOfPlayers |> Option.ofString
+                  ExistingGames = existingGameNames }
         }
-        |> Result.mapError formValidationError
+        |> Result.mapError form.FormValidationError
 
     let validateUpdateGameForm user (form: CreateGameForm) : Result<Workflows.Game.UpdateGameRequest, ApiError> =
-        let formValidationError errors =
-            let okInputs = 
-                [ Inputs.okTextInput Metadata.name form.Name |> TurboStream.replace Metadata.name.Id
-                  Inputs.okTextInput Metadata.imageUrl form.ImageUrl |> TurboStream.replace Metadata.imageUrl.Id
-                  Inputs.okTextInput Metadata.link form.Link |> TurboStream.replace Metadata.link.Id
-                  Inputs.okTextInput Metadata.numberOfPlayers form.NumberOfPlayers |> TurboStream.replace Metadata.numberOfPlayers.Id
-                  Inputs.okTextareaInput Metadata.notes form.Notes |> TurboStream.replace Metadata.notes.Id ]
-
-            TurboStream.mergeByTargetId okInputs errors
-            |> FormValidationError 
             
         validation {
             let! gameName = validateGameName [] form.Name
@@ -254,13 +266,13 @@ module private Validation =
             and! imageUrl = validateImageUrl form.ImageUrl
             return 
                 { Workflows.Game.UpdateGameRequest.GameName = gameName
-                  Workflows.Game.UpdateGameRequest.CreatedBy = user
-                  Workflows.Game.UpdateGameRequest.ImageUrl = imageUrl
-                  Workflows.Game.UpdateGameRequest.Link = link
-                  Workflows.Game.UpdateGameRequest.Notes = form.Notes |> Option.ofString
-                  Workflows.Game.UpdateGameRequest.NumberOfPlayers = form.NumberOfPlayers |> Option.ofString }
+                  CreatedBy = user
+                  ImageUrl = imageUrl
+                  Link = link
+                  Notes = form.Notes |> Option.ofString
+                  NumberOfPlayers = form.NumberOfPlayers |> Option.ofString }
         }
-        |> Result.mapError formValidationError
+        |> Result.mapError form.FormValidationError
 
 let getAll env : HttpFunc =
     fun ctx -> 
@@ -268,7 +280,7 @@ let getAll env : HttpFunc =
             let! games = Storage.Games.getAllGames env
             return Views.games games 
         }
-        |> (fun view -> ctx.RespondWithHtml(env, view))
+        |> (fun view -> ctx.RespondWithHtml(env, Page.Games, view))
 
 let showGame env (ctx: HttpContext) gameNameStr =
     taskResult {
@@ -280,7 +292,7 @@ let showGame env (ctx: HttpContext) gameNameStr =
         let! game = Storage.Games.getGame env gameName
         return Views.showGameView isInline game
     }
-    |> (fun view -> ctx.RespondWithHtml(env, view))
+    |> (fun view -> ctx.RespondWithHtml(env, Page.Games, view))
 
 let addGame env : HttpFunc =
     fun ctx ->
@@ -288,7 +300,7 @@ let addGame env : HttpFunc =
             ctx.TryGetQueryStringValue "inline" 
             |> Option.bind bool.tryParse 
             |> Option.defaultValue false
-        ctx.RespondWithHtml(env, Views.addGameView isInline)
+        ctx.RespondWithHtml(env, Page.Games, Views.addGameView isInline)
 
 let editGame env (ctx: HttpContext) gameNameStr =
     taskResult {
@@ -300,7 +312,7 @@ let editGame env (ctx: HttpContext) gameNameStr =
         let! game = Storage.Games.getGame env gameName
         return Views.editGameView isInline game 
     }
-    |> (fun view -> ctx.RespondWithHtml(env, view))
+    |> (fun view -> ctx.RespondWithHtml(env, Page.Games, view))
 
 let saveGame env (ctx: HttpContext): HttpFuncResult =
     taskResult {

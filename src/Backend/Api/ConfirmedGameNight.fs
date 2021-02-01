@@ -83,7 +83,7 @@ let getAll env : HttpFunc =
             let! currentUser = ctx.GetUser() |> Result.mapError ApiError.MissingUser
             return Views.gameNightsView currentUser confirmed 
         } 
-        |> (fun view -> ctx.RespondWithHtml(env, view))
+        |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))
         
 let controller env = controller {
     

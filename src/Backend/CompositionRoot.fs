@@ -15,7 +15,7 @@ type BackendEnv() =
                     member _.Domain = config.Domain }
             { new ITemplates with
                 member _.Fragment(content) = Api.Shared.HtmlViews.fragment settings content 
-                member _.FullPage user content = Api.Shared.HtmlViews.fullPage settings user content }
+                member _.FullPage user page content = Api.Shared.HtmlViews.fullPage settings user page content }
 let env = BackendEnv()
 
 module Api =
@@ -27,10 +27,12 @@ module Api =
     let versionPage : HttpHandler = Api.Version.handler env
     
     module Fragments =
-        let gameSelect : HttpHandler = Api.ProposedGameNight.Fragments.gameSelectFragment env
-        let addGameSelect : HttpHandler = Api.ProposedGameNight.Fragments.addGameSelectFragment env
-        let addDateInput : HttpHandler = Api.ProposedGameNight.Fragments.addDateInputFragment env
-        let addGameNightLink : HttpHandler = Api.ProposedGameNight.Fragments.addGameNightLinkFragment env
-        let addGameLink : HttpHandler = Api.Game.Fragments.addGameLinkFragment env
-            
-
+        module ProposedGameNight =
+            let gameSelect : HttpHandler = Api.ProposedGameNight.Fragments.gameSelectFragment env
+            let addGameSelect : HttpHandler = Api.ProposedGameNight.Fragments.addGameSelectFragment env
+            let addDateInput : HttpHandler = Api.ProposedGameNight.Fragments.addDateInputFragment env
+            let addGameNightLink : HttpHandler = Api.ProposedGameNight.Fragments.addGameNightLinkFragment env
+        module Game =
+            let addGameLink : HttpHandler = Api.Game.Fragments.addGameLinkFragment env
+        module Navbar =
+            let numberOfGameNights : HttpHandler = Api.Navbar.numberOfGameNightsFragment env

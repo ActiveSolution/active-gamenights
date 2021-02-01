@@ -122,7 +122,7 @@ module GameNights =
           DateVotes = serializeDateVotes dateVotes
           CreatedBy = %gn.CreatedBy
           Status = confirmedStatus }
-        |> InsertOrMerge
+        |> InsertOrReplace
         |> env.Tables.InGameNightTable
         |> Async.map ensureSuccessful
         
@@ -133,7 +133,7 @@ module GameNights =
           DateVotes = serializeDateVotes gn.DateVotes
           CreatedBy = %gn.CreatedBy
           Status = cancelledStatus }
-        |> InsertOrMerge
+        |> InsertOrReplace
         |> env.Tables.InGameNightTable
         |> Async.map ensureSuccessful
         
@@ -199,7 +199,7 @@ module GameNights =
           DateVotes = serializeDateVotes gn.DateVotes
           CreatedBy = %gn.CreatedBy
           Status = proposedStatus }
-        |> InsertOrMerge
+        |> InsertOrReplace
         |> env.Tables.InGameNightTable
         |> Async.map ensureSuccessful
 
@@ -247,7 +247,7 @@ module Games =
           ImageUrl = game.ImageUrl |> Option.toObj 
           Notes = game.Notes |> Option.toObj
           CreatedBy = %game.CreatedBy }
-        |> InsertOrMerge
+        |> InsertOrReplace
         |> env.Tables.InGameTable
         |> Async.map ensureSuccessful
 

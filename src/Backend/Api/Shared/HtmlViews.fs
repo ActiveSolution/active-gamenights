@@ -68,11 +68,11 @@ let fragment env content =
     |> RenderView.AsString.htmlDocument
         
 
-let fullPage env user content =
+let fullPage env user page content =
     html [] [
         htmlHead env
-        body [] [
-            Navbar.navbarView user
+        body [ _class "has-navbar-fixed-top" ] [
+            Navbar.Views.navbarView user page
             yield! content
         ]
     ] 

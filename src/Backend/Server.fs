@@ -28,11 +28,13 @@ let rewriteHttpMethod : HttpHandler =
         
         
 let fragments = router {
-    get "/proposedgamenight/gameselect" CompositionRoot.Api.Fragments.gameSelect
-    get "/proposedgamenight/addgameselect" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "index" |] >=> CompositionRoot.Api.Fragments.addGameSelect)
-    get "/proposedgamenight/adddateinput" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "index" |] >=> CompositionRoot.Api.Fragments.addDateInput)
-    get "/proposedgamenight/addgamenightlink" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "*" |] >=> CompositionRoot.Api.Fragments.addGameNightLink)
-    get "/game/addgamelink" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "*" |] >=> CompositionRoot.Api.Fragments.addGameLink)
+    pipe_through requireUsername
+    get "/proposedgamenight/gameselect" CompositionRoot.Api.Fragments.ProposedGameNight.gameSelect
+    get "/proposedgamenight/addgameselect" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "index" |] >=> CompositionRoot.Api.Fragments.ProposedGameNight.addGameSelect)
+    get "/proposedgamenight/adddateinput" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "index" |] >=> CompositionRoot.Api.Fragments.ProposedGameNight.addDateInput)
+    get "/proposedgamenight/addgamenightlink" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "*" |] >=> CompositionRoot.Api.Fragments.ProposedGameNight.addGameNightLink)
+    get "/game/addgamelink" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "*" |] >=> CompositionRoot.Api.Fragments.Game.addGameLink)
+    get "/navbar/numberofgamenights" (privateCachingWithQueries (TimeSpan.FromSeconds 10.) [| "*" |] >=> CompositionRoot.Api.Fragments.Navbar.numberOfGameNights)
 }
 
 let browserRouter =

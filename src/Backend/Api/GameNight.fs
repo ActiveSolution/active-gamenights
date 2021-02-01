@@ -42,7 +42,7 @@ let getAll env : HttpFunc =
             return Views.gameNightsView currentUser confirmed proposed
 
         }
-        |> (fun view -> ctx.RespondWithHtml(env, view))
+        |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))
     
 let controller env = controller {
     plug [ All ] CommonHttpHandlers.requireUsername

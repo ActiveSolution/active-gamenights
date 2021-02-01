@@ -12,4 +12,4 @@ let versionView =
     ]
     
 let handler env : HttpHandler =
-    fun _ ctx -> ctx.RespondWithHtml(env, versionView)
+    fun _ ctx -> ctx.RespondWithHtml(env, Page.Version, versionView)

@@ -12,12 +12,6 @@ open Backend.Api.Shared
 open FSharp.UMX
 open FsHotWire
 
-[<CLIMutable>]
-type CreateProposedGameNightForm =
-    { Games : string list
-      Dates : string list }
-
-
 module Views =    
 
     open Giraffe.ViewEngine
@@ -32,7 +26,7 @@ module Views =
             ]
             div [ _class "media-content" ] [
                 div [ _class "content" ] [ 
-                    p [] [ gameName |> GameName.toDisplayName |> str ]
+                    a [ _href (sprintf "/game/%s" %gameName); _targetTurboFrame "_top" ] [ strong [] [ gameName |> GameName.toDisplayName |> str ] ]
                 ]
                 nav [ _class "level" ] [ 
                     div [ _class "level-left" ] [
@@ -46,7 +40,7 @@ module Views =
             ]
         ]
 
-    let proposedGameNightView isInline currentUser (gn: ProposedGameNight) =
+    let proposedGameNightView currentUser (gn: ProposedGameNight) =
         let turboFrameId = "proposed-game-night-" + gn.Id.ToString()
         turboFrame [ _id turboFrameId ] [
             div [ _class "box mb-5"; _dataGameNightId (gn.Id.ToString()) ] [
@@ -72,18 +66,15 @@ module Views =
                                 ]
                         ]
                     ]
-                    div [ _class "media-right" ] [ 
-                        a [ _href (sprintf "/proposedgamenight/%s/edit?inline=%b" (gn.Id.ToString()) isInline) ] [ str "edit" ] 
-                    ]
                 ]
             ]
         ]
 
 
-    let showGameNightView isInline user (gn: ProposedGameNight) =
+    let showGameNightView user (gn: ProposedGameNight) =
         section [ _class "section" ] [
             div [ _class "container" ] [
-                proposedGameNightView isInline user gn
+                proposedGameNightView user gn
             ]
         ]
 
@@ -100,16 +91,26 @@ module Views =
                 ]
             ]
         
-    let gameNightsView currentUser proposed =
+    let gameNightsView currentUser (proposed: List<_>) =
+        let turboStream =
+            Navbar.Views.loadedNumberOfGameNightsView (proposed.Length)
+            |> TurboStream.replace "navbar-game-nights-link-text"
+            |> List.singleton
+            |> TurboStream.render
         turboFrame [ _id "proposed-game-nights"] [ 
+            turboStream
             match proposed with
             | [] -> 
-                emptyText
+                section [ _class "section"] [ 
+                    div [ _class "container"] [ 
+                        addProposedGameNightLink
+                    ]
+                ]
             | proposed ->
                 section [ _class "section"] [ 
                     div [ _class "container"] [ 
                         h2 [ _class "title is-2" ] [ str "Proposed game nights" ]
-                        for gameNight in proposed do proposedGameNightView true currentUser gameNight 
+                        for gameNight in proposed do proposedGameNightView currentUser gameNight 
                         addProposedGameNightLink
                     ]
                 ]
@@ -127,53 +128,40 @@ module Views =
             ]
         ]
 
-    let gameSelect (allGames: Set<string<CanonizedGameName>>) index = 
+    let gameSelect (allGames: Set<string<CanonizedGameName>>) loadGames index selectedGame =
         let placeholder = if index > 1 then "Pick another game" else "Pick a game"
-        turboFrame [ _id (sprintf "game-select-%i" index) ] [
-            div [ _class "select" ] [
-                select [ 
-                    _name "Games"
-                ] [
-                    option [] [ str placeholder ]
-                    for game in allGames do option [] [ game |> GameName.toDisplayName |> str ]
-                ]
-            ]
-        ]
-
-    let errorGameSelect (allGames: Set<string<CanonizedGameName>>) index errorMsg = 
-        let placeholder = if index > 1 then "Pick another game" else "Pick a game"
-        div [ _class "field"; _id (sprintf "game-input-%i-field" index) ] [
-            div [ _class "control" ] [
-                div [ _class "select is-danger" ] [
-                    select [ 
-                        _name "Games"
-                    ] [
-                        option [] [ str placeholder ]
-                        for game in allGames do option [] [ game |> GameName.toDisplayName |> str ]
-                    ]
-                ]
-                p [ _class "help is-danger" ] [ str errorMsg ] 
-            ]
-        ]
-
-    let gameSelectTurboFrame index =
-        let placeholder = if index > 1 then "Pick another game" else "Pick a game"
+        let fragmentEndpoint =
+            selectedGame
+            |> Option.map (fun selected -> (sprintf "/fragments/proposedgamenight/gameselect?index=%i&selectedGame=%s" index %selected))
+            |> Option.defaultValue (sprintf "/fragments/proposedgamenight/gameselect?index=%i" index)
         div [ _class "field"; _id (sprintf "game-input-%i-field" index) ] [
             div [ _class "control" ] [
                 turboFrame [
                     _id (sprintf "game-select-%i" index)
-                    _src (sprintf "/fragments/proposedgamenight/gameselect?index=%i" index)
+                    if loadGames then _src fragmentEndpoint
                 ] [ 
                     div [ _class "select" ] [
                         select [ 
                             _name "Games"
+                            _style "min-width: 20em;"
                         ] [
                             option [] [ str placeholder ]
+                            for game in allGames do 
+                                option [
+                                    match selectedGame with
+                                    | Some selected when selected = game -> _selected
+                                    | _ -> ()
+                                ] [ 
+                                    game |> GameName.toDisplayName |> str 
+                                ]
                         ]
                     ]
                 ]
             ]
         ]
+
+    let lazyGameSelect index selectedGame = gameSelect Set.empty true index selectedGame
+    let loadedGameSelect allGames index selectedGame = gameSelect allGames false index selectedGame
 
     let addDateInputButton nextIndex =
         div [ _class "field" ] [
@@ -198,7 +186,18 @@ module Views =
             ]
         ]
 
-    open Backend.Extensions
+    let okDateInput index date =
+        div [ _class "field"; _id (sprintf "date-input-%i-field" index) ] [
+            div [ _class "control" ] [
+                input [
+                    _type "date"
+                    _class "input"
+                    _name "Dates"
+                    _value (date |> DateTime.asString)
+                ]
+            ]
+        ]
+
     let errorDateInput index value errorMsg =
         let value = if String.IsNullOrWhiteSpace value then None else Some value
         div [ _class "field"; _id (sprintf "date-input-%i-field" index) ] [
@@ -215,28 +214,27 @@ module Views =
             p [ _class "help is-danger" ] [ str errorMsg ]
         ]
 
-    let addProposedGameNightView isInline =
-        let target = if isInline then "proposed-game-nights" else "_top"
-        let gameInputTitle =
-            div [ _class "field" ] [
-                div [ _class "control" ] [
-                    h5 [ _class "title is-5" ] [ str "What do you want to play?"]
-                ]
+    let private gameInputTitle =
+        div [ _class "field" ] [
+            div [ _class "control" ] [
+                h5 [ _class "title is-5" ] [ str "What do you want to play?"]
             ]
-        let dateInputTitle =
-            div [ _class "field" ] [
-                div [ _class "control" ] [
-                    h5 [ _class "title is-5" ] [ str "When?"]
-                ]
+        ]
+    let private dateInputTitle =
+        div [ _class "field" ] [
+            div [ _class "control" ] [
+                h5 [ _class "title is-5" ] [ str "When?"]
             ]
+        ]
 
+    let addProposedGameNightView isInline game =
         section [ _class "section" ] [
             div [ _class "container" ] [
                 h2 [ _class "title is-2" ] [ str "Add proposed game night"]
-                turboFrame [ _id "add-proposed-game-night" ] [ 
+                turboFrame [ _id "add-proposed-game-night"; _autoscroll ] [ 
                     form [
                         _class "box"
-                        _targetTurboFrame target
+                        _targetTurboFrame (if isInline then "proposed-game-nights" else "_top")
                         _method "POST"
                         _action "/proposedgamenight" 
                     ] [
@@ -245,7 +243,7 @@ module Views =
                             _style "display:block; margin-top: 10px;" 
                         ] [
                             gameInputTitle
-                            gameSelectTurboFrame 1
+                            lazyGameSelect 1 game
                             addGameButton 2
                         ]
                         span [
@@ -257,11 +255,28 @@ module Views =
                             addDateInputButton 2
                         ]
                         if isInline then 
-                            Partials.submitButtonWithCancel "Save" "Cancel" "/fragments/proposedgamenight/addgamenightlink" target
+                            Partials.submitButtonWithCancel "Save" "Cancel" "/fragments/proposedgamenight/addgamenightlink" (if isInline then "add-proposed-game-night" else "_top")
                         else
                             Partials.submitButton "Save"
                     ]
                 ]
+            ]
+        ]
+
+
+    let errorGameSelect (allGames: Set<string<CanonizedGameName>>) index errorMsg = 
+        let placeholder = if index > 1 then "Pick another game" else "Pick a game"
+        div [ _class "field"; _id (sprintf "game-input-%i-field" index) ] [
+            div [ _class "control" ] [
+                div [ _class "select is-danger" ] [
+                    select [ 
+                        _name "Games"
+                    ] [
+                        option [] [ str placeholder ]
+                        for game in allGames do option [] [ game |> GameName.toDisplayName |> str ]
+                    ]
+                ]
+                p [ _class "help is-danger" ] [ str errorMsg ] 
             ]
         ]
 
@@ -274,8 +289,36 @@ module Views =
         errorDateInput index value msg
         |> TurboStream.replace (sprintf "date-input-%i-field" index) 
 
+open FsHotWire.Giraffe
+
+[<CLIMutable>]
+type CreateProposedGameNightForm =
+    { Games : string list
+      Dates : string list }
+    with
+        // todo implement
+        member private this.OkInputs = 
+            let gameSelects =
+                this.Games
+                |> List.mapi (fun i g -> 
+                    Views.lazyGameSelect (i + 1) (g |> GameName.create |> Result.toOption) 
+                    |> TurboStream.replace (sprintf "game-input-%i-field" (i + 1)) )
+            let dateInputs =
+                this.Dates
+                |> List.mapi (fun i d -> i, DateTime.tryParse d |> Result.toOption)
+                |> List.choose (fun (i,d)-> d |> Option.map (fun date -> i, date))
+                |> List.map (fun (index, date) ->
+                    Views.okDateInput (index + 1) date
+                    |> TurboStream.replace (sprintf "date-input-%i-field" (index + 1)) )
+            [ yield! gameSelects 
+              yield! dateInputs ]
+        member this.FormValidationError errors =
+            TurboStream.mergeByTargetId this.OkInputs errors
+            |> FormValidationError 
+
 
 module private Validation =
+    open Workflows.GameNights
     let validateGameNames existingGames games =
         let isValid existingGameNames gameStr =
             result {
@@ -298,38 +341,27 @@ module private Validation =
         |> Result.map (fun ds -> NonEmptySet.create ds.Head ds.Tail)
         |> Result.mapError List.singleton
 
-    let validateCreateGameNightForm user existingGames (form: CreateProposedGameNightForm) : Result<Workflows.GameNights.ProposeGameNightRequest, ApiError> =
-        let formValidationError errors =
-            // TODO missing okInputs
-            let okInputs = []
-
-            TurboStream.mergeByTargetId okInputs errors
-            |> FormValidationError 
+    let validateCreateGameNightForm user existingGames (form: CreateProposedGameNightForm) : Result<Workflows.GameNights.CreateProposedGameNightRequest, ApiError> =
             
         validation {
             let! games = validateGameNames existingGames form.Games
             and! dates = validateDates form.Dates
 
             return 
-                { Workflows.GameNights.ProposeGameNightRequest.CreatedBy = user
-                  Workflows.GameNights.ProposeGameNightRequest.Games = games
-                  Workflows.GameNights.ProposeGameNightRequest.Dates = dates }
+                { CreateProposedGameNightRequest.CreatedBy = user
+                  Games = games
+                  Dates = dates }
         }
-        |> Result.mapError formValidationError
-
+        |> Result.mapError form.FormValidationError
 
 let getProposedGameNight env (ctx: HttpContext) stringId =
     taskResult {
-        let isInline = 
-            ctx.TryGetQueryStringValue "inline" 
-            |> Option.bind bool.tryParse 
-            |> Option.defaultValue false
         let! id = GameNightId.parse stringId |> Result.mapError ApiError.BadRequest
         let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
         let! gn = Storage.GameNights.getProposedGameNight env id |> AsyncResult.mapError (fun _ -> ApiError.NotFound)
-        return Views.showGameNightView isInline user gn
+        return Views.showGameNightView user gn
     }
-    |> (fun view -> ctx.RespondWithHtml(env, view))
+    |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))
         
         
 let addProposedGameNight env : HttpFunc =
@@ -338,8 +370,11 @@ let addProposedGameNight env : HttpFunc =
             ctx.TryGetQueryStringValue "inline" 
             |> Option.bind bool.tryParse 
             |> Option.defaultValue false
-        Views.addProposedGameNightView isInline 
-        |> (fun view -> ctx.RespondWithHtml(env, view))
+        let game =
+            ctx.TryGetQueryStringValue "game"
+            |> Option.bind (GameName.create >> Result.toOption)
+        Views.addProposedGameNightView isInline game 
+        |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))
 
 let saveProposedGameNight env (ctx: HttpContext) : HttpFuncResult =
     taskResult {
@@ -348,12 +383,12 @@ let saveProposedGameNight env (ctx: HttpContext) : HttpFuncResult =
         let! existingGames = Storage.Games.getAllGames env
         let existingGameNames = existingGames |> Set.map (fun g -> g.Name)
         let! req = Validation.validateCreateGameNightForm user existingGameNames form
-        let gn = Workflows.GameNights.proposeGameNight req
+        let gn = Workflows.GameNights.createProposedGameNight req
         let! _ = Storage.GameNights.saveProposedGameNight env gn
         return "/proposedgamenight"
             
     } |> ctx.RespondWithRedirect
-    
+
 let getAll env : HttpFunc =
     fun ctx -> 
         taskResult {
@@ -361,7 +396,7 @@ let getAll env : HttpFunc =
             let! currentUser = ctx.GetUser() |> Result.mapError ApiError.MissingUser
             return Views.gameNightsView currentUser proposed 
         } 
-        |> (fun view -> ctx.RespondWithHtml(env, view))
+        |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))
         
         
 let gameController env (gameNightId: string) =
@@ -473,7 +508,12 @@ module Fragments =
             taskResult {
                 let! allGames = Storage.Games.getAllGames env
                 let allGameNames = allGames |> Set.map (fun g -> g.Name)
-                return Views.gameSelect allGameNames index
+                let selectedGame = 
+                    ctx.TryGetQueryStringValue "selectedGame" 
+                    |> Option.bind (GameName.create >> Result.toOption)
+                    |> Option.bind (fun g -> if allGameNames |> Set.contains g then Some g else None)
+
+                return Views.loadedGameSelect allGameNames index selectedGame
             }
             |> (fun view -> ctx.RespondWithHtmlFragment(env, view))
 
@@ -481,34 +521,16 @@ module Fragments =
         fun _ ctx ->
             let index = ctx.TryGetQueryStringValue "index" |> Option.map int |> Option.defaultValue 1
 
-            match ctx.Request with
-            | AcceptTurboStream ->
-                [ TurboStream.remove "add-game-button"
-                  TurboStream.append "game-inputs" (Views.gameSelectTurboFrame index)
-                  TurboStream.append "game-inputs" (Views.addGameButton (index + 1)) ]
-                |> ctx.RespondWithTurboStream
-            | _ ->
-                let view =
-                    span [] [
-                        Views.gameSelectTurboFrame index
-                        Views.addGameButton (index + 1)
-                    ]
-                ctx.RespondWithHtmlFragment(env, view)
+            [ TurboStream.remove "add-game-button"
+              TurboStream.append "game-inputs" (Views.lazyGameSelect index None)
+              TurboStream.append "game-inputs" (Views.addGameButton (index + 1)) ]
+            |> ctx.RespondWithTurboStream
         
     let addDateInputFragment env : HttpHandler =
         fun _ ctx ->
             let index = ctx.TryGetQueryStringValue "index" |> Option.map int |> Option.defaultValue 1
 
-            match ctx.Request with
-            | AcceptTurboStream ->
-                [ TurboStream.remove "add-date-input-button"
-                  TurboStream.append "date-inputs" (Views.emptyDateInput index)
-                  TurboStream.append "date-inputs" (Views.addDateInputButton (index + 1)) ]
-                |> ctx.RespondWithTurboStream
-            | _ ->
-                let view =
-                    span [] [
-                        Views.emptyDateInput index
-                        Views.addDateInputButton (index + 1)
-                    ]
-                ctx.RespondWithHtmlFragment(env, view)
+            [ TurboStream.remove "add-date-input-button"
+              TurboStream.append "date-inputs" (Views.emptyDateInput index)
+              TurboStream.append "date-inputs" (Views.addDateInputButton (index + 1)) ]
+            |> ctx.RespondWithTurboStream
