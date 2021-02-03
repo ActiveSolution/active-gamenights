@@ -39,7 +39,7 @@ module Views =
             ]
         ]
 
-    let private confirmedGameNightCard currentUser (gn: ConfirmedGameNight) =
+    let private confirmedGameNightCard (allGames: Map<Guid<GameId>, Game>) currentUser (gn: ConfirmedGameNight) =
         let turboFrameId = "confirmed-game-night-" + gn.Id.ToString()
         turboFrame [ _id turboFrameId ] [
             div [ _class "card mb-5"; _dataGameNightId (gn.Id.ToString()) ] [
@@ -47,20 +47,21 @@ module Views =
                     p [ _class "card-header-title" ] [ (gn.CreatedBy |> Username.toDisplayName) + " wants to play" |> str ]
                 ]
                 div [ _class "card-content" ] [ 
-                    for gameName, votes in gn.GameVotes |> NonEmptyMap.toList do
-                        let actionUrl = sprintf "/confirmedgamenight/%s/game/%s/vote" (gn.Id.ToString()) %gameName
+                    for gameId, votes in gn.GameVotes |> NonEmptyMap.toList do
+                        let gameName = allGames.[gameId].Name
+                        let actionUrl = sprintf "/confirmedgamenight/%A/game/%A/vote" gn.Id %gameId
                         ul [] [
                             li [ ] [
                                 confirmedGameCard gameName votes currentUser actionUrl turboFrameId
                             ] 
                         ] 
-                    let actionUrl = sprintf "/confirmedgamenight/%s/date/%s/vote" (gn.Id.ToString()) gn.Date.AsString
+                    let actionUrl = sprintf "/confirmedgamenight/%A/date/%s/vote" gn.Id gn.Date.AsString
                     GameNightViews.dateCard gn.Date (gn.Players |> NonEmptySet.toSet) currentUser actionUrl turboFrameId
                 ]
             ]
         ]
         
-    let gameNightsView currentUser confirmed =
+    let gameNightsView allGames currentUser confirmed =
         turboFrame [ _id "confirmed-game-nights" ] [
             match confirmed with
             | [] -> 
@@ -70,7 +71,7 @@ module Views =
                     div [ _class "container" ] [
                         h2 [ _class "title is-2" ] [ str "Confirmed game nights" ]
                         div [] [
-                            for gameNight in confirmed do confirmedGameNightCard currentUser gameNight
+                            for gameNight in confirmed do confirmedGameNightCard allGames currentUser gameNight
                         ]
                     ]
                 ]
@@ -81,7 +82,8 @@ let getAll env : HttpFunc =
         taskResult {
             let! confirmed = Storage.GameNights.getAllConfirmedGameNights env
             let! currentUser = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-            return Views.gameNightsView currentUser confirmed 
+            let! allGames = Storage.Games.getAllGames env |> Async.map (Game.toMap)
+            return Views.gameNightsView allGames currentUser confirmed 
         } 
         |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))
         

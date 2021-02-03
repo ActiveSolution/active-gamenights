@@ -12,6 +12,8 @@
     <Compile Include="Domain\FutureDate.fs" />
     <Compile Include="Domain\Username.fs" />
     <Compile Include="Domain\GameName.fs" />
+    <Compile Include="Domain\Game.fs" />
+    <Compile Include="Domain\GameId.fs" />
     <Compile Include="Domain\GameNightId.fs" />
     <Compile Include="Domain\Workflows\Game.fs" />
     <Compile Include="Domain\Workflows\GameNights.fs" />

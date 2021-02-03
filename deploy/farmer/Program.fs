@@ -50,21 +50,21 @@ let main argv =
             zip_deploy webAppOutput
         }
 
-        let functions = functions {
-            name (webAppName + "-functions")
-            link_to_storage_account storage.Name.ResourceName
-            operating_system Linux
-            link_to_service_plan webApp.ServicePlanName
-            zip_deploy functionsOutput
-            setting "ENABLE_ORYX_BUILD" "false" // az cli zip-deploy for linux az functions consumption plan. tworkaround from https://github.com/Azure/Azure-Functions/issues/1200
-        }
+        // let functions = functions {
+        //     name (webAppName + "-functions")
+        //     link_to_storage_account storage.Name.ResourceName
+        //     operating_system Linux
+        //     link_to_service_plan webApp.ServicePlanName
+        //     zip_deploy functionsOutput
+        //     setting "ENABLE_ORYX_BUILD" "false" // az cli zip-deploy for linux az functions consumption plan. tworkaround from https://github.com/Azure/Azure-Functions/issues/1200
+        // }
         
         arm {
             location Location.WestEurope
             add_resources [
                 storage
                 webApp
-                functions
+                // functions
             ]
         }
     

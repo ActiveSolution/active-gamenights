@@ -3,9 +3,11 @@ module Domain.Workflows.Game
 open Domain
 open FSharp.UMX
 open System
+open FsToolkit.ErrorHandling
 
 type AddGameRequest =
-    { GameName : string<CanonizedGameName>
+    { Id : Guid<GameId>
+      GameName : string<CanonizedGameName>
       CreatedBy : string<CanonizedUsername>
       ImageUrl : string option
       Link : string option
@@ -20,28 +22,37 @@ let addGame : AddGame =
         if Set.contains req.GameName req.ExistingGames then
             Error "Duplicate game"
         else 
-            { Game.CreatedBy = req.CreatedBy
-              Game.ImageUrl = req.ImageUrl
-              Game.Link = req.Link 
-              Game.Name = req.GameName 
-              Game.Notes = req.Notes
-              Game.NumberOfPlayers = req.NumberOfPlayers }
+            { Game.Id = req.Id
+              CreatedBy = req.CreatedBy
+              ImageUrl = req.ImageUrl
+              Link = req.Link 
+              Name = req.GameName 
+              Notes = req.Notes
+              NumberOfPlayers = req.NumberOfPlayers }
             |> Ok
 
 type UpdateGameRequest =
-    { GameName : string<CanonizedGameName>
+    { Id: Guid<GameId>
+      CurrentGameName: string<CanonizedGameName>
+      GameName : string<CanonizedGameName>
       CreatedBy : string<CanonizedUsername>
       ImageUrl : string option
       Link : string option
       Notes : string option
-      NumberOfPlayers : string option }
+      NumberOfPlayers : string option
+      ExistingGames : Set<string<CanonizedGameName>> }
 
-type UpdateGame = UpdateGameRequest -> Game
+type UpdateGame = UpdateGameRequest -> Result<Game, string>
 let updateGame : UpdateGame =
     fun req ->
-        { Game.CreatedBy = req.CreatedBy
-          Game.ImageUrl = req.ImageUrl
-          Game.Link = req.Link 
-          Game.Name = req.GameName 
-          Game.Notes = req.Notes
-          Game.NumberOfPlayers = req.NumberOfPlayers }
+        if Set.contains req.GameName req.ExistingGames then
+            Error "Duplicate game"
+        else 
+            { Id = req.Id
+              CreatedBy = req.CreatedBy
+              ImageUrl = req.ImageUrl
+              Link = req.Link 
+              Name = req.GameName 
+              Notes = req.Notes
+              NumberOfPlayers = req.NumberOfPlayers }
+            |> Ok

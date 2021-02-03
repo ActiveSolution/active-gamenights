@@ -1,0 +1,28 @@
+{
+  "name": "activegamenight",
+  "version": "1.0.0",
+  "description": "This project uses a [FAKE](https://fake.build) script to run build tasks (build.fsx). To build locally: 1. `dotnet tool restore` to restore the required tools (paket and fake-cli) 2. `dotnet fake build` to run the build",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "parcel src/backend/scripts/application.js -d src/backend/Public",
+    "build": "parcel build src/backend/scripts/application.js -d src/backend/Public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/activesolution/ActiveGameNight.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/activesolution/ActiveGameNight/issues"
+  },
+  "homepage": "https://github.com/activesolution/ActiveGameNight#readme",
+  "dependencies": {
+    "@hotwired/turbo": "7.0.0-beta.2",
+    "stimulus": "^2.0.0"
+  }
+}

@@ -25,7 +25,8 @@ let addVoteButton addVoteUrl target =
                             div [ _class "control" ]
                                 [
                                     button 
-                                        [ 
+                                        [
+                                            yield! Stimulus.loadingButton "is-loading"
                                             _addVoteButton 
                                             _class "button is-primary is-small"
                                             _type "submit"
@@ -57,7 +58,8 @@ let removeVoteButton removeVoteUrl (user: string<CanonizedUsername>) target =
                             div [ _class "control" ]
                                 [
                                     button 
-                                        [ 
+                                        [
+                                            yield! Stimulus.loadingButton "is-loading"
                                             _removeVoteButton 
                                             _class "button is-info is-small"
                                             _type "submit"
@@ -77,7 +79,7 @@ let otherUsersVoteButton (user: string<CanonizedUsername>) =
                 button [ 
                     _class "button is-small is-primary no-hover" 
                     _disabled
-                ] [ str %user ]
+                ] [ user |> Username.toDisplayName |> str ]
             ]
         ]
     ]

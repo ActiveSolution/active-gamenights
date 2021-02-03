@@ -11,6 +11,8 @@ open Domain
 
 module private Views =
     open Giraffe.ViewEngine
+    open FsHotWire.Giraffe
+
     let addUserView =
         section [ _class "section" ] [
             div [ _class "container" ] [
@@ -34,7 +36,10 @@ module private Views =
                     ]
                     div [ _class "field" ] [
                         div [ _class "control" ] [
-                            button [ _class "button is-primary"; _type "submit"; _name "submit" ] [ str "OK" ]
+                            button [ 
+                                yield! Stimulus.loadingButton "is-loading"
+                                _class "button is-primary"; _type "submit"; _name "submit" 
+                            ] [ str "OK" ]
                         ]
                     ]
                 ]

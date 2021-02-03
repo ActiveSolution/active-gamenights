@@ -274,7 +274,7 @@ Target.createFinal "KillDotnet" killDotnet
     ==> "DotnetBuild"
     ==> "Build"
     ==> "RunWebTests"
-    ==> "DotnetPublishBackend" <=> "DotnetPublishFunctions"
+    ==> "DotnetPublishBackend" //<=> "DotnetPublishFunctions"
     ==> "Package"
 
 "DeployToTest"

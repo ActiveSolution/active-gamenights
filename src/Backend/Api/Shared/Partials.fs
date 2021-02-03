@@ -6,28 +6,31 @@ open Backend
         
 module Partials =
     open FsHotWire.Giraffe 
-    let submitButton (text: string) =
+    let loadingButton id text =
+        button [ 
+            yield! Stimulus.loadingButton "is-loading"
+            _id id
+            _class "button is-primary"; _type "submit" 
+        ] [
+            str text
+        ]
+    let submitButton id (text: string) =
         div [ 
             _class "field" 
             _style "margin-top: 10px;"
         ] [ 
             div [ _class "control" ] [
-                button [ _class "button is-primary"; _type "submit" ] [
-                    str text
-                ]
+                loadingButton id text
             ]
         ]
 
-    let submitButtonWithCancel (okText: string) (cancelText: string) cancelHref cancelTarget =
+    let submitButtonWithCancel id (okText: string) (cancelText: string) cancelHref cancelTarget =
         div [ 
             _class "field is-grouped" 
             _style "margin-top: 10px;"
         ] [
             div [ _class "control"] [
-                button [
-                    _class "button is-primary"
-                    _type "submit"
-                ] [ str okText]
+                loadingButton id okText
             ]
             div [ _class "control"] [
                 a [

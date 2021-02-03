@@ -19,8 +19,8 @@ type GameEntity =
       Link : string
       Notes : string
       CreatedBy : string
-      ImageUrl : string
-    }
+      ImageUrl : string }
+
 
 type GameNightEntity = 
     { [<PartitionKey>] PartitionKey : string
@@ -62,15 +62,15 @@ module private Implementation =
 
 module GameNights =
     let private parseGameNightId entityId =
-        GameNightId.parse entityId |> okOrFail "Entity has invalid GameNightId"
+        GameNightId.parse entityId |> okOrFail (sprintf "Entity has invalid GameNightId (%s)" entityId)
 
-    let private serializeGameVotes (gs: NonEmptyMap<string<CanonizedGameName>, Set<string<CanonizedUsername>>>) =
+    let private serializeGameVotes (gs: NonEmptyMap<Guid<GameId>, Set<string<CanonizedUsername>>>) =
         gs
         |> NonEmptyMap.toList
         |> List.map (fun (x, y) -> (x, y |> Set.toList))
         |> Json.serialize
         
-    let private deserializeGameVotes (str: string) : NonEmptyMap<string<CanonizedGameName>, Set<string<CanonizedUsername>>> =
+    let private deserializeGameVotes (str: string) : NonEmptyMap<Guid<GameId>, Set<string<CanonizedUsername>>> =
         Json.deserialize str
         |> NonEmptyMap.ofList
         
@@ -205,7 +205,8 @@ module GameNights =
 
 module Games =
     let private toGame (entity: GameEntity) =
-        { Game.CreatedBy = entity.CreatedBy |> Username.create |> okOrFail "Invalid username in db"
+        { Game.Id = entity.Id |> GameId.parse |> okOrFail (sprintf "Invalid game id in db (%s)" entity.Id)
+          Game.CreatedBy = entity.CreatedBy |> Username.create |> okOrFail "Invalid username in db"
           Game.ImageUrl = entity.ImageUrl |> Option.ofObj
           Game.Link = entity.Link |> Option.ofObj
           Game.Name = GameName.create entity.Name |> okOrFail "Invalid game name in db"
@@ -224,23 +225,25 @@ module Games =
                 |> Set.ofSeq
         }
 
-    let getGame (env: #IStorage) (gameName: string<CanonizedGameName>) : Async<Game> =
+
+    let private readGameEntity (env: #IStorage) (gameId: Guid<GameId>) =
+        let gameIdStr = gameId.ToString()
+        Query.all<GameEntity>
+        |> Query.where <@ fun _ s -> s.PartitionKey = partitionKey && s.RowKey = gameIdStr @>
+        |> env.Tables.FromGameTable
+
+    let getGame (env: #IStorage) (gameId: Guid<GameId>) : Async<Game option> =
         async {
-            let! result =
-                let gameNameStr = %gameName
-                Query.all<GameEntity>
-                |> Query.where <@ fun _ s -> s.PartitionKey = partitionKey && s.RowKey = gameNameStr @>
-                |> env.Tables.FromGameTable
+            let! result = readGameEntity env gameId
             return 
                 result 
-                |> Seq.head 
-                |> fst 
-                |> toGame
+                |> Seq.tryHead 
+                |> Option.map (fst >> toGame)
         }
 
     let addGame (env: #IStorage) (game: Game) : Async<unit> = 
         { GameEntity.PartitionKey = partitionKey
-          Id = game.Name.ToString()
+          Id = game.Id.ToString()
           Name = game.Name.ToString()
           NumberOfPlayers = game.NumberOfPlayers |> Option.toObj
           Link = game.Link |> Option.toObj

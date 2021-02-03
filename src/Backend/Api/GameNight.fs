@@ -7,6 +7,7 @@ open Backend.Extensions
 open Backend
 open Backend.Api.Shared
 open FsToolkit.ErrorHandling
+open Domain
 
     
 module private Views =
@@ -19,10 +20,10 @@ module private Views =
                 i [ _class "fas fa-spinner fa-spin fa-3x" ] [ ]
             ]
         ]
-    let gameNightsView currentUser confirmed proposed =
+    let gameNightsView allGames currentUser confirmed proposed =
         [
-            ConfirmedGameNight.Views.gameNightsView currentUser confirmed
-            ProposedGameNight.Views.gameNightsView currentUser proposed
+            ConfirmedGameNight.Views.gameNightsView allGames currentUser confirmed
+            ProposedGameNight.Views.gameNightsView allGames currentUser proposed
         ]
 
 let private getGameNights env =
@@ -39,7 +40,9 @@ let getAll env : HttpFunc =
         taskResult {
             let! (confirmed, proposed) = getGameNights env
             let! currentUser = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-            return Views.gameNightsView currentUser confirmed proposed
+            let! allGames = Storage.Games.getAllGames env |> Async.map Game.toMap
+            return Views.gameNightsView allGames currentUser confirmed proposed
+            
 
         }
         |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))

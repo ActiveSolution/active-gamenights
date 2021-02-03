@@ -11,9 +11,11 @@ module Domain =
     [<Measure>] type CanonizedUsername
     [<Measure>] type FutureDate
     [<Measure>] type GameNightId
+    [<Measure>] type GameId
                     
     type Game = 
-        { Name : string<CanonizedGameName>
+        { Id: Guid<GameId>
+          Name : string<CanonizedGameName>
           CreatedBy : string<CanonizedUsername>
           NumberOfPlayers : string option
           Link : string option
@@ -21,18 +23,18 @@ module Domain =
           Notes : string option }
     type ProposedGameNight =
         { Id : Guid<GameNightId>
-          GameVotes : NonEmptyMap<string<CanonizedGameName>, Set<string<CanonizedUsername>>>
+          GameVotes : NonEmptyMap<Guid<GameId>, Set<string<CanonizedUsername>>>
           DateVotes : NonEmptyMap<DateTime, Set<string<CanonizedUsername>>>
           CreatedBy : string<CanonizedUsername> }
     type ConfirmedGameNight =
         { Id : Guid<GameNightId> 
-          GameVotes : NonEmptyMap<string<CanonizedGameName>, Set<string<CanonizedUsername>>>
+          GameVotes : NonEmptyMap<Guid<GameId>, Set<string<CanonizedUsername>>>
           Date : DateTime
           Players : NonEmptySet<string<CanonizedUsername>>
           CreatedBy : string<CanonizedUsername> }
     type CancelledGameNight =
         { Id : Guid<GameNightId>
-          GameVotes : NonEmptyMap<string<CanonizedGameName>, Set<string<CanonizedUsername>>>
+          GameVotes : NonEmptyMap<Guid<GameId>, Set<string<CanonizedUsername>>>
           DateVotes : NonEmptyMap<DateTime, Set<string<CanonizedUsername>>>
           CreatedBy : string<CanonizedUsername> }
           

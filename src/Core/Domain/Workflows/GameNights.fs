@@ -8,20 +8,20 @@ open FSharp.UMX
 
 
 type CreateProposedGameNightRequest =
-    { Games : NonEmptySet<string<CanonizedGameName>>
+    { Games : NonEmptySet<Guid<GameId>>
       Dates : NonEmptySet<DateTime<FutureDate>>
       CreatedBy : string<CanonizedUsername> }
 type CreateProposedGameNight = CreateProposedGameNightRequest -> ProposedGameNight
 
 type UpdateProposedGameNightRequest =
-    { Games : NonEmptySet<string<CanonizedGameName>>
+    { Games : NonEmptySet<Guid<GameId>>
       Dates : NonEmptySet<DateTime<FutureDate>> 
       OriginalGameNight : ProposedGameNight }
 type UpdateProposedGameNight = UpdateProposedGameNightRequest -> ProposedGameNight
 
 type GameVoteRequest =
     { GameNight : ProposedGameNight
-      GameName : string<CanonizedGameName> 
+      GameId : Guid<GameId>
       User : string<CanonizedUsername> }
 type DateVoteRequest =
     { GameNight : ProposedGameNight
@@ -46,10 +46,9 @@ module ProposeGameNightRequest =
             "Must provide at least one date" |> Error
         else
             result {
-                let! gameNames =
+                let! gameIds =
                     games
-                   |> List.choose (fun s -> if String.IsNullOrWhiteSpace(s) then None else Some s)
-                   |> List.map GameName.create
+                   |> List.map GameId.create
                    |> List.sequenceResultM
                 let! dates =
                     dates
@@ -58,15 +57,15 @@ module ProposeGameNightRequest =
                     |> List.sequenceResultM
                     
                 return
-                    { CreateProposedGameNightRequest.Games = NonEmptySet.create gameNames.Head gameNames.Tail
+                    { CreateProposedGameNightRequest.Games = NonEmptySet.create gameIds.Head gameIds.Tail
                       Dates = NonEmptySet.create dates.Head dates.Tail
                       CreatedBy = createdBy } 
             }
 
 module GameVoteRequest =
-    let create(gameNight, gameName, user) =
+    let create(gameNight, gameId, user) =
         { GameNight = gameNight
-          GameName = gameName
+          GameId = gameId
           User = user }
           
 module DateVoteRequest =
@@ -109,22 +108,22 @@ let addGameVote : AddGameVote =
     fun req ->
         let newVotes = 
             req.GameNight.GameVotes 
-            |> NonEmptyMap.tryFind req.GameName 
+            |> NonEmptyMap.tryFind req.GameId 
             |> Option.defaultValue Set.empty 
             |> Set.add req.User
         let newGames =
-            req.GameNight.GameVotes |> NonEmptyMap.add req.GameName newVotes
+            req.GameNight.GameVotes |> NonEmptyMap.add req.GameId newVotes
         { req.GameNight with GameVotes = newGames}
         
 let removeGameVote : RemoveGameVote =
     fun req ->
         let newVotes = 
             req.GameNight.GameVotes 
-            |> NonEmptyMap.tryFind req.GameName 
+            |> NonEmptyMap.tryFind req.GameId 
             |> Option.defaultValue Set.empty 
             |> Set.remove req.User
         let newGames =
-            req.GameNight.GameVotes |> NonEmptyMap.add req.GameName newVotes
+            req.GameNight.GameVotes |> NonEmptyMap.add req.GameId newVotes
         { req.GameNight with GameVotes = newGames}
         
 let addDateVote : AddDateVote =

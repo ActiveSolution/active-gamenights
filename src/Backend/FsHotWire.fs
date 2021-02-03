@@ -77,3 +77,11 @@ module Giraffe =
             |> RenderView.AsString.htmlDocument
             |> ctx.WriteStringAsync 
         
+    module Stimulus =
+
+        let loadingButton klass =
+            [
+              attr "data-controller" "loading-button"
+              attr "data-action" "loading-button#setLoading"
+              attr "data-loading-button-loading-class" klass
+            ]

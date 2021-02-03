@@ -184,3 +184,11 @@ module Option =
             None
         else 
             Some str
+            
+module Set =
+    
+    let tryFind predicate set =
+        set
+        |> Set.toList
+        |> List.tryFind predicate
+            

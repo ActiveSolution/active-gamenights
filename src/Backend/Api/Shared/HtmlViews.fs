@@ -51,8 +51,7 @@ let htmlHead (settings: ITemplateSettings) =
             _src "https://plausible.io/js/plausible.js"
         ] []
         script [
-            _type "module"
-            _src "https://cdn.skypack.dev/pin/@hotwired/turbo@v7.0.0-beta.2-ou6dW2bg0qdKgUED7QEB/min/@hotwired/turbo.js"
+            _src "/application.js"
         ] []
         link [
             _rel "stylesheet"
