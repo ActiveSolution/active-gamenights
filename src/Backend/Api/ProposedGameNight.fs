@@ -25,9 +25,7 @@ module Views =
                 p [ _class "image is-64x64" ] [ img [ _src (game.ImageUrl |> Option.defaultValue "http://via.placeholder.com/64") ]  ] 
             ]
             div [ _class "media-content" ] [
-                div [ _class "content" ] [ 
-                    a [ _href (sprintf "/game/%A" game.Id); _targetTurboFrame "_top" ] [ strong [] [ game.Name |> GameName.toDisplayName |> str ] ]
-                ]
+                a [ _href (sprintf "/game/%A" game.Id); _targetTurboFrame "_top" ] [ strong [] [ game.Name |> GameName.toDisplayName |> str ] ]
                 nav [ _class "level" ] [ 
                     div [ _class "level-left" ] [
                         yield! GameNightViews.gameVoteButtons currentUser votes actionUrl voteUpdateTarget
@@ -180,7 +178,8 @@ module Views =
         div [ _class "field"; _id (sprintf "date-input-%i-field" index) ] [
             div [ _class "control" ] [
                 input [
-                    _type "date"
+                    _id (sprintf "date-input-%i" index)
+                    _type "text"
                     _class "input"
                     _name "Dates"
                     _placeholder "yyyy-mm-dd"
@@ -192,7 +191,8 @@ module Views =
         div [ _class "field"; _id (sprintf "date-input-%i-field" index) ] [
             div [ _class "control" ] [
                 input [
-                    _type "date"
+                    _id (sprintf "date-input-%i" index)
+                    _type "text"
                     _class "input"
                     _name "Dates"
                     _value (date |> DateTime.asString)
@@ -205,7 +205,8 @@ module Views =
         div [ _class "field"; _id (sprintf "date-input-%i-field" index) ] [
             div [ _class "control" ] [
                 input [
-                    _type "date"
+                    _id (sprintf "date-input-%i" index)
+                    _type "text"
                     _class "input is-danger"
                     _name "Dates"
                     match value with

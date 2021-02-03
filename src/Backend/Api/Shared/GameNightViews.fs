@@ -115,9 +115,7 @@ let dateCard (date: DateTime) votes currentUser actionUrl voteUpdateTarget =
             ] 
         ]
         div [ _class "media-content" ] [
-            div [ _class "content" ] [
-                p [] [ date.AsString |> str ]
-            ]
+            p [] [ date.AsString |> str ]
             nav [ _class "level" ] [ 
                 div [ _class "level-left" ] [
                     yield! dateVoteButtons currentUser votes actionUrl voteUpdateTarget

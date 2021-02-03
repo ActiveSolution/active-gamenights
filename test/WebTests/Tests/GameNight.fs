@@ -11,7 +11,7 @@ let all rootUrl =
     let username = "Game Night Tester"
     let username2 = "Game Night Tester2"
     let date = (DateTime.Now.AddDays(5.))
-    let gameName = sprintf "Web Test Game %s" (date.ToString("yyyy-MM-dd-HHmmss"))
+    let gameName = "Among Us"
     let mutable gameNightId = null
     
     context "game nights"

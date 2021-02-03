@@ -19,13 +19,13 @@ let private toDateString (date: DateTime) = date.ToString("yyyy-MM-dd")
 let gameNightUrl rootUrl = rootUrl + "/gamenight"
 
 let _addProposedGameNightLink = "#add-proposed-game-night-link"
-let _gameCardTitle gameNightId gameName = sprintf "[data-game-night-id=%s] [data-game-name=%s] .content p" gameNightId (canonize gameName)
+let _gameCardTitle gameNightId gameName = sprintf "[data-game-night-id=%s] [data-game-name=%s] a strong" gameNightId (canonize gameName)
 let _addGameVoteButton (gameNightId) (gameName) = sprintf "[data-game-night-id=%s] [data-game-name=%s] [data-add-vote-button]" gameNightId (canonize gameName)
 let _removeGameVoteButton (gameNightId) (gameName) = sprintf "[data-game-night-id=%s] [data-game-name=%s] [data-remove-vote-button]" gameNightId (canonize gameName)
 let _addDateVoteButton gameNightId date = sprintf "[data-game-night-id=%s] [data-date=%s] [data-add-vote-button]" gameNightId (toDateString date)
 let _removeDateVoteButton gameNightId date = sprintf "[data-game-night-id=%s] [data-date=%s] [data-remove-vote-button]" gameNightId (toDateString date)
-let _gameNightHeader gameNightId = sprintf "[data-game-night-id=%s] p.card-header-title" gameNightId
-let _dateCardTitle gameNightId date = sprintf "[data-game-night-id=%s] [data-date=%s] .content p" gameNightId (toDateString date)
+let _gameNightHeader gameNightId = sprintf "[data-game-night-id=%s] .title" gameNightId
+let _dateCardTitle gameNightId date = sprintf "[data-game-night-id=%s] [data-date=%s] .media-content p" gameNightId (toDateString date)
 
 let addProposedGameNight rootUrl game (date: DateTime) =
     describe (sprintf "Adding proposed game night: game %s for date %s" game (toDateString date))
@@ -33,8 +33,8 @@ let addProposedGameNight rootUrl game (date: DateTime) =
     url (gameNightUrl rootUrl)
     waitForElement _addProposedGameNightLink
     click _addProposedGameNightLink
-    waitForElement (AddPropoposedGameNightPage._gameInput 1)
-    (AddPropoposedGameNightPage._gameInput 1) << game
+    waitForElement (AddPropoposedGameNightPage._gameSelect 1)
+    element (AddPropoposedGameNightPage._gameSelect 1) |> elementWithin game |> click
     (AddPropoposedGameNightPage._dateInput 1) << (toDateString date)
     click "Save"
     
