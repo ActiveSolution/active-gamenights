@@ -38,7 +38,7 @@ let main argv =
         let webApp = webApp {
             name webAppName
             operating_system Linux
-            runtime_stack Runtime.DotNetCore31
+            runtime_stack Runtime.DotNetCoreLatest
             https_only
             always_on
             sku WebApp.Sku.B1
