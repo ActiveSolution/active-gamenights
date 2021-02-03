@@ -15,6 +15,10 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 5.0.102
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.405
       - name: Install tools
         run: dotnet tool restore
       - name: Deploy to prod
