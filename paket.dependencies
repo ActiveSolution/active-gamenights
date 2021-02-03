@@ -64,11 +64,12 @@ group build
 
 group deploy
     source https://api.nuget.org/v3/index.json
+    source nugets
     framework: netcoreapp3.1
     storage: none
     
     nuget FSharp.Core
-    nuget Farmer
+    nuget Farmer 1.4.0-local1
     
 group WebTests
     source https://www.nuget.org/api/v2

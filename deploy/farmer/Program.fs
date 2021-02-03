@@ -32,13 +32,13 @@ let main argv =
     let deployment =
         let storage = storageAccount {
             name storageName
-            sku Storage.Standard_LRS
+            sku Storage.Sku.Standard_LRS
         }
     
         let webApp = webApp {
             name webAppName
             operating_system Linux
-            runtime_stack Runtime.DotNetCoreLatest
+            runtime_stack (Runtime.DotNet "5.0")
             https_only
             always_on
             sku WebApp.Sku.B1
