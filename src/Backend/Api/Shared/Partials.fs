@@ -7,8 +7,8 @@ open Backend
 module Partials =
     open FsHotWire.Giraffe 
     let loadingButton id text =
-        button [ 
-            yield! Stimulus.loadingButton "is-loading"
+        button [
+            yield! Stimulus.Controllers.loadingButton
             _id id
             _class "button is-primary"; _type "submit" 
         ] [
@@ -103,7 +103,6 @@ module Inputs =
         ]
 
 module Icons =
-    open Giraffe.ViewEngine
     let plusIcon = 
         span [ _class "icon" ] [ 
             i [ _class "fas fa-plus" ] [ ] 

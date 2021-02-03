@@ -78,10 +78,44 @@ module Giraffe =
             |> ctx.WriteStringAsync 
         
     module Stimulus =
-
-        let loadingButton klass =
-            [
-              attr "data-controller" "loading-button"
-              attr "data-action" "loading-button#setLoading"
-              attr "data-loading-button-loading-class" klass
-            ]
+        type Action =
+            { DomEvent: string
+              Controller: string
+              Action: string }
+        type Target =
+            { Controller: string
+              TargetName: string
+              TargetValue: string }
+        type Value =
+            { Controller: string
+              ValueName: string
+              Value: string }
+        type CssClass =
+            { Controller: string
+              ClassName: string
+              ClassValue: string }
+        let controller name = attr "data-controller" name
+        let controllers names = attr "data-controller" (names |> String.concat " ")
+        let action (action: Action) =
+            attr "data-action" (sprintf "%s->%s#%s" action.DomEvent action.Controller action.Action) 
+        let actions (actions: seq<Action>) =
+            actions
+            |> Seq.map (fun a -> sprintf "%s->%s#%s" a.DomEvent a.Controller a.Action)
+            |> String.concat " "
+            |> attr "data-action"
+            
+        let target (target: Target) =
+            attr (sprintf "data-%s-%s" target.Controller target.TargetName) target.TargetValue
+            
+        let value (value: Value) =
+            attr (sprintf "data-%s-%s-value" value.Controller value.ValueName) value.Value
+        
+        let cssClass (klass: CssClass) =
+            attr (sprintf "data-%s-%s-class" klass.Controller klass.ClassName) klass.ClassValue
+        
+        module Controllers =
+            let loadingButton =
+                let ctrl = "add-class"
+                [ controller ctrl
+                  cssClass { Controller = ctrl; ClassName = "name"; ClassValue = "is-loading" }
+                  action { DomEvent = "click"; Controller = ctrl; Action = "addClass" } ]

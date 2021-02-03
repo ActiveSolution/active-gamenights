@@ -26,7 +26,7 @@ let addVoteButton addVoteUrl target =
                                 [
                                     button 
                                         [
-                                            yield! Stimulus.loadingButton "is-loading"
+                                            yield! Stimulus.Controllers.loadingButton
                                             _addVoteButton 
                                             _class "button is-primary is-small"
                                             _type "submit"
@@ -46,30 +46,29 @@ let removeVoteButton removeVoteUrl (user: string<CanonizedUsername>) target =
                     _targetTurboFrame target 
                     _method "POST"
                     _action (removeVoteUrl + "/" + %user)
-                ] 
-                [
-                    input [
-                        _type "hidden"
-                        _name "_method"
-                        _value "delete"
-                    ]
-                    div [ _class "field" ]
-                        [
-                            div [ _class "control" ]
-                                [
-                                    button 
-                                        [
-                                            yield! Stimulus.loadingButton "is-loading"
-                                            _removeVoteButton 
-                                            _class "button is-info is-small"
-                                            _type "submit"
-                                            _onmouseover "this.style.backgroundColor='#feecf0';this.style.color='#cc0f35';"
-                                            _onmouseout "this.style.backgroundColor='#3298dc';this.style.color='white'"
-                                        ] 
-                                        [ user |> Username.toDisplayName |> str ]
-                                ]
-                        ]
+            ] [
+                input [
+                    _type "hidden"
+                    _name "_method"
+                    _value "delete"
                 ]
+                div [ _class "field" ] [
+                    div [ _class "control" ] [
+                        button [
+                            Stimulus.controllers [ "add-class"; "remove-vote-button" ]
+                            Stimulus.cssClass { Controller = "add-class"; ClassName = "name"; ClassValue = "is-loading" }
+                            Stimulus.value { Controller = "remove-vote-button"; ValueName = "text"; Value = Username.toDisplayName user }
+                            Stimulus.actions 
+                                [ { DomEvent = "click"; Controller = "add-class"; Action = "addClass" }
+                                  { DomEvent = "mouseenter"; Controller = "remove-vote-button"; Action = "setActive" } 
+                                  { DomEvent = "mouseleave"; Controller = "remove-vote-button"; Action = "setInactive" } ]
+                            _removeVoteButton 
+                            _class "button is-info is-small"
+                            _type "submit"
+                        ] [ user |> Username.toDisplayName |> str ]
+                    ]
+                ]
+            ]
         ]
     
 let otherUsersVoteButton (user: string<CanonizedUsername>) =

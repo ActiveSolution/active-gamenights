@@ -37,9 +37,9 @@ module private Views =
                     div [ _class "field" ] [
                         div [ _class "control" ] [
                             button [ 
-                                yield! Stimulus.loadingButton "is-loading"
+                                yield! Stimulus.Controllers.loadingButton
                                 _class "button is-primary"; _type "submit"; _name "submit" 
-                            ] [ str "OK" ]
+                            ] [ str "Ok" ]
                         ]
                     ]
                 ]
