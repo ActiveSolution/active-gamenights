@@ -161,7 +161,7 @@ let runFarmerDeploy env _ =
         | Prod -> 
             sprintf "--project %s -- deployEnvironment=prod" farmerDeployPath
     DotNet.exec id "run" args
-    |> ignore
+    |> (fun p -> if p.ExitCode <> 0 then failwith "Farmer deployment failed")
 
 let gitCheckUniqueTag _ =
     let allTags = 

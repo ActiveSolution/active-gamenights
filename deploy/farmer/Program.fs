@@ -56,7 +56,7 @@ let main argv =
         //     operating_system Linux
         //     link_to_service_plan webApp.ServicePlanName
         //     zip_deploy functionsOutput
-        //     setting "ENABLE_ORYX_BUILD" "false" // az cli zip-deploy for linux az functions consumption plan. tworkaround from https://github.com/Azure/Azure-Functions/issues/1200
+        //     setting "ENABLE_ORYX_BUILD" "false" // az cli zip-deploy for linux az functions consumption plan. workaround from https://github.com/Azure/Azure-Functions/issues/1200
         // }
         
         arm {
