@@ -101,22 +101,22 @@ let dotnetPublishBackend ctx =
             OutputPath = Some (webAppOutput)
         }) backendProj
 
-let dotnetPublishFunctions ctx =
-    let args =
-        [
-            sprintf "/p:PackageVersion=%s" (semVersion).AsString
-        ]
-    DotNet.publish(fun c ->
-        { c with
-            Configuration = configuration (ctx.Context.AllExecutingTargets)
-            NoBuild = true
-            NoRestore = true
-            SelfContained = Some false
-            Common =
-                c.Common
-                |> DotNet.Options.withAdditionalArgs args
-            OutputPath = Some (functionsOutput)
-        }) functionsProj
+// let dotnetPublishFunctions ctx =
+//     let args =
+//         [
+//             sprintf "/p:PackageVersion=%s" (semVersion).AsString
+//         ]
+//     DotNet.publish(fun c ->
+//         { c with
+//             Configuration = configuration (ctx.Context.AllExecutingTargets)
+//             NoBuild = true
+//             NoRestore = true
+//             SelfContained = Some false
+//             Common =
+//                 c.Common
+//                 |> DotNet.Options.withAdditionalArgs args
+//             OutputPath = Some (functionsOutput)
+//         }) functionsProj
 
 let dotnetRestore _ = DotNet.restore id sln
 
@@ -143,7 +143,7 @@ let dotnetBuild ctx =
 let watchApp _ =
 
     let server() = dotNetWatch "run" backendPath ""
-    let functions() = dotNetWatch "msbuild" functionsPath "/t:RunFunctions"
+    // let functions() = dotNetWatch "msbuild" functionsPath "/t:RunFunctions"
 
     // [ server; functions ]
     [ server ]
@@ -243,7 +243,7 @@ Target.create "DotnetBuild" dotnetBuild
 Target.create "WatchApp" watchApp
 Target.create "Build" ignore
 Target.create "DotnetPublishBackend" dotnetPublishBackend
-Target.create "DotnetPublishFunctions" dotnetPublishFunctions
+// Target.create "DotnetPublishFunctions" dotnetPublishFunctions
 Target.create "Package" ignore
 Target.create "DeployToTest" (runFarmerDeploy Test)
 Target.create "DeployToProd" (runFarmerDeploy Prod)
