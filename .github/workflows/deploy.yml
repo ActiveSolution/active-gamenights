@@ -19,6 +19,11 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 3.1.405
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '15'
+      - run: npm install -g yarn
       - name: Install tools
         run: dotnet tool restore
       - name: Deploy to prod

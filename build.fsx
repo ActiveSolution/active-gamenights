@@ -14,6 +14,32 @@ open Fake.IO
 open Fake.IO.FileSystemOperators
 open Fake.IO.Globbing.Operators
 
+module Tools =
+    let platformTool tool winTool =
+        let tool = if Environment.isUnix then tool else winTool
+        match ProcessUtils.tryFindFileOnPath tool with
+        | Some t -> t
+        | _ ->
+            let errorMsg =
+                tool + " was not found in path. " +
+                "Please install it and make sure it's available from your path. " +
+                "See https://safe-stack.github.io/docs/quickstart/#install-pre-requisites for more info"
+            failwith errorMsg
+
+    let private yarnTool = platformTool "yarn" "yarn.exe"
+    let private createProcess cmd args workingDir =   
+        let arguments = args |> Arguments.OfArgs
+        Command.RawCommand (cmd, arguments)
+        |> CreateProcess.fromCommand
+        |> CreateProcess.withWorkingDirectory workingDir
+        |> CreateProcess.ensureExitCode
+    let private runTool cmd args workingDir = 
+        createProcess cmd args workingDir 
+        |> Proc.run
+        |> ignore
+
+    let yarn (args: string list) = runTool yarnTool args
+
 type DeployEnvironment =
     | Test
     | Prod
@@ -33,6 +59,7 @@ let outputPath = "./output"
 let webAppOutput = outputPath @@ "webapp"
 let functionsOutput = outputPath @@ "functions"
 let testSite = "https://active-game-night-test.azurewebsites.net/"
+let prodSite = "https://active-game-night.azurewebsites.net/"
 
 //-----------------------------------------------------------------------------
 // Helpers
@@ -84,6 +111,8 @@ let clean _ =
     |> Seq.iter Shell.rm
 
 let dotnetPublishBackend ctx =
+    Tools.yarn [ "build" ] rootPath
+
     Shell.copyDir (webAppOutput @@ "public") (backendPath @@ "public") (fun _ -> true)
 
     let args =
@@ -120,6 +149,7 @@ let dotnetPublishBackend ctx =
 //         }) functionsProj
 
 let dotnetRestore _ = DotNet.restore id sln
+let yarnInstall _ = Tools.yarn [] rootPath
 
 let writeVersionToFile _ =
     let sb = System.Text.StringBuilder("module Backend.Version\n\n")
@@ -143,11 +173,11 @@ let dotnetBuild ctx =
 
 let watchApp _ =
 
+    let frontEnd() = Tools.yarn [ "dev" ] rootPath
     let server() = dotNetWatch "run" backendPath ""
     // let functions() = dotNetWatch "msbuild" functionsPath "/t:RunFunctions"
 
-    // [ server; functions ]
-    [ server ]
+    [ frontEnd; server ]
     |> Seq.iter (invokeAsync >> Async.Catch >> Async.Ignore >> Async.Start)
     printfn "Press Ctrl+C (or Ctrl+Break) to stop..."
     let cancelEvent = Console.CancelKeyPress |> Async.AwaitEvent |> Async.RunSynchronously
@@ -189,7 +219,8 @@ let waitForDeployment env _ =
         let rec waitForResponse'() =
             if sw.Elapsed < timeout then
                 try 
-                    Fake.Net.Http.get "" "" url |> ignore
+                    let response = Fake.Net.Http.get "" "" url
+                    if response.Contains("Version: " + semVersion.AsString) |> not then failwith "Site is not up"
                     Trace.tracefn "Site %s responded after %f s" url sw.Elapsed.TotalSeconds
                 with exn ->
                     lastExceptionMsg <- exn.ToString()
@@ -205,9 +236,9 @@ let waitForDeployment env _ =
     System.Threading.Thread.Sleep 5000
     match env with
     | Test ->
-        waitForResponse (TimeSpan.FromSeconds(120.)) testSite
+        waitForResponse (TimeSpan.FromSeconds(120.)) (testSite + "/version")
     | Prod ->
-        waitForResponse (TimeSpan.FromSeconds(120.)) "https://active-game-night.azurewebsites.net/"
+        waitForResponse (TimeSpan.FromSeconds(120.)) (prodSite + "/version")
 
 let runWebTests ctx =
     let configuration = (configuration ctx.Context.AllExecutingTargets).ToString()
@@ -224,6 +255,7 @@ let runWebTests ctx =
 
 Target.create "Clean" clean
 Target.create "DotnetRestore" dotnetRestore
+Target.create "YarnInstall" yarnInstall
 Target.create "WriteVersionToFile" writeVersionToFile
 Target.create "DotnetBuild" dotnetBuild
 Target.create "WatchApp" watchApp
@@ -249,6 +281,7 @@ Target.create "CreateProdRelease" ignore
 // Only call Clean if 'Package' was in the call chain
 // Ensure Clean is called before 'DotnetRestore' and 'InstallClient'
 "Clean" ?=> "DotnetRestore"
+"Clean" ?=> "YarnInstall"
 "Clean" ==> "Package"
 
 "WriteVersionToFile"
@@ -256,7 +289,7 @@ Target.create "CreateProdRelease" ignore
 
 "DotnetRestore"
     ==> "WriteVersionToFile"
-    ==> "DotnetBuild"
+    ==> "DotnetBuild" <=> "YarnInstall"
     ==> "Build"
     ==> "DotnetPublishBackend" //<=> "DotnetPublishFunctions"
     ==> "Package"
