@@ -110,8 +110,11 @@ let clean _ =
     [ "paket-files/paket.restore.cached" ]
     |> Seq.iter Shell.rm
 
+
 let dotnetPublishBackend ctx =
-    Tools.yarn [ "build" ] rootPath
+    let entryPath = backendPath @@ "scripts" @@ "application.js" |> Path.getFullName
+    let outputPath = backendPath @@ "public" |> Path.getFullName
+    Tools.yarn [ "exec"; "parcel"; "build"; entryPath; "-d"; outputPath ] rootPath
 
     Shell.copyDir (webAppOutput @@ "public") (backendPath @@ "public") (fun _ -> true)
 
