@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Slack notification
 * Export Calendar event
 
+
+## [0.4.3] - 2021-02-04
+### Added
+* Styling
+
 ## [0.4.2] - 2021-02-04
 ### Fixed
 * Bugfix in navbar
