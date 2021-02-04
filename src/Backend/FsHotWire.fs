@@ -84,8 +84,7 @@ module Giraffe =
               Action: string }
         type Target =
             { Controller: string
-              TargetName: string
-              TargetValue: string }
+              TargetName: string }
         type Value =
             { Controller: string
               ValueName: string
@@ -105,7 +104,7 @@ module Giraffe =
             |> attr "data-action"
             
         let target (target: Target) =
-            attr (sprintf "data-%s-%s" target.Controller target.TargetName) target.TargetValue
+            attr (sprintf "data-%s-target" target.Controller) target.TargetName
             
         let value (value: Value) =
             attr (sprintf "data-%s-%s-value" value.Controller value.ValueName) value.Value
@@ -115,7 +114,7 @@ module Giraffe =
         
         module Controllers =
             let loadingButton =
-                let ctrl = "add-class"
+                let ctrl = "css-class"
                 [ controller ctrl
                   cssClass { Controller = ctrl; ClassName = "name"; ClassValue = "is-loading" }
                   action { DomEvent = "click"; Controller = ctrl; Action = "addClass" } ]

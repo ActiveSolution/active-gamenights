@@ -55,11 +55,11 @@ let removeVoteButton removeVoteUrl (user: string<CanonizedUsername>) target =
                 div [ _class "field" ] [
                     div [ _class "control" ] [
                         button [
-                            Stimulus.controllers [ "add-class"; "remove-vote-button" ]
-                            Stimulus.cssClass { Controller = "add-class"; ClassName = "name"; ClassValue = "is-loading" }
+                            Stimulus.controllers [ "css-class"; "remove-vote-button" ]
+                            Stimulus.cssClass { Controller = "css-class"; ClassName = "name"; ClassValue = "is-loading" }
                             Stimulus.value { Controller = "remove-vote-button"; ValueName = "text"; Value = Username.toDisplayName user }
                             Stimulus.actions 
-                                [ { DomEvent = "click"; Controller = "add-class"; Action = "addClass" }
+                                [ { DomEvent = "click"; Controller = "css-class"; Action = "addClass" }
                                   { DomEvent = "mouseenter"; Controller = "remove-vote-button"; Action = "setActive" } 
                                   { DomEvent = "mouseleave"; Controller = "remove-vote-button"; Action = "setInactive" } ]
                             _removeVoteButton 

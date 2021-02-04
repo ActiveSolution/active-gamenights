@@ -87,7 +87,12 @@ module Views =
         ]
 
     let navbarView user (page: Page) =
-        nav [ _class "navbar is-fixed-top is-info"; Accessibility._roleNavigation ] [
+        nav [ 
+            _class "navbar is-fixed-top is-info"
+            Accessibility._roleNavigation 
+            Stimulus.controller "css-class"
+            Stimulus.cssClass { Controller = "css-class"; ClassName = "name"; ClassValue = "is-active" }
+        ] [
             div [ _class "navbar-brand" ] [
                 a [ _class "navbar-item"; _href "/" ] [
                     img [ 
@@ -97,11 +102,20 @@ module Views =
                     ]
                     str "Active Game Night"
                 ]
-                div [ _class "navbar-burger"; _id "agn-navbar-burger" ] [
+                div [ 
+                    _id "agn-navbar-burger" 
+                    _class "navbar-burger"
+                    Stimulus.action { DomEvent = "click"; Controller = "css-class"; Action = "toggleClass" }
+                    Stimulus.target { Controller = "css-class"; TargetName = "element" }
+                ] [
                     yield! List.replicate 3 (span [] [])
                 ]
             ]
-            div [ _class "navbar-menu"; _id "agn-navbar-menu" ] [
+            div [ 
+                _id "agn-navbar-menu" 
+                _class "navbar-menu"
+                Stimulus.target { Controller = "css-class"; TargetName = "element" }
+            ] [
                 div [ _class "navbar-start" ] [
                     match user with
                     | Some _ ->
