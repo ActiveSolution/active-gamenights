@@ -55,15 +55,22 @@ module Views =
 
     let numberOfGameNightsView load (numGN: int option) =
         let num = numGN |> Option.bind (fun i -> if i > 0 then string i |> Some else None) 
+        let minWidth = _style "min-width: 3em;"
+        let spinner = 
+                nav [ _class "level" ] [
+                div [ _class "icon" ] [
+                    i [ _class "fas fa-spinner fa-spin" ] [ ]
+                ]
+            ]
         turboFrame [ 
             _id "navbar-game-nights-link-text"
             if load then _src "/fragments/navbar/numberofgamenights"
         ] [
             match num with
             | Some num ->
-                span [ _class "tag is-light is-small ml-2"] [ str num ]
+                span [ _class "tag is-light is-small ml-2"; minWidth ] [ str num ]
             | None -> 
-                emptyText
+                span [ _class "tag is-light is-small ml-2"; minWidth ] [ spinner ]
         ]
 
     let lazyNumberOfGameNightsView = numberOfGameNightsView true None

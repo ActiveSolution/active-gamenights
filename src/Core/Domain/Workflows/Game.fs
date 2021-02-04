@@ -33,26 +33,21 @@ let addGame : AddGame =
 
 type UpdateGameRequest =
     { Id: Guid<GameId>
-      CurrentGameName: string<CanonizedGameName>
       GameName : string<CanonizedGameName>
       CreatedBy : string<CanonizedUsername>
       ImageUrl : string option
       Link : string option
       Notes : string option
-      NumberOfPlayers : string option
-      ExistingGames : Set<string<CanonizedGameName>> }
+      NumberOfPlayers : string option }
 
-type UpdateGame = UpdateGameRequest -> Result<Game, string>
+type UpdateGame = UpdateGameRequest -> Game
 let updateGame : UpdateGame =
     fun req ->
-        if Set.contains req.GameName req.ExistingGames then
-            Error "Duplicate game"
-        else 
-            { Id = req.Id
-              CreatedBy = req.CreatedBy
-              ImageUrl = req.ImageUrl
-              Link = req.Link 
-              Name = req.GameName 
-              Notes = req.Notes
-              NumberOfPlayers = req.NumberOfPlayers }
-            |> Ok
+        // todo verify that game exists
+        { Id = req.Id
+          CreatedBy = req.CreatedBy
+          ImageUrl = req.ImageUrl
+          Link = req.Link 
+          Name = req.GameName 
+          Notes = req.Notes
+          NumberOfPlayers = req.NumberOfPlayers }

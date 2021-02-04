@@ -43,25 +43,8 @@ type CreateGameForm =
 
             TurboStream.mergeByTargetId (this.OkInputs("add-game-submit-button")) errors
             |> FormValidationError 
-
-[<CLIMutable>]
-type UpdateGameForm =
-    { Id: string
-      Name : string
-      NumberOfPlayers : string
-      Link : string
-      ImageUrl : string
-      Notes : string }
-    with 
-        member private this.OkInputs(submitButtonId) = 
-            [ Inputs.okTextInput Metadata.name this.Name |> TurboStream.replace Metadata.name.Id
-              Inputs.okTextInput Metadata.imageUrl this.ImageUrl |> TurboStream.replace Metadata.imageUrl.Id
-              Inputs.okTextInput Metadata.link this.Link |> TurboStream.replace Metadata.link.Id
-              Inputs.okTextInput Metadata.numberOfPlayers this.NumberOfPlayers |> TurboStream.replace Metadata.numberOfPlayers.Id
-              Inputs.okTextareaInput Metadata.notes this.Notes |> TurboStream.replace Metadata.notes.Id ]
-              |> List.append [ TurboStream.replace submitButtonId (Partials.loadingButton submitButtonId "Save") ]
-        member this.EditFormValidationError(gameName: string<CanonizedGameName>) errors =
-            TurboStream.mergeByTargetId (this.OkInputs(sprintf "edit-game-%s-submit-button" this.Id)) errors
+        member this.EditFormValidationError (gameId: Guid<GameId>) errors =
+            TurboStream.mergeByTargetId (this.OkInputs(sprintf "edit-game-%A-submit-button" gameId)) errors
             |> FormValidationError 
 
 module private Views =
@@ -191,14 +174,13 @@ module private Views =
             section [ _class "section" ] [
                 div [ _class "container" ] [
                     h2 [ _class "title is-2" ] [ str "Edit game"]
-                    turboFrame [ _id id; _autoscroll ] [ 
+                    turboFrame [ _id id; _autoscroll; _target target ] [ 
                         article [ _class "box media mb-5" ] [
                             div [ _class "media-content" ] [
                                 form [
                                     _method "POST"
                                     _action (sprintf "/game/%A/edit" game.Id) 
                                 ] [
-                                    input [ _type "hidden"; _name "Id"; _value <| game.Id.ToString() ]
                                     Inputs.textInput Metadata.name (game.Name |> GameName.toDisplayName |> Some)
                                     Inputs.textInput Metadata.imageUrl game.ImageUrl
                                     Inputs.textInput Metadata.link game.Link
@@ -290,25 +272,22 @@ module private Validation =
         }
         |> Result.mapError form.CreateFormValidationError
 
-    let validateUpdateGameForm existingGameNames currentGameName user (form: UpdateGameForm) : Result<Workflows.Game.UpdateGameRequest, ApiError> =
+    let validateUpdateGameForm gameId existingGameNames user (form: CreateGameForm) : Result<Workflows.Game.UpdateGameRequest, ApiError> =
             
         validation {
             let! gameName = validateGameName [] form.Name
             and! link = validateLink form.Link
             and! imageUrl = validateImageUrl form.ImageUrl
-            let gameId = form.Id |> GameId.parse |> Result.defaultWith (fun _ -> invalidArg "UpdateGameForm.Id" "Invalid GameId")
             return 
                 { Workflows.Game.UpdateGameRequest.Id = gameId
-                  CurrentGameName = currentGameName
                   GameName = gameName
                   CreatedBy = user
                   ImageUrl = imageUrl
                   Link = link
                   Notes = form.Notes |> Option.ofString
-                  NumberOfPlayers = form.NumberOfPlayers |> Option.ofString 
-                  ExistingGames = existingGameNames }
+                  NumberOfPlayers = form.NumberOfPlayers |> Option.ofString }
         }
-        |> Result.mapError (form.EditFormValidationError currentGameName)
+        |> Result.mapError (form.EditFormValidationError gameId)
 
 let getAll env : HttpFunc =
     fun ctx -> 
@@ -363,15 +342,15 @@ let saveGame env (ctx: HttpContext): HttpFuncResult =
     }
     |> ctx.RespondWithRedirect
 
-let updateGame env (ctx: HttpContext) gameNameStr =
+let updateGame env (ctx: HttpContext) gameIdStr =
     taskResult {
-        let! gameName = GameName.create gameNameStr |> Result.mapError ApiError.BadRequest 
-        let! form = ctx.BindFormAsync<UpdateGameForm>()
+        let! gameId = GameId.parse gameIdStr |> Result.mapError ApiError.BadRequest 
+        let! form = ctx.BindFormAsync<CreateGameForm>()
         let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
         let! existingGames = Storage.Games.getAllGames env 
         let existingGameNames = existingGames |> Set.map (fun x -> x.Name)
-        let! request = Validation.validateUpdateGameForm existingGameNames gameName user form 
-        let! game = Workflows.Game.updateGame request |> Result.mapError ApiError.BadRequest
+        let! request = Validation.validateUpdateGameForm gameId existingGameNames user form 
+        let game = Workflows.Game.updateGame request 
         let! _ = Storage.Games.addGame env game
 
         return "/game"

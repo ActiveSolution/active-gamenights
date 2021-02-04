@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Edit Game (BGG-link, image, notes, number of players)
 * Add filters for GET /api/gamenight (e.g. ?status=completed/confirmed/cancelled/proposed&fromDate=2020-12-13)
 
+
+## [0.4.1] - 2021-02-04
+### Added
+* Add interactivity to burger button in navbar.
+* Add build step for bundling js
+
 ## [0.4.0] - 2021-02-01
 ### Added
 * Use Hotwire
