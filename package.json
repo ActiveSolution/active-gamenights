@@ -8,8 +8,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "parcel src/backend/scripts/application.js -d src/backend/Public",
-    "build": "parcel build src/backend/scripts/application.js -d src/backend/Public"
+    "parcel": "parcel"
   },
   "repository": {
     "type": "git",
@@ -24,5 +23,8 @@
   "dependencies": {
     "@hotwired/turbo": "7.0.0-beta.2",
     "stimulus": "^2.0.0"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.4"
   }
 }

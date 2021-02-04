@@ -55,6 +55,8 @@ let backendProj = backendPath @@ "Backend.fsproj"
 let functionsPath = src @@ "Functions"
 let functionsProj = functionsPath @@ "Functions.fsproj"
 let farmerDeployPath = rootPath @@ "deploy" @@ "farmer"
+let jsEntryPath = backendPath @@ "scripts" @@ "application.js" |> Path.getFullName
+let jsOutputPath = backendPath @@ "public" @@ "Scripts" |> Path.getFullName
 let outputPath = "./output"
 let webAppOutput = outputPath @@ "webapp"
 let functionsOutput = outputPath @@ "functions"
@@ -95,7 +97,7 @@ let semVersion =
 //-----------------------------------------------------------------------------
 
 let clean _ =
-    [ "bin"; "temp"; outputPath ]
+    [ "bin"; "temp"; outputPath; jsOutputPath ]
     |> Shell.cleanDirs
 
     !! srcGlob
@@ -112,9 +114,7 @@ let clean _ =
 
 
 let dotnetPublishBackend ctx =
-    let entryPath = backendPath @@ "scripts" @@ "application.js" |> Path.getFullName
-    let outputPath = backendPath @@ "public" |> Path.getFullName
-    Tools.yarn [ "exec"; "parcel"; "build"; entryPath; "-d"; outputPath ] rootPath
+    Tools.yarn [ "run"; "parcel"; "build"; jsEntryPath; "--out-dir"; jsOutputPath; "--out-file"; "bundle.js"; "--public-url"; "/Scripts" ] rootPath
 
     Shell.copyDir (webAppOutput @@ "public") (backendPath @@ "public") (fun _ -> true)
 
@@ -176,7 +176,7 @@ let dotnetBuild ctx =
 
 let watchApp _ =
 
-    let frontEnd() = Tools.yarn [ "dev" ] rootPath
+    let frontEnd() = Tools.yarn [ "run"; "parcel"; jsEntryPath; "--out-dir"; jsOutputPath; "--out-file"; "bundle.js"; "--public-url"; "/Scripts" ] rootPath
     let server() = dotNetWatch "run" backendPath ""
     // let functions() = dotNetWatch "msbuild" functionsPath "/t:RunFunctions"
 

@@ -34,7 +34,7 @@ let htmlHead (settings: ITemplateSettings) =
         ]
         link [ 
             _rel "manifest" 
-            _href "Icons/site.json"
+            _href "/Icons/site.json"
         ]
         link [
             _rel "stylesheet"
@@ -51,7 +51,8 @@ let htmlHead (settings: ITemplateSettings) =
             _src "https://plausible.io/js/plausible.js"
         ] []
         script [
-            _src "/application.js"
+            _src "/Scripts/bundle.js"
+            _type "text/javascript"
         ] []
         link [
             _rel "stylesheet"
