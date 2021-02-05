@@ -34,7 +34,7 @@ let fragments = router {
     get "/proposedgamenight/adddateinput" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "index" |] >=> CompositionRoot.Api.Fragments.ProposedGameNight.addDateInput)
     get "/proposedgamenight/addgamenightlink" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "*" |] >=> CompositionRoot.Api.Fragments.ProposedGameNight.addGameNightLink)
     get "/game/addgamelink" (privateCachingWithQueries (TimeSpan.FromHours 24.) [| "*" |] >=> CompositionRoot.Api.Fragments.Game.addGameLink)
-    get "/navbar/numberofgamenights" (privateCachingWithQueries (TimeSpan.FromSeconds 10.) [| "*" |] >=> CompositionRoot.Api.Fragments.Navbar.numberOfGameNights)
+    get "/navbar/unvotedcount" CompositionRoot.Api.Fragments.Navbar.unvotedCount
 }
 
 let browserRouter =

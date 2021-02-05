@@ -11,31 +11,30 @@ open FSharp.UMX
 open System
 
 let addVoteButton addVoteUrl target =
-    div [ _class "level-item" ]
-        [
-            form 
-                [ 
-                    _targetTurboFrame target 
-                    _method "POST"
-                    _action addVoteUrl
-                ] 
-                [
-                    div [ _class "field" ]
-                        [
-                            div [ _class "control" ]
-                                [
-                                    button 
-                                        [
-                                            yield! Stimulus.Controllers.loadingButton
-                                            _addVoteButton 
-                                            _class "button is-primary is-small"
-                                            _type "submit"
-                                        ] 
-                                        [ "add vote" |> str ]
-                                ]
-                        ]
+    div [ _class "level-item" ] [
+        form [ 
+            _targetTurboFrame target 
+            _method "POST"
+            _action addVoteUrl
+        ] [
+            div [ _class "field" ] [
+                div [ _class "control" ] [
+                    button [
+                        Stimulus.controller "css-class"
+                        Stimulus.cssClass { Controller = "css-class" ; ClassName = "name"; ClassValue = "is-loading" }
+                        Stimulus.actions 
+                            [ { DomEvent = "click"; Controller = "css-class"; Action = "addClass" }
+                              { DomEvent = "click"; Controller = "unvoted-count"; Action = "delayedFetch" } ]
+                        _addVoteButton 
+                        _class "button is-primary is-small"
+                        _type "submit"
+                    ] [ 
+                        "add vote" |> str 
+                    ]
                 ]
+            ]
         ]
+    ]
     
 let removeVoteButton removeVoteUrl (user: string<CanonizedUsername>) target =
 
@@ -61,7 +60,8 @@ let removeVoteButton removeVoteUrl (user: string<CanonizedUsername>) target =
                             Stimulus.actions 
                                 [ { DomEvent = "click"; Controller = "css-class"; Action = "addClass" }
                                   { DomEvent = "mouseenter"; Controller = "remove-vote-button"; Action = "setActive" } 
-                                  { DomEvent = "mouseleave"; Controller = "remove-vote-button"; Action = "setInactive" } ]
+                                  { DomEvent = "mouseleave"; Controller = "remove-vote-button"; Action = "setInactive" } 
+                                  { DomEvent = "click"; Controller = "unvoted-count"; Action = "delayedFetch" } ]
                             _removeVoteButton 
                             _class "button is-info is-small"
                             _type "submit"

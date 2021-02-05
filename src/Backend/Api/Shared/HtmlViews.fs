@@ -60,20 +60,22 @@ let htmlHead (settings: ITemplateSettings) =
         ]
     ]
 
-let fragment env content =
-    html [] [
-        htmlHead env
-        body [] [ content ]
-    ]
-    |> RenderView.AsString.htmlDocument
+let fragment content =
+    content
+    |> RenderView.AsString.htmlNode
         
 
 let fullPage env user page content =
     html [] [
         htmlHead env
-        body [ _class "has-navbar-fixed-top" ] [
+        body [
+            Stimulus.controller "unvoted-count"
+            _class "has-navbar-fixed-top" 
+        ] [
             Navbar.Views.navbarView user page
-            yield! content
+            turboFrame [ _id "content" ] [
+                yield! content
+            ]
         ]
     ] 
     |> RenderView.AsString.htmlDocument

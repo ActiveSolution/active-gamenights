@@ -39,6 +39,7 @@ module Views =
         ]
 
     let proposedGameNightView (allGames: Map<Guid<GameId>, Game>) currentUser (gn: ProposedGameNight) =
+    
         let turboFrameId = "proposed-game-night-" + gn.Id.ToString()
         turboFrame [ _id turboFrameId ] [
             div [ _class "box mb-5"; _dataGameNightId (gn.Id.ToString()) ] [
@@ -91,13 +92,7 @@ module Views =
             ]
         
     let gameNightsView allGames currentUser (proposed: List<_>) =
-        let turboStream =
-            Navbar.Views.loadedNumberOfGameNightsView (proposed.Length)
-            |> TurboStream.replace "navbar-game-nights-link-text"
-            |> List.singleton
-            |> TurboStream.render
         turboFrame [ _id "proposed-game-nights"] [ 
-            turboStream
             match proposed with
             | [] -> 
                 section [ _class "section"] [ 

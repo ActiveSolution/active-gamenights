@@ -14,7 +14,7 @@ type BackendEnv() =
                     member _.BasePath = config.BasePath
                     member _.Domain = config.Domain }
             { new ITemplates with
-                member _.Fragment(content) = Api.Shared.HtmlViews.fragment settings content 
+                member _.Fragment(content) = Api.Shared.HtmlViews.fragment content 
                 member _.FullPage user page content = Api.Shared.HtmlViews.fullPage settings user page content }
 let env = BackendEnv()
 
@@ -35,4 +35,4 @@ module Api =
         module Game =
             let addGameLink : HttpHandler = Api.Game.Fragments.addGameLinkFragment env
         module Navbar =
-            let numberOfGameNights : HttpHandler = Api.Navbar.numberOfGameNightsFragment env
+            let unvotedCount : HttpHandler = Api.Navbar.unvotedCountFragment env

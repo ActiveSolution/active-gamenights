@@ -5,3 +5,16 @@
 .container {
     max-width: 60em;
 }
+
+.circle
+{
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: bolder;
+    color: #fff;
+    line-height: 20px;
+    text-align: center;
+    background: #f14668
+}

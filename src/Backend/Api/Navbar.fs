@@ -1,5 +1,6 @@
 module Backend.Api.Navbar
 
+open FSharpPlus.Data
 open Giraffe
 open Domain
 open FsToolkit.ErrorHandling
@@ -53,43 +54,55 @@ module Views =
         | Some u -> logoutDropdown u
         | None -> emptyText
 
-    let numberOfGameNightsView load (numGN: int option) =
-        let tag =
-            let minWidth = _style "min-width: 3em;"
-            [ _class "tag is-light is-small ml-2"; minWidth ]
+    let unvotedGameNightsCountView (numGN: int option) =
         let spinner = 
                 nav [ _class "level" ] [
                 div [ _class "icon" ] [
                     i [ _class "fas fa-spinner fa-spin" ] [ ]
                 ]
             ]
-        turboFrame [ 
-            _id "navbar-game-nights-link-text"
-            if load then _src "/fragments/navbar/numberofgamenights"
+        div [
+            Stimulus.target { Controller = "unvoted-count"; TargetName = "count" }
         ] [
             match numGN with
+            | None ->
+                emptyText
+//                div [ _class "ml-2" ] [ spinner ]
             | Some num when num < 1 ->
-                span [] [ emptyText ]
+                emptyText
+//                div [ _class "circle ml-2"; _hidden ] [ emptyText ]
             | Some num ->
-                span tag [ str (string num) ]
-            | None -> 
-                span tag [ spinner ]
+                div [ _class "circle ml-2" ] [ str (string num) ]
         ]
 
-    let lazyNumberOfGameNightsView = numberOfGameNightsView true None
-    let loadedNumberOfGameNightsView numGN = numberOfGameNightsView false (Some numGN)
+    let loadedUnvotedGameNightsCountView (allGameNights: ProposedGameNight list) user =
+        let gameNightsWhereUserHasNotVoted = 
+            allGameNights 
+            |> List.choose (fun g -> 
+                let gameVoters = g.GameVotes |> NonEmptyMap.values |> Seq.collect Set.toSeq |> Set.ofSeq
+                let dateVoters = g.DateVotes |> NonEmptyMap.values |> Seq.collect Set.toSeq |> Set.ofSeq
+                let allVoters = gameVoters + dateVoters
+                if Set.contains user allVoters then None else Some g.Id)
+            |> List.length
+        unvotedGameNightsCountView (Some gameNightsWhereUserHasNotVoted)
 
     let gameNightsLink isActive =
-        a [ 
+        a [
+            Stimulus.action { DomEvent = "click"; Controller = "active-page"; Action = "toggleClass" }
+            Stimulus.target { Controller = "active-page"; TargetName = "element" }
+            _targetTurboFrame "content"
             if isActive then _class "navbar-item is-tab is-active" else _class "navbar-item is-tab"
             _href "/gamenight" 
         ] [ 
             str "GameNights"
-            lazyNumberOfGameNightsView
+            unvotedGameNightsCountView None
         ]
 
     let gamesLink isActive =
-        a [ 
+        a [
+            Stimulus.action { DomEvent = "click"; Controller = "active-page"; Action = "toggleClass" }
+            Stimulus.target { Controller = "active-page"; TargetName = "element" }
+            _targetTurboFrame "content"
             if isActive then _class "navbar-item is-tab is-active" else _class "navbar-item is-tab"
             _href "/game" 
         ] [ 
@@ -97,8 +110,9 @@ module Views =
         ]
 
     let navbarView user (page: Page) =
-        nav [ 
+        nav [
             _class "navbar is-fixed-top is-info"
+            flag "data-turbo-permanent"
             Accessibility._roleNavigation 
             Stimulus.controller "css-class"
             Stimulus.cssClass { Controller = "css-class"; ClassName = "name"; ClassValue = "is-active" }
@@ -126,20 +140,15 @@ module Views =
                 _class "navbar-menu"
                 Stimulus.target { Controller = "css-class"; TargetName = "element" }
             ] [
-                div [ _class "navbar-start" ] [
+                div [ 
+                    Stimulus.controller "active-page"
+                    Stimulus.cssClass { Controller = "active-page"; ClassName = "name"; ClassValue = "is-active" }
+                    _class "navbar-start" 
+                ] [
                     match user with
                     | Some _ ->
-                        yield! 
-                            match page with 
-                            | Page.GameNights -> 
-                                [ gameNightsLink true
-                                  gamesLink false ]
-                            | Page.Games ->
-                                [ gameNightsLink false
-                                  gamesLink true ]
-                            | Page.User | Page.Version ->   
-                                [ gameNightsLink false
-                                  gamesLink false ]
+                        gamesLink (page = Page.Games)
+                        gameNightsLink (page = Page.GameNights)
                     | None -> 
                         emptyText
                 ]
@@ -147,10 +156,11 @@ module Views =
             ]
         ]
 
-let numberOfGameNightsFragment env : HttpHandler =
+let unvotedCountFragment env : HttpHandler =
     fun _ (ctx: HttpContext) ->
         taskResult {
             let! allGameNights = Storage.GameNights.getAllProposedGameNights env
-            return Views.loadedNumberOfGameNightsView (allGameNights.Length)
+            let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
+            return Views.loadedUnvotedGameNightsCountView allGameNights user
         }
         |> (fun view -> ctx.RespondWithHtmlFragment(env, view))

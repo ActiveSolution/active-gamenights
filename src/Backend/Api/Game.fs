@@ -101,13 +101,13 @@ module private Views =
             ]
         ]
 
-    let addGameLink =
+    let addGameLink isInline =
         div [ ] [
             turboFrame 
                 [ _id "add-game" ] [
                     a [ 
                         _id "add-game-link"
-                        _href "/game/add?inline=true" 
+                        _href (sprintf "/game/add?inline=%b" isInline) 
                     ] [ 
                         Icons.plusIcon
                         str "Add new game"
@@ -121,7 +121,7 @@ module private Views =
             section [ _class "section"] [
                 div [ _class "container" ] [
                     h2 [ _class "title is-2" ] [ str "No games" ]
-                    addGameLink
+                    addGameLink false
                 ]
             ]
         | games ->
@@ -129,7 +129,7 @@ module private Views =
                 section [ _class "section"] [ 
                     div [ _class "container"] [ 
                         for game in games do gameCard true (Some game)
-                        addGameLink
+                        addGameLink true
                     ]
                 ]
             ]
@@ -373,4 +373,4 @@ let controller env = controller {
 module Fragments =
     let addGameLinkFragment env : HttpHandler =
         fun _ ctx -> 
-            ctx.RespondWithHtmlFragment(env, Views.addGameLink)
+            ctx.RespondWithHtmlFragment(env, Views.addGameLink true)

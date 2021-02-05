@@ -17,6 +17,7 @@ module private Views =
         section [ _class "section" ] [
             div [ _class "container" ] [
                 form [
+                    _targetTurboFrame "_top"
                     _action "/user"
                     _method "POST"
                 ] [
