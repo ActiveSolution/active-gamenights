@@ -30,7 +30,7 @@ module Views =
                     form [
                         _action "/user/logout"
                         _method "POST"
-                        _targetTurboFrame "_top"
+                        _disableTurboDrive
                     ] [
                         input [ 
                             _type "hidden"
@@ -107,7 +107,6 @@ module Views =
     let navbarView user (page: Page) =
         nav [
             _class "navbar is-fixed-top is-info"
-            flag "data-turbo-permanent"
             Accessibility._roleNavigation 
             Stimulus.controller "css-class"
             Stimulus.cssClass { Controller = "css-class"; ClassName = "name"; ClassValue = "is-active" }

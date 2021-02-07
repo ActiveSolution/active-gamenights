@@ -6,7 +6,10 @@ export default class extends ApplicationController {
     refresh() {
         fetch("/fragments/navbar/unvotedcount")
             .then(res => res.text())
-            .then(html =>
-                this.countTarget.innerHTML = html);
+            .then(html => {
+                if (this.hasCountTarget) {
+                    this.countTarget.innerHTML = html;
+                }
+            });
     }
 }

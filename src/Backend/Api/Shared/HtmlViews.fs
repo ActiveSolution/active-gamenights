@@ -72,7 +72,7 @@ let fullPage env user page content =
         htmlHead env
         body [
             Stimulus.controller "unvoted-count"
-            Stimulus.action { DomEvent = "vote:connected"; Controller = "unvoted-count"; Action = "refresh" }
+            Stimulus.action { DomEvent = "refresh-vote-count:connected"; Controller = "unvoted-count"; Action = "refresh" }
             _class "has-navbar-fixed-top" 
         ] [
             Navbar.Views.navbarView user page

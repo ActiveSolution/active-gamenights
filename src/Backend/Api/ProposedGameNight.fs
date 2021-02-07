@@ -43,7 +43,7 @@ module Views =
         let turboFrameId = "proposed-game-night-" + gn.Id.ToString()
         turboFrame [ _id turboFrameId ] [
             div [
-                if triggerVoteCount then Stimulus.controller "vote"
+                if triggerVoteCount then Stimulus.controller "refresh-vote-count"
                 _class "box mb-5"
                 _dataGameNightId (gn.Id.ToString()) 
             ] [
@@ -99,13 +99,19 @@ module Views =
         turboFrame [ _id "proposed-game-nights"] [ 
             match proposed with
             | [] -> 
-                section [ _class "section"] [ 
+                section [
+                    Stimulus.controller "refresh-vote-count"
+                    _class "section"
+                ] [ 
                     div [ _class "container"] [ 
                         addProposedGameNightLink
                     ]
                 ]
             | proposed ->
-                section [ _class "section"] [ 
+                section [
+                    Stimulus.controller "refresh-vote-count"
+                    _class "section"
+                ] [ 
                     div [ _class "container"] [ 
                         h2 [ _class "title is-2" ] [ str "Proposed game nights" ]
                         for gameNight in proposed do proposedGameNightView false allGames currentUser gameNight 
