@@ -82,7 +82,7 @@ let getAll env : HttpFunc =
         taskResult {
             let! confirmed = Storage.GameNights.getAllConfirmedGameNights env
             let! currentUser = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-            let! allGames = Storage.Games.getAllGames env |> Async.map (Game.toMap)
+            let! allGames = Storage.Games.getAllGames env |> Async.map Game.toMap
             return Views.gameNightsView allGames currentUser confirmed 
         } 
         |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))

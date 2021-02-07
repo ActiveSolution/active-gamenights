@@ -115,8 +115,8 @@ module private Views =
                 ]
             ]
 
-    let games games =
-        match games |> Set.toList with
+    let games (games: seq<Game>) =
+        match games |> Seq.toList with
         | [] ->
             section [ _class "section"] [
                 div [ _class "container" ] [
@@ -333,7 +333,7 @@ let saveGame env (ctx: HttpContext): HttpFuncResult =
     taskResult {
         let! form = ctx.BindFormAsync<CreateGameForm>()
         let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-        let! existingGames = Storage.Games.getAllGames env |> Async.map (Set.map (fun x -> x.Name))
+        let! existingGames = Storage.Games.getAllGames env |> Async.map (Set.ofSeq >>Set.map (fun x -> x.Name))
         let gameId = GameId.newId() 
         let! request = Validation.validateCreateGameForm gameId user existingGames form
         let! game = Workflows.Game.addGame request |> Result.mapError ApiError.BadRequest
@@ -348,7 +348,7 @@ let updateGame env (ctx: HttpContext) gameIdStr =
         let! form = ctx.BindFormAsync<CreateGameForm>()
         let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
         let! existingGames = Storage.Games.getAllGames env 
-        let existingGameNames = existingGames |> Set.map (fun x -> x.Name)
+        let existingGameNames = existingGames |> Set.ofSeq |> Set.map (fun x -> x.Name)
         let! request = Validation.validateUpdateGameForm gameId existingGameNames user form 
         let game = Workflows.Game.updateGame request 
         let! _ = Storage.Games.addGame env game

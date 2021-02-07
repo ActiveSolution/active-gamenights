@@ -213,7 +213,7 @@ module Games =
           Game.Notes = entity.Notes |> Option.ofObj
           Game.NumberOfPlayers = entity.NumberOfPlayers |> Option.ofObj }
 
-    let getAllGames (env: #IStorage) : Async<Set<Game>> =
+    let getAllGames (env: #IStorage) : Async<seq<Game>> =
         async {
             let! result =
                 Query.all<GameEntity>
@@ -222,7 +222,6 @@ module Games =
                 result
                 |> Seq.map (fst >> toGame)
                 |> Seq.sortBy (fun x -> x.Name)
-                |> Set.ofSeq
         }
 
 

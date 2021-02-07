@@ -132,7 +132,7 @@ module Views =
             ]
         ]
 
-    let gameSelect (allGames: Set<Game>) loadGames index (selectedGame: Guid<GameId> option) =
+    let gameSelect (allGames: seq<Game>) loadGames index (selectedGame: Guid<GameId> option) =
         let placeholder = if index > 1 then "Pick another game" else "Pick a game"
         let fragmentEndpoint =
             selectedGame
@@ -403,7 +403,7 @@ let saveProposedGameNight env (ctx: HttpContext) : HttpFuncResult =
         let! form = ctx.BindFormAsync<CreateProposedGameNightForm>()
         let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
         let! existingGames = Storage.Games.getAllGames env
-        let! req = Validation.validateCreateGameNightForm user existingGames form
+        let! req = Validation.validateCreateGameNightForm user (existingGames |> Set.ofSeq) form
         let gn = Workflows.GameNights.createProposedGameNight req
         let! _ = Storage.GameNights.saveProposedGameNight env gn
         return "/proposedgamenight"
@@ -539,7 +539,7 @@ module Fragments =
                     |> Option.bind (GameId.parse >> Result.toOption)
                     |> Option.bind (fun gameId -> 
                         allGames 
-                        |> Set.tryFind (fun g -> g.Id = gameId) 
+                        |> Seq.tryFind (fun g -> g.Id = gameId) 
                         |> Option.map(fun g -> g.Id))
 
                 return Views.loadedGameSelect allGames index selectedGame
