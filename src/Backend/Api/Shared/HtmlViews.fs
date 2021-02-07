@@ -51,6 +51,8 @@ let htmlHead (settings: ITemplateSettings) =
             _src "https://plausible.io/js/plausible.js"
         ] []
         script [
+            _async
+            _defer
             _src "/Scripts/bundle.js"
             _type "text/javascript"
         ] []
@@ -70,6 +72,7 @@ let fullPage env user page content =
         htmlHead env
         body [
             Stimulus.controller "unvoted-count"
+            Stimulus.action { DomEvent = "vote:connected"; Controller = "unvoted-count"; Action = "refresh" }
             _class "has-navbar-fixed-top" 
         ] [
             Navbar.Views.navbarView user page

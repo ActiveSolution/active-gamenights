@@ -62,7 +62,7 @@ module ApiResultHelpers =
         |> env.Templates.FullPage (getUser ctx) page
         |> Controller.html ctx
 
-    let fullPageHtmlMultiple (env: #ITemplateBuilder) page content ctx =
+    let fullPageHtmlMultiple (env: #ITemplateBuilder) page content (ctx: HttpContext) =
         content
         |> env.Templates.FullPage (getUser ctx) page
         |> Controller.html ctx

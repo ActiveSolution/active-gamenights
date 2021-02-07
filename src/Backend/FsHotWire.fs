@@ -46,7 +46,7 @@ module Giraffe =
     module TurboStream =
         let private template = tag "template"
         let render (turboStreams: seq<TurboStream>) =
-            body [] [
+            [
                 for ts in turboStreams do
                     turboStream [
                         _action ts.Action
@@ -58,23 +58,26 @@ module Giraffe =
                                 | None -> ()
                             ]
                         ]
-                    ]
+            ]
             
         let append targetId content =
             TurboStream.Create("append", targetId, Some content)
             
         let replace targetId content =
             TurboStream.Create("replace", targetId, Some content)
+            
+        let update targetId content =
+            TurboStream.Create("update", targetId, Some content)
 
         let remove targetId =
             TurboStream.Create("remove", targetId, None)
             
         let writeTurboStreamContent statusCode (ts: seq<TurboStream>) (ctx: HttpContext) =
-            ctx.SetContentType "text/html; turbo-stream"
+            ctx.SetContentType "text/vnd.turbo-stream.html"
             ctx.SetStatusCode statusCode
             
             render ts
-            |> RenderView.AsString.htmlDocument
+            |> RenderView.AsString.htmlNodes
             |> ctx.WriteStringAsync 
         
     module Stimulus =

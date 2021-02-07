@@ -38,11 +38,15 @@ module Views =
             ]
         ]
 
-    let proposedGameNightView (allGames: Map<Guid<GameId>, Game>) currentUser (gn: ProposedGameNight) =
+    let proposedGameNightView triggerVoteCount (allGames: Map<Guid<GameId>, Game>) currentUser (gn: ProposedGameNight) =
     
         let turboFrameId = "proposed-game-night-" + gn.Id.ToString()
         turboFrame [ _id turboFrameId ] [
-            div [ _class "box mb-5"; _dataGameNightId (gn.Id.ToString()) ] [
+            div [
+                if triggerVoteCount then Stimulus.controller "vote"
+                _class "box mb-5"
+                _dataGameNightId (gn.Id.ToString()) 
+            ] [
                 div [ _class "media" ] [
                     div [ _class "media-content" ] [
                         h5 [ _class "title is-5" ] [ (gn.CreatedBy |> Username.toDisplayName) + " wants to play" |> str ]
@@ -74,7 +78,7 @@ module Views =
     let showGameNightView allGames user (gn: ProposedGameNight) =
         section [ _class "section" ] [
             div [ _class "container" ] [
-                proposedGameNightView allGames user gn
+                proposedGameNightView true allGames user gn
             ]
         ]
 
@@ -104,7 +108,7 @@ module Views =
                 section [ _class "section"] [ 
                     div [ _class "container"] [ 
                         h2 [ _class "title is-2" ] [ str "Proposed game nights" ]
-                        for gameNight in proposed do proposedGameNightView allGames currentUser gameNight 
+                        for gameNight in proposed do proposedGameNightView false allGames currentUser gameNight 
                         addProposedGameNightLink
                     ]
                 ]
@@ -357,12 +361,20 @@ module private Validation =
         }
         |> Result.mapError (form.FormValidationError "add-proposed-game-night-submit-button")
 
-let getProposedGameNight env (ctx: HttpContext) stringId =
+let showProposedGameNight env (ctx: HttpContext) stringId =
+    let getData id =
+        taskResult {
+            let! allGames = Storage.Games.getAllGames env |> Async.map (Game.toMap) |> Async.StartChild
+            let! proposed = Storage.GameNights.getAllProposedGameNights env |> Async.StartChild
+            let! p = proposed
+            let! gs = allGames
+            return (p, gs)
+        }
     taskResult {
         let! id = GameNightId.parse stringId |> Result.mapError ApiError.BadRequest
+        let! proposed, allGames = getData id
+        let gn = proposed |> List.filter (fun gn -> gn.Id = id) |> List.exactlyOne
         let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-        let! gn = Storage.GameNights.getProposedGameNight env id |> AsyncResult.mapError (fun _ -> ApiError.NotFound)
-        let! allGames = Storage.Games.getAllGames env |> Async.map (Game.toMap)
         return Views.showGameNightView allGames user gn
     }
     |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))
@@ -393,11 +405,18 @@ let saveProposedGameNight env (ctx: HttpContext) : HttpFuncResult =
     } |> ctx.RespondWithRedirect
 
 let getAll env : HttpFunc =
+    let getData =
+        async {
+            let! proposed = Storage.GameNights.getAllProposedGameNights env |> Async.StartChild
+            let! allGames = Storage.Games.getAllGames env |> Async.map Game.toMap |> Async.StartChild
+            let! p = proposed
+            let! gs = allGames
+            return (p, gs)
+        }
     fun ctx -> 
         taskResult {
-            let! proposed = Storage.GameNights.getAllProposedGameNights env
+            let! (proposed, allGames) = getData
             let! currentUser = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-            let! allGames = Storage.Games.getAllGames env |> Async.map Game.toMap
             return Views.gameNightsView allGames currentUser proposed 
         } 
         |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))
@@ -489,7 +508,7 @@ let controller env = controller {
     plug [ Add ] (CommonHttpHandlers.privateCaching (TimeSpan.FromHours 24.))
     
     index (getAll env)
-    show (getProposedGameNight env)
+    show (showProposedGameNight env)
     add (addProposedGameNight env)
     create (saveProposedGameNight env)
     

@@ -837,10 +837,10 @@
     lodash "^4.17.19"
     to-fast-properties "^2.0.0"
 
-"@hotwired/turbo@7.0.0-beta.2":
-  version "7.0.0-beta.2"
-  resolved "https://registry.yarnpkg.com/@hotwired/turbo/-/turbo-7.0.0-beta.2.tgz#0f20c1f5b67fe07472a5f1eda2e3f79146324512"
-  integrity sha512-3YyWDaImtkU8MJ+//qV8nmV8KeFInN/nptqwJo1Bl5UjROmixPr3w9tPHyA499Mo1mBJOur8jiXVowbX6VWLUg==
+"@hotwired/turbo@7.0.0-beta.4":
+  version "7.0.0-beta.4"
+  resolved "https://registry.yarnpkg.com/@hotwired/turbo/-/turbo-7.0.0-beta.4.tgz#be6d7014902d45121f56358d360e0810bad4c19e"
+  integrity sha512-koox7UeA2Na0tLBPesxNO3nk/gtezRxF33NHKbAx+zv5s2k1Xh/orB5xNr5dAckoUj3Pdpytnw41WH4QB1jYBg==
 
 "@iarna/toml@^2.2.0":
   version "2.2.5"
@@ -4660,6 +4660,11 @@ stealthy-require@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/stealthy-require/-/stealthy-require-1.1.1.tgz#35b09875b4ff49f26a777e509b3090a3226bf24b"
   integrity sha1-NbCYdbT/SfJqd35QmzCQoyJr8ks=
+
+stimulus-use@^0.23.0:
+  version "0.23.0"
+  resolved "https://registry.yarnpkg.com/stimulus-use/-/stimulus-use-0.23.0.tgz#7f35e99c98dc4ded59ada8d89a83b6a85b847099"
+  integrity sha512-9oYoT1kSzPLfvNHf4RoZKk6LTEtZ07mzUtq3BY5Cp1068eimgXES+TxGV2Cze8CeGBubWJXUxJ15LeLlR3bBtA==
 
 stimulus@^2.0.0:
   version "2.0.0"

@@ -16,5 +16,7 @@
     color: #fff;
     line-height: 20px;
     text-align: center;
-    background: #f14668
+    background: #f14668;
+    position:relative; 
+    top:-0.75em;
 }

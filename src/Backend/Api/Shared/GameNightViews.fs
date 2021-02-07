@@ -22,9 +22,7 @@ let addVoteButton addVoteUrl target =
                     button [
                         Stimulus.controller "css-class"
                         Stimulus.cssClass { Controller = "css-class" ; ClassName = "name"; ClassValue = "is-loading" }
-                        Stimulus.actions 
-                            [ { DomEvent = "click"; Controller = "css-class"; Action = "addClass" }
-                              { DomEvent = "click"; Controller = "unvoted-count"; Action = "delayedFetch" } ]
+                        Stimulus.action { DomEvent = "click"; Controller = "css-class"; Action = "addClass" } 
                         _addVoteButton 
                         _class "button is-primary is-small"
                         _type "submit"
@@ -60,8 +58,7 @@ let removeVoteButton removeVoteUrl (user: string<CanonizedUsername>) target =
                             Stimulus.actions 
                                 [ { DomEvent = "click"; Controller = "css-class"; Action = "addClass" }
                                   { DomEvent = "mouseenter"; Controller = "remove-vote-button"; Action = "setActive" } 
-                                  { DomEvent = "mouseleave"; Controller = "remove-vote-button"; Action = "setInactive" } 
-                                  { DomEvent = "click"; Controller = "unvoted-count"; Action = "delayedFetch" } ]
+                                  { DomEvent = "mouseleave"; Controller = "remove-vote-button"; Action = "setInactive" } ]
                             _removeVoteButton 
                             _class "button is-info is-small"
                             _type "submit"
