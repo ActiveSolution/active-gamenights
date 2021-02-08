@@ -5,7 +5,7 @@ group Backend
     framework: net5.0
     storage: none
 
-    nuget Giraffe
+    nuget Giraffe 
     nuget Saturn
     nuget FSharp.Core
     nuget FsToolkit.ErrorHandling
@@ -14,38 +14,13 @@ group Backend
     nuget Microsoft.Extensions.Configuration.UserSecrets 
     nuget FSharp.Azure.Storage
     nuget Unquote 4.0
-    nuget Microsoft.AspNetCore.Authentication.JwtBearer 3.1.10 
     nuget Giraffe.ViewEngine 1.2.0
-    
-group Functions
-
-    source https://api.nuget.org/v3/index.json
-    framework: netcoreapp3.1
-    storage: none
-    strategy: min
-
-    nuget FSharp.Core
-    nuget FsToolkit.ErrorHandling
-    nuget FsToolkit.ErrorHandling.TaskResult
-    nuget FsConfig
-    nuget Microsoft.Extensions.Configuration.EnvironmentVariables
-    nuget Microsoft.Extensions.Configuration.UserSecrets 
-    nuget Microsoft.NET.Sdk.Functions 
-    nuget Newtonsoft.Json 12.0.3
-    
-group Core
-    source https://api.nuget.org/v3/index.json
-    framework: netcoreapp3.1
-    storage: none
-
-    nuget FSharp.Core
-    nuget FsToolkit.ErrorHandling
+    nuget Lib.AspNetCore.ServerSentEvents
     nuget FSharpPlus 1.2.0-CI01568 
-    nuget FsToolkit.ErrorHandling.TaskResult
     nuget FSharp.Azure.Storage
-    nuget Unquote 4.0
     nuget Newtonsoft.Json
     nuget FSharp.UMX
+    
 
 group build
     source https://api.nuget.org/v3/index.json

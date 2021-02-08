@@ -1,11 +1,10 @@
 module Backend.Api.GameNight
 
-open FsHotWire.Giraffe
 open Giraffe
+open Infrastructure
 open Saturn
 open Backend.Extensions
 open Backend
-open Backend.Api.Shared
 open FsToolkit.ErrorHandling
 open Domain
 

@@ -2,6 +2,7 @@ module Backend.Api.ConfirmedGameNight
 
 open Giraffe
 open FSharpPlus.Data
+open Infrastructure
 open Saturn
 open FsToolkit.ErrorHandling
 open Backend
@@ -44,7 +45,7 @@ module Views =
         turboFrame [ _id turboFrameId ] [
             div [ _class "card mb-5"; _dataGameNightId (gn.Id.ToString()) ] [
                 header [ _class "card-header" ] [ 
-                    p [ _class "card-header-title" ] [ (gn.CreatedBy |> Username.toDisplayName) + " wants to play" |> str ]
+                    p [ _class "card-header-title" ] [ (gn.CreatedBy |> User.toDisplayName) + " wants to play" |> str ]
                 ]
                 div [ _class "card-content" ] [ 
                     for gameId, votes in gn.GameVotes |> NonEmptyMap.toList do

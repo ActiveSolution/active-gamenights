@@ -4,6 +4,9 @@ open Giraffe.ViewEngine
 open FSharp.UMX
 open Domain
 
+
+type AsyncResult<'TResult, 'TError> = Async<Result<'TResult, 'TError>>
+
 type ApiError =
     | Duplicate 
     | NotFound

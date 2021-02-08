@@ -7,6 +7,7 @@ open Saturn
 open Microsoft.AspNetCore.Http
 open FsToolkit.ErrorHandling
 open Domain
+open System
 
 
 module private Views =
@@ -27,7 +28,7 @@ module private Views =
                             input [
                                 _type "text"
                                 _class "input"
-                                _name HttpContext.usernameKey
+                                _name HttpContext.userKey
                                 _autofocus
                             ]
                             span [ _class "icon is-small is-left" ] [
@@ -55,13 +56,12 @@ let createUser : HttpFunc =
     fun ctx ->
         result {
             let! username =
-                ctx.GetFormValue HttpContext.usernameKey
-                |> Result.requireSome (sprintf "missing form value %s" HttpContext.usernameKey |> ApiError.BadRequest)
-            let! user =
-                username
-                |> Username.create 
+                ctx.GetFormValue HttpContext.userKey
+                |> Result.requireSome (sprintf "missing form value %s" HttpContext.userKey |> ApiError.BadRequest)
+            let! username = 
+                User.createUsername username
                 |> Result.mapError ApiError.BadRequest
-            ctx.SetUsername user
+            ctx.SetUsername username
             return ctx.TryGetQueryStringValue "redirect" |> Option.defaultValue "/"
         }
         |> ctx.RespondWithRedirect

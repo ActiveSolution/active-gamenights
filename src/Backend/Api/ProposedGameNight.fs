@@ -3,6 +3,8 @@ module Backend.Api.ProposedGameNight
 open System
 open Giraffe
 open FSharpPlus.Data
+open Giraffe.ViewEngine
+open Infrastructure
 open Microsoft.AspNetCore.Http
 open Saturn
 open FsToolkit.ErrorHandling
@@ -16,7 +18,7 @@ module Views =
 
     open Giraffe.ViewEngine
     open FsHotWire.Giraffe
-    let gameCard game votes currentUser actionUrl voteUpdateTarget =
+    let gameCard (game:Game) votes currentUser actionUrl voteUpdateTarget =
         article [ 
             _class "media" 
             _dataGameName %game.Name
@@ -49,7 +51,7 @@ module Views =
             ] [
                 div [ _class "media" ] [
                     div [ _class "media-content" ] [
-                        h5 [ _class "title is-5" ] [ (gn.CreatedBy |> Username.toDisplayName) + " wants to play" |> str ]
+                        h5 [ _class "title is-5" ] [ (gn.CreatedBy |> User.toDisplayName) + " wants to play" |> str ]
                         div [ _class "block" ] [
                             for gameId, votes in gn.GameVotes |> NonEmptyMap.toList do
                                 let game = allGames.[gameId]
@@ -368,7 +370,7 @@ module private Validation =
         |> Result.mapError (form.FormValidationError "add-proposed-game-night-submit-button")
 
 let showProposedGameNight env (ctx: HttpContext) stringId =
-    let getData id =
+    let getData () =
         taskResult {
             let! allGames = Storage.Games.getAllGames env |> Async.map (Game.toMap) |> Async.StartChild
             let! proposed = Storage.GameNights.getAllProposedGameNights env |> Async.StartChild
@@ -378,7 +380,7 @@ let showProposedGameNight env (ctx: HttpContext) stringId =
         }
     taskResult {
         let! id = GameNightId.parse stringId |> Result.mapError ApiError.BadRequest
-        let! proposed, allGames = getData id
+        let! proposed, allGames = getData ()
         let gn = proposed |> List.filter (fun gn -> gn.Id = id) |> List.exactlyOne
         let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
         return Views.showGameNightView allGames user gn
@@ -427,7 +429,6 @@ let getAll env : HttpFunc =
         } 
         |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))
         
-        
 let gameController env (gameNightId: string) =
     let voteController (gameIdStr: string) =
         let saveGameVote (ctx: HttpContext) = 
@@ -439,6 +440,7 @@ let gameController env (gameNightId: string) =
                 let req = Workflows.GameNights.GameVoteRequest.create (gameNight, gameId, user)
                 let updated = Workflows.GameNights.addGameVote req
                 let! _ = Storage.GameNights.saveProposedGameNight env updated
+                
                 return sprintf "/proposedgamenight/%s" (gameNightId.ToString())
             }
             |> ctx.RespondWithRedirect
@@ -481,6 +483,7 @@ let dateController env (gameNightId: string) =
                 let updated = Workflows.GameNights.addDateVote req
                 
                 let! _ = Storage.GameNights.saveProposedGameNight env updated
+                
                 return sprintf "/proposedgamenight/%s" (gameNightId.ToString())
             }
             |> ctx.RespondWithRedirect

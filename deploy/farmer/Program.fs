@@ -15,7 +15,6 @@ let parseCLI (key:string) (argv: string[]) =
     |> Option.bind (fun x -> x.Split('=', StringSplitOptions.RemoveEmptyEntries) |> Array.tryItem 1)
     
 let webAppOutput = "./output/webapp"
-let functionsOutput = "./output/functions"
 
 [<EntryPoint>]
 let main argv =
@@ -50,21 +49,11 @@ let main argv =
             zip_deploy webAppOutput
         }
 
-        // let functions = functions {
-        //     name (webAppName + "-functions")
-        //     link_to_storage_account storage.Name.ResourceName
-        //     operating_system Linux
-        //     link_to_service_plan webApp.ServicePlanName
-        //     zip_deploy functionsOutput
-        //     setting "ENABLE_ORYX_BUILD" "false" // az cli zip-deploy for linux az functions consumption plan. workaround from https://github.com/Azure/Azure-Functions/issues/1200
-        // }
-        
         arm {
             location Location.WestEurope
             add_resources [
                 storage
                 webApp
-                // functions
             ]
         }
     

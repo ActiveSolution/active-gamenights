@@ -4,6 +4,7 @@ open System
 open Domain
 open FsHotWire.Giraffe
 open Giraffe
+open Infrastructure
 open Saturn
 open Backend.Extensions
 open Backend

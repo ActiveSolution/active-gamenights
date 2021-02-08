@@ -28,7 +28,7 @@ module bool =
         | false, _ -> None
         
 module HttpContext = 
-    let usernameKey = "username"
+    let userKey = "username"
     
 module ApiResultHelpers =
     let handleResult ctx okFunc res : HttpFuncResult =
@@ -53,8 +53,8 @@ module ApiResultHelpers =
         
 
     let getUser (ctx: HttpContext) =
-        ctx.Session.GetString(HttpContext.usernameKey)
-        |> Username.create
+        ctx.Session.GetString(HttpContext.userKey)
+        |> User.createUsername
         |> Result.toOption
     let fullPageHtml (env: #ITemplateBuilder) page content ctx =
         content
@@ -79,16 +79,16 @@ type ApiFormResponse =
     
 type HttpContext with
     member this.GetUser() =
-        this.Session.GetString(HttpContext.usernameKey)
+        this.Session.GetString(HttpContext.userKey)
         |> Option.ofObj
         |> Result.requireSome "Missing user in HttpContext"
-        |> Result.bind Username.create
+        |> Result.bind User.createUsername
         
     member this.SetUsername(user: string<CanonizedUsername>) =
-        this.Session.SetString(HttpContext.usernameKey, %user)
+        this.Session.SetString(HttpContext.userKey, %user)
         
     member this.ClearUsername() =
-        this.Session.Remove(HttpContext.usernameKey)
+        this.Session.Remove(HttpContext.userKey)
     
     member ctx.RespondWithHtmlFragment (env, content) =
         ApiResultHelpers.fragment env content ctx
@@ -136,6 +136,7 @@ type HttpContext with
             
         formTaskResult
         |> Task.bind (ApiResultHelpers.handleResult ctx handleFormResponse)
+        
         
 module Map =
     let keys map = map |> Map.toList |> List.map fst

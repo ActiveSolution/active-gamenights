@@ -52,14 +52,11 @@ let deployGlob = rootPath  @@ "deploy/**/*.??proj"
 let backendPath = src @@ "Backend"
 let webTestsPath = test @@ "WebTests"
 let backendProj = backendPath @@ "Backend.fsproj"
-let functionsPath = src @@ "Functions"
-let functionsProj = functionsPath @@ "Functions.fsproj"
 let farmerDeployPath = rootPath @@ "deploy" @@ "farmer"
 let jsEntryPath = backendPath @@ "scripts" @@ "application.js" |> Path.getFullName
 let jsOutputPath = backendPath @@ "public" @@ "Scripts" |> Path.getFullName
 let outputPath = "./output"
 let webAppOutput = outputPath @@ "webapp"
-let functionsOutput = outputPath @@ "functions"
 let testSite = "https://active-game-night-test.azurewebsites.net"
 let prodSite = "https://active-game-night.azurewebsites.net"
 
@@ -134,23 +131,6 @@ let dotnetPublishBackend ctx =
             OutputPath = Some (webAppOutput)
         }) backendProj
 
-// let dotnetPublishFunctions ctx =
-//     let args =
-//         [
-//             sprintf "/p:PackageVersion=%s" (semVersion).AsString
-//         ]
-//     DotNet.publish(fun c ->
-//         { c with
-//             Configuration = configuration (ctx.Context.AllExecutingTargets)
-//             NoBuild = true
-//             NoRestore = true
-//             SelfContained = Some false
-//             Common =
-//                 c.Common
-//                 |> DotNet.Options.withAdditionalArgs args
-//             OutputPath = Some (functionsOutput)
-//         }) functionsProj
-
 let dotnetRestore _ = DotNet.restore id sln
 let yarnInstall _ = Tools.yarn [] rootPath
 
@@ -178,7 +158,6 @@ let watchApp _ =
 
     let frontEnd() = Tools.yarn [ "run"; "parcel"; jsEntryPath; "--out-dir"; jsOutputPath; "--out-file"; "bundle.js"; "--public-url"; "/Scripts" ] rootPath
     let server() = dotNetWatch "run" backendPath ""
-    // let functions() = dotNetWatch "msbuild" functionsPath "/t:RunFunctions"
 
     [ frontEnd; server ]
     |> Seq.iter (invokeAsync >> Async.Catch >> Async.Ignore >> Async.Start)
@@ -264,7 +243,6 @@ Target.create "DotnetBuild" dotnetBuild
 Target.create "WatchApp" watchApp
 Target.create "Build" ignore
 Target.create "DotnetPublishBackend" dotnetPublishBackend
-// Target.create "DotnetPublishFunctions" dotnetPublishFunctions
 Target.create "Package" ignore
 Target.create "DeployToTest" (runFarmerDeploy Test)
 Target.create "DeployToProd" (runFarmerDeploy Prod)
@@ -294,7 +272,7 @@ Target.create "CreateProdRelease" ignore
     ==> "WriteVersionToFile"
     ==> "DotnetBuild" <=> "YarnInstall"
     ==> "Build"
-    ==> "DotnetPublishBackend" //<=> "DotnetPublishFunctions"
+    ==> "DotnetPublishBackend"
     ==> "Package"
 
 "DeployToTest"

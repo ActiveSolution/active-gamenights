@@ -1,9 +1,0 @@
-group Functions
-    FSharp.Core
-    FsToolkit.ErrorHandling
-    FsToolkit.ErrorHandling.TaskResult
-    FsConfig
-    Microsoft.Extensions.Configuration.UserSecrets 
-    Microsoft.Extensions.Configuration.EnvironmentVariables
-    Microsoft.NET.Sdk.Functions
-    Microsoft.Azure.WebJobs.Extensions

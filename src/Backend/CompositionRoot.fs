@@ -2,6 +2,7 @@ module Backend.CompositionRoot
 
 open Backend
 open Giraffe
+open Infrastructure
 
 let config = Configuration.config.Value
 

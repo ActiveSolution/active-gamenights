@@ -79,6 +79,7 @@ let configureServices (s: IServiceCollection) =
     s
 let configureApp (a: IApplicationBuilder) =
     a.UseResponseCaching() |> ignore
+    a.UseRouting() |> ignore
     a
     
 application {

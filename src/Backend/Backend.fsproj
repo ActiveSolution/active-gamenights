@@ -6,10 +6,24 @@
     <UserSecretsId>53976580-fec0-49dd-8e4a-64509d07c664</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Domain\Helpers.fs" />
+    <Compile Include="Domain\Domain.fs" />
+    <Compile Include="Domain\Date.fs" />
+    <Compile Include="Domain\FutureDate.fs" />
+    <Compile Include="Domain\User.fs" />
+    <Compile Include="Domain\GameName.fs" />
+    <Compile Include="Domain\Game.fs" />
+    <Compile Include="Domain\GameId.fs" />
+    <Compile Include="Domain\GameNightId.fs" />
+    <Compile Include="Domain\Workflows\Game.fs" />
+    <Compile Include="Domain\Workflows\GameNights.fs" />
+    <Compile Include="Domain\ProposedGameNight.fs" />
     <Compile Include="FsHotWire.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="Extensions.fs" />
     <Compile Include="Version.fs" />
+    <Compile Include="Infrastructure\Json.fs" />
+    <Compile Include="Infrastructure\Storage.fs" />
     <Compile Include="Configuration.fs" />
     <Compile Include="Validation.fs" />
     <Compile Include="CommonHttpHandlers.fs" />
@@ -25,9 +39,6 @@
     <Compile Include="Api\GameNight.fs" />
     <Compile Include="CompositionRoot.fs" />
     <Compile Include="Server.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Core\Core.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

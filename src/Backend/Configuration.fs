@@ -1,6 +1,7 @@
 module Backend.Configuration
 
 open FsConfig
+open Infrastructure
 open Microsoft.Extensions.Configuration
 open System.IO
 open Backend

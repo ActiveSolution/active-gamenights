@@ -8,6 +8,7 @@ open Backend.Extensions
 open FSharp.UMX
 open Giraffe.ViewEngine
 open FsHotWire.Giraffe
+open Infrastructure
 open Saturn
 open Microsoft.AspNetCore.Http
 open Backend
@@ -25,7 +26,7 @@ module Views =
     let userView (user: string<CanonizedUsername> option) =
         let logoutDropdown (user: string<CanonizedUsername>) =
             div [ _class "navbar-item has-dropdown is-hoverable"; _id "logout-dropdown" ] [
-                a [ _class "navbar-link"; _id "username" ] [ str (user |> Username.toDisplayName) ]
+                a [ _class "navbar-link"; _id "username" ] [ str (user |> User.toDisplayName) ]
                 div [ _class "navbar-dropdown" ] [
                     form [
                         _action "/user/logout"
@@ -69,17 +70,8 @@ module Views =
             if lazyLoad then _src "/fragments/navbar/unvotedcount"
         ] [ numGN |> Option.map unvotedGameNightsCountView |> Option.defaultValue emptyText ]
         
-    let private gameNightsWhereUserHasNotVoted (allGameNights: ProposedGameNight list) user = 
-        allGameNights 
-        |> List.choose (fun g -> 
-            let gameVoters = g.GameVotes |> NonEmptyMap.values |> Seq.collect Set.toSeq |> Set.ofSeq
-            let dateVoters = g.DateVotes |> NonEmptyMap.values |> Seq.collect Set.toSeq |> Set.ofSeq
-            let allVoters = gameVoters + dateVoters
-            if Set.contains user allVoters then None else Some g.Id)
-        |> List.length
-
     let loadedUnvotedGameNightsCountViewTF (allGameNights: ProposedGameNight list) user =
-        unvotedGameNightsCountViewTF false (Some (gameNightsWhereUserHasNotVoted allGameNights user))
+        unvotedGameNightsCountViewTF false (Some (ProposedGameNight.gameNightsWhereUserHasNotVoted allGameNights user))
 
     let gameNightsLink isActive =
         a [

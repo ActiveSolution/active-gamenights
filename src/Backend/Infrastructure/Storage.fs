@@ -1,5 +1,5 @@
 [<RequireQualifiedAccess>]
-module Storage
+module Infrastructure.Storage
 
 open Infrastructure
 open FSharp.Azure.Storage.Table
@@ -9,6 +9,7 @@ open FSharpPlus.Data
 open Microsoft.Azure.Cosmos.Table
 open FSharp.UMX
 open System
+open Backend
 
 
 type GameEntity = 
@@ -57,7 +58,7 @@ module private Implementation =
     
     let okOrFail msg = Result.defaultWith (fun _ -> failwith msg)
     let someOrFail msg = Option.defaultWith (fun _ -> failwith msg)
-    let parseUser entityUser = Username.create entityUser |> okOrFail "Entity has invalid CreatedBy"
+    let parseUser entityUser = User.createUsername entityUser |> okOrFail "Entity has invalid CreatedBy"
     
 
 module GameNights =
@@ -206,7 +207,7 @@ module GameNights =
 module Games =
     let private toGame (entity: GameEntity) =
         { Game.Id = entity.Id |> GameId.parse |> okOrFail (sprintf "Invalid game id in db (%s)" entity.Id)
-          Game.CreatedBy = entity.CreatedBy |> Username.create |> okOrFail "Invalid username in db"
+          Game.CreatedBy = entity.CreatedBy |> User.createUsername |> okOrFail "Invalid username in db"
           Game.ImageUrl = entity.ImageUrl |> Option.ofObj
           Game.Link = entity.Link |> Option.ofObj
           Game.Name = GameName.create entity.Name |> okOrFail "Invalid game name in db"

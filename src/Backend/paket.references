@@ -9,3 +9,7 @@ group Backend
     FSharp.Azure.Storage
     Unquote
     Giraffe.ViewEngine
+    Lib.AspNetCore.ServerSentEvents
+    FSharpPlus 
+    Newtonsoft.Json
+    FSharp.UMX
