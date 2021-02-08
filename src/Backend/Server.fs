@@ -84,9 +84,10 @@ let configureServices (s: IServiceCollection) =
     s
     
 type RequireUser(next: RequestDelegate) = 
-    member this.Invoke (ctx: HttpContext) =
-        printfn "PathString %A" ctx.Request.Path
-        if ctx.Request.Path = PathString "/user/add" then next.Invoke(ctx)
+    member __.Invoke (ctx: HttpContext) =
+        // This middleware duplicate some of the logic from the Giraffe/Saturn webapp, but is required because the Giraffe/Saturn routing otherwise ends up after mapping the SSE middleware
+        let allowedPaths = [| "/user/add"; "/version"; "/about" |] |> Array.map PathString
+        if allowedPaths |> Array.contains ctx.Request.Path then next.Invoke(ctx)
         else
             match ctx.Session.GetString(HttpContext.userKey) |> User.deserialize with
             | Ok user ->
