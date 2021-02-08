@@ -9,7 +9,8 @@ open Giraffe
 let exceptClient (currentUser: User) =
     System.Func<_,_>(fun (client: IServerSentEventsClient) ->
         match client.User |> ClaimsPrincipal.getUser with
-        | Ok clientUser when clientUser.Id = currentUser.Id -> false
+        | Ok clientUser when clientUser.Id = currentUser.Id -> 
+            false
         | _ -> true)
 
 let sendEvent (ctx: HttpContext) clientPredicate text =

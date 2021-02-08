@@ -80,7 +80,7 @@ module private Views =
                             a [ 
                                 _class "button is-primary is-small" 
                                 _href (sprintf "/proposedgamenight/add?game=%A" %game.Id)
-                                _targetTurboFrame "_top"
+                                _targetTurboFrame "content"
                             ] [ 
                                 str "I wanna play this!"
                             ]

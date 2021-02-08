@@ -1,9 +1,11 @@
 module Backend.Api.Shared.HtmlViews
 
+open Domain.Domain
 open FsHotWire.Giraffe
 open Backend
 open Backend.Api
 open Giraffe.ViewEngine
+open FSharp.UMX
 
 let htmlHead (settings: ITemplateSettings) =
     head [ _title "Active Game Night" ] [ 
@@ -31,10 +33,6 @@ let htmlHead (settings: ITemplateSettings) =
             _rel "shortcut icon"
             _href "/Icons/favicon.ico"
             _type "image/x-icon"
-        ]
-        link [ 
-            _rel "manifest" 
-            _href "/Icons/site.json"
         ]
         link [
             _rel "stylesheet"
@@ -67,18 +65,24 @@ let fragment content =
     |> RenderView.AsString.htmlNode
         
 
-let fullPage env user page content =
+let fullPage env (user: string<CanonizedUsername> option) page content =
     html [] [
         htmlHead env
-        body [
-            Stimulus.controllers [ "unvoted-count"; "turbo-stream" ]
-            Stimulus.action { DomEvent = "refresh-vote-count:connected"; Controller = "unvoted-count"; Action = "refresh" }
-            Stimulus.value { Controller = "turbo-stream"; ValueName = "url"; Value = "/sse-notifications" }
-            _class "has-navbar-fixed-top" 
-        ] [
-            Navbar.Views.navbarView user page
-            turboFrame [ _id "content" ] [
-                yield! content
+        body [] [
+            div [
+                if user.IsSome then 
+                    Stimulus.controllers [ "unvoted-count"; "turbo-stream" ]
+                else
+                    Stimulus.controller "unvoted-count"
+                Stimulus.action { DomEvent = "refresh-vote-count:connected"; Controller = "unvoted-count"; Action = "refresh" }
+                if user.IsSome then Stimulus.value { Controller = "turbo-stream"; ValueName = "url"; Value = "/sse-notifications" }
+     
+                _class "has-navbar-fixed-top" 
+            ] [
+                Navbar.Views.navbarView user page
+                turboFrame [ _id "content" ] [
+                    yield! content
+                ]
             ]
         ]
     ] 

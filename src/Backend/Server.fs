@@ -1,6 +1,9 @@
 module Backend.Startup
 
 open System
+open System.Net
+open System.Security.Claims
+open Domain
 open Giraffe
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
@@ -79,9 +82,30 @@ let configureServices (s: IServiceCollection) =
     s.AddResponseCaching() |> ignore
     s.AddServerSentEvents() |> ignore
     s
+    
+type RequireUser(next: RequestDelegate) = 
+    member this.Invoke (ctx: HttpContext) =
+        printfn "PathString %A" ctx.Request.Path
+        if ctx.Request.Path = PathString "/user/add" then next.Invoke(ctx)
+        else
+            match ctx.Session.GetString(HttpContext.userKey) |> User.deserialize with
+            | Ok user ->
+                let claims = 
+                    [ Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+                      Claim(ClaimTypes.Name, user.Name.ToString()) ]
+                let identity = ClaimsIdentity(claims, "Basic")
+                let principal = ClaimsPrincipal(identity)
+                ctx.User <- principal
+                next.Invoke(ctx)
+            | Error _ ->
+                ctx.Response.Redirect "/user/add"
+                next.Invoke(ctx)
+            
+            
 let configureApp (a: IApplicationBuilder) =
     a.UseResponseCaching() |> ignore
     a.UseRouting() |> ignore
+    a.UseMiddleware<RequireUser>() |> ignore
     a.MapServerSentEvents<ServerSentEventsService>(PathString "/sse-notifications") |> ignore
     a
     

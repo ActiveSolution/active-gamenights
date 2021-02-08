@@ -18,6 +18,7 @@ module Views =
 
     open Giraffe.ViewEngine
     open FsHotWire.Giraffe
+    
     let gameCard (gnId: Guid<GameNightId>) (game:Game) votes currentUser actionUrl voteUpdateTarget =
         article [ 
             _class "media" 
@@ -240,7 +241,7 @@ module Views =
             ]
         ]
 
-    let addProposedGameNightView isInline game =
+    let addProposedGameNightView isInline allGames game =
         section [ _class "section" ] [
             div [ _class "container" ] [
                 h2 [ _class "title is-2" ] [ str "Add proposed game night"]
@@ -256,7 +257,7 @@ module Views =
                             _style "display:block; margin-top: 10px;" 
                         ] [
                             gameInputTitle
-                            lazyGameSelect 1 game
+                            loadedGameSelect allGames 1 game
                             addGameButton 2
                         ]
                         span [
@@ -309,7 +310,6 @@ type CreateProposedGameNightForm =
     { Games : string list
       Dates : string list }
     with
-        // todo implement
         member private this.OkInputs submitButtonId = 
             let gameSelects =
                 this.Games
@@ -393,14 +393,19 @@ let showProposedGameNight env (ctx: HttpContext) stringId =
         
 let addProposedGameNight env : HttpFunc =
     fun ctx ->
-        let isInline = 
-            ctx.TryGetQueryStringValue "inline" 
-            |> Option.bind bool.tryParse 
-            |> Option.defaultValue false
-        let gameId =
-            ctx.TryGetQueryStringValue "game"
-            |> Option.bind (GameId.parse >> Result.toOption)
-        Views.addProposedGameNightView isInline gameId 
+        taskResult {
+            
+            let isInline = 
+                ctx.TryGetQueryStringValue "inline" 
+                |> Option.bind bool.tryParse 
+                |> Option.defaultValue false
+            let gameId =
+                ctx.TryGetQueryStringValue "game"
+               |> Option.bind (GameId.parse >> Result.toOption)
+               
+            let! allGames = Storage.Games.getAllGames env
+            return Views.addProposedGameNightView isInline allGames gameId
+        }
         |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))
 
 let saveProposedGameNight env (ctx: HttpContext) : HttpFuncResult =
@@ -436,7 +441,7 @@ let sendGameVoteAddedNotification ctx (gameNightId: Guid<GameNightId>) (gameId: 
     let votesId = sprintf "proposed-game-night-game-votes-%s-%s" (gameNightId.ToString()) (gameId.ToString())
     let voteId = sprintf "proposed-game-night-game-vote-%s-%s-%s" (gameNightId.ToString()) (gameId.ToString()) %user.Name
     GameNightViews.otherUsersVoteButton voteId user.Name
-    |> TurboStream.append votesId 
+    |> TurboStream.append votesId
     |> Seq.singleton
     |> TurboStream.render
     |> RenderView.AsString.htmlNodes
@@ -446,7 +451,7 @@ let sendDateVoteAddedNotification ctx (gameNightId: Guid<GameNightId>) (date: Da
     let votesId = sprintf "proposed-game-night-date-votes-%s-%s" (gameNightId.ToString()) (date.AsString)
     let voteId = sprintf "proposed-game-night-date-vote-%s-%s-%s" (gameNightId.ToString()) (date.AsString) %user.Name
     GameNightViews.otherUsersVoteButton voteId user.Name
-    |> TurboStream.append votesId 
+    |> TurboStream.append votesId
     |> Seq.singleton
     |> TurboStream.render
     |> RenderView.AsString.htmlNodes
@@ -563,7 +568,7 @@ let dateController env (gameNightId: string) =
         
 let controller env = controller {
     plug [ All ] CommonHttpHandlers.requireUsername
-    plug [ Add ] (CommonHttpHandlers.privateCaching (TimeSpan.FromHours 24.))
+    plug [ Add ] ((CommonHttpHandlers.privateCachingWithQueries (TimeSpan.FromHours 24.)) [| "game" |])
     
     index (getAll env)
     show (showProposedGameNight env)
@@ -601,7 +606,7 @@ module Fragments =
     let addGameSelectFragment : HttpHandler =
         fun _ ctx ->
             let index = ctx.TryGetQueryStringValue "index" |> Option.map int |> Option.defaultValue 1
-
+                    
             [ TurboStream.remove "add-game-button"
               TurboStream.append "game-inputs" (Views.lazyGameSelect index None)
               TurboStream.append "game-inputs" (Views.addGameButton (index + 1)) ]

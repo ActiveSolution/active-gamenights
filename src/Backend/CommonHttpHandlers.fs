@@ -13,7 +13,8 @@ let requireUsername : HttpHandler =
             let claims = 
                 [ Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
                   Claim(ClaimTypes.Name, user.Name.ToString()) ]
-            let principal = ClaimsPrincipal(ClaimsIdentity(claims, "Anonymous"))
+            let identity = ClaimsIdentity(claims, "Basic")
+            let principal = ClaimsPrincipal(identity)
             ctx.User <- principal
             next ctx
         | Error _ -> 

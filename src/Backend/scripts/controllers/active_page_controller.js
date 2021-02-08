@@ -16,7 +16,6 @@ export default class extends Controller {
   }
 
   toggleClass() {
-    console.log("clicked toggle")
     if (this.hasElementTarget)
     {
       this.elementTargets.forEach(e => e.classList.toggle(this.nameClass));

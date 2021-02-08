@@ -43,7 +43,7 @@ module ClaimsPrincipal =
     let private getNameIdentifier = getClaim ClaimTypes.NameIdentifier
         
     let private getName = getClaim ClaimTypes.Name
-    let getUser principal =
+    let getUser (principal: ClaimsPrincipal) =
         result {
             let! userId = principal |> getNameIdentifier |> Result.bind User.parseUserId
             let! username = principal |> getName |> Result.bind User.createUsername
