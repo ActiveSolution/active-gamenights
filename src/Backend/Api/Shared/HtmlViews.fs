@@ -68,21 +68,18 @@ let fragment content =
 let fullPage env (user: string<CanonizedUsername> option) page content =
     html [] [
         htmlHead env
-        body [] [
-            div [
-                if user.IsSome then 
-                    Stimulus.controllers [ "unvoted-count"; "turbo-stream" ]
-                else
-                    Stimulus.controller "unvoted-count"
-                Stimulus.action { DomEvent = "refresh-vote-count:connected"; Controller = "unvoted-count"; Action = "refresh" }
-                if user.IsSome then Stimulus.value { Controller = "turbo-stream"; ValueName = "url"; Value = "/sse-notifications" }
-     
-                _class "has-navbar-fixed-top" 
-            ] [
-                Navbar.Views.navbarView user page
-                turboFrame [ _id "content" ] [
-                    yield! content
-                ]
+        body [
+            if user.IsSome then 
+                Stimulus.controllers [ "unvoted-count"; "turbo-stream" ]
+            else
+                Stimulus.controller "unvoted-count"
+            Stimulus.action { DomEvent = "refresh-vote-count:connected"; Controller = "unvoted-count"; Action = "refresh" }
+            if user.IsSome then Stimulus.value { Controller = "turbo-stream"; ValueName = "url"; Value = "/sse-notifications" }
+            _class "has-navbar-fixed-top" 
+        ] [
+            Navbar.Views.navbarView user page
+            turboFrame [ _id "content" ] [
+                yield! content
             ]
         ]
     ] 
