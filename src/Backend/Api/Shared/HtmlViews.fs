@@ -73,7 +73,7 @@ let fullPage env user page content =
         body [
             Stimulus.controllers [ "unvoted-count"; "turbo-stream" ]
             Stimulus.action { DomEvent = "refresh-vote-count:connected"; Controller = "unvoted-count"; Action = "refresh" }
-            Stimulus.value { Controller = "turbo-stream"; ValueName = "url"; Value = "http://localhost:8085/sse-notifications" }
+            Stimulus.value { Controller = "turbo-stream"; ValueName = "url"; Value = "/sse-notifications" }
             _class "has-navbar-fixed-top" 
         ] [
             Navbar.Views.navbarView user page
