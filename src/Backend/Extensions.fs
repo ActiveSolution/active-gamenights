@@ -2,6 +2,7 @@
 module Backend.Extensions
 
 open System
+open System.Security.Claims
 open Microsoft.AspNetCore.Http
 open FsToolkit.ErrorHandling
 open Domain
@@ -9,8 +10,6 @@ open Giraffe
 open Saturn
 open FsHotWire
 open FsHotWire.Giraffe
-open FSharp.UMX
-open System.Threading.Tasks
 
 type BasePath with
     member this.Val = this |> fun (BasePath bp) -> bp
@@ -29,6 +28,29 @@ module bool =
         
 module HttpContext = 
     let userKey = "username"
+    
+module ClaimsPrincipal =
+    let private getClaim ct (principal: ClaimsPrincipal) =
+        if principal = null then Error "No user principal"
+        elif principal.Claims = null || principal.Claims |> Seq.isEmpty then Error "No user claims"
+        else
+            principal.Claims
+            |> Seq.filter (fun c ->
+                c.Type = ct)
+            |> Seq.exactlyOne
+            |> (fun c -> Ok c.Value)
+        
+    let private getNameIdentifier = getClaim ClaimTypes.NameIdentifier
+        
+    let private getName = getClaim ClaimTypes.Name
+    let getUser principal =
+        result {
+            let! userId = principal |> getNameIdentifier |> Result.bind User.parseUserId
+            let! username = principal |> getName |> Result.bind User.createUsername
+            return   
+                { User.Id = userId
+                  User.Name = username }
+        }
     
 module ApiResultHelpers =
     let handleResult ctx okFunc res : HttpFuncResult =
@@ -52,19 +74,20 @@ module ApiResultHelpers =
             | _ -> Response.badRequest ctx ""
         
 
-    let getUser (ctx: HttpContext) =
-        ctx.Session.GetString(HttpContext.userKey)
-        |> User.createUsername
+    let getUsername (ctx: HttpContext) =
+        ctx.User 
+        |> ClaimsPrincipal.getUser
         |> Result.toOption
+        |> Option.map (fun u -> u.Name)
     let fullPageHtml (env: #ITemplateBuilder) page content ctx =
         content
         |> Seq.singleton
-        |> env.Templates.FullPage (getUser ctx) page
+        |> env.Templates.FullPage (getUsername ctx) page
         |> Controller.html ctx
 
     let fullPageHtmlMultiple (env: #ITemplateBuilder) page content (ctx: HttpContext) =
         content
-        |> env.Templates.FullPage (getUser ctx) page
+        |> env.Templates.FullPage (getUsername ctx) page
         |> Controller.html ctx
         
     let fragment (env: #ITemplateBuilder) content ctx =
@@ -77,15 +100,13 @@ type ApiFormResponse =
     | Redirect of string
     | TurboStream of TurboStream list
     
+   
 type HttpContext with
-    member this.GetUser() =
-        this.Session.GetString(HttpContext.userKey)
-        |> Option.ofObj
-        |> Result.requireSome "Missing user in HttpContext"
-        |> Result.bind User.createUsername
-        
-    member this.SetUsername(user: string<CanonizedUsername>) =
-        this.Session.SetString(HttpContext.userKey, %user)
+
+    member this.GetCurrentUser() =
+        this.User |> ClaimsPrincipal.getUser
+    member this.SetUser(user: User) =
+        this.Session.SetString(HttpContext.userKey, user |> User.serialize)
         
     member this.ClearUsername() =
         this.Session.Remove(HttpContext.userKey)

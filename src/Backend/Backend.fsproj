@@ -24,6 +24,7 @@
     <Compile Include="Version.fs" />
     <Compile Include="Infrastructure\Json.fs" />
     <Compile Include="Infrastructure\Storage.fs" />
+    <Compile Include="Infrastructure\Notifications.fs" />
     <Compile Include="Configuration.fs" />
     <Compile Include="Validation.fs" />
     <Compile Include="CommonHttpHandlers.fs" />
@@ -34,7 +35,6 @@
     <Compile Include="Api\Version.fs" />
     <Compile Include="Api\User.fs" />
     <Compile Include="Api\Game.fs" />
-    <Compile Include="Api\ConfirmedGameNight.fs" />
     <Compile Include="Api\ProposedGameNight.fs" />
     <Compile Include="Api\GameNight.fs" />
     <Compile Include="CompositionRoot.fs" />

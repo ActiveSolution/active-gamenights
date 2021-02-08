@@ -8,6 +8,7 @@ open Microsoft.Extensions.DependencyInjection
 open Saturn
 open Microsoft.Extensions.Logging
 open Backend.CommonHttpHandlers
+open Lib.AspNetCore.ServerSentEvents
         
 let endpointPipe =
     pipeline {
@@ -44,7 +45,6 @@ let browserRouter =
         forward "" CompositionRoot.Api.gameNightController
         forward "/user" CompositionRoot.Api.userController
         forward "/fragments" fragments
-        forward "/confirmedgamenight" CompositionRoot.Api.confirmedGameNightController
         forward "/proposedgamenight" CompositionRoot.Api.proposedGameNightController
         forward "/gamenight" CompositionRoot.Api.gameNightController
         forward"/game" CompositionRoot.Api.gameController
@@ -62,10 +62,11 @@ let webApp =
 let errorHandler: ErrorHandler =
     fun exn logger _next ctx ->
         match exn with
-        | :? ArgumentException as a -> Response.badRequest ctx a.Message
+        | :? ArgumentException as a ->
+            Response.badRequest ctx (a.ToString())
         | _ ->
             let msg =
-                sprintf "Exception for %s%s" ctx.Request.Path.Value ctx.Request.QueryString.Value
+                sprintf "Exception for %s%s:\n\t%s" ctx.Request.Path.Value ctx.Request.QueryString.Value (exn.ToString())
 
             logger.LogError(exn, msg)
             Response.internalError ctx ()
@@ -76,10 +77,12 @@ let configureLogging (log:ILoggingBuilder) =
     log.AddConsole() |> ignore
 let configureServices (s: IServiceCollection) =
     s.AddResponseCaching() |> ignore
+    s.AddServerSentEvents() |> ignore
     s
 let configureApp (a: IApplicationBuilder) =
     a.UseResponseCaching() |> ignore
     a.UseRouting() |> ignore
+    a.MapServerSentEvents<ServerSentEventsService>(PathString "/sse-notifications") |> ignore
     a
     
 application {

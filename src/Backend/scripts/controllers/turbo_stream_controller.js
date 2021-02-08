@@ -7,7 +7,6 @@ export default class extends Controller {
 
     connect() {
         this.es = new EventSource(this.urlValue);
-        console.log(`connecting to event source ${this.urlValue}`)
         connectStreamSource(this.es);
     }
 

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Slack notification
 * Export Calendar event
 
+## [0.4.5] - 2021-02-08
+### Added
+* Publish SSE for adding/removing votes
+
+
 ## [0.4.4] - 2021-02-07
 ### Added
 * 'notification' for unvoted game nights in navbar.

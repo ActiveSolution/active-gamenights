@@ -18,7 +18,7 @@ module Views =
 
     open Giraffe.ViewEngine
     open FsHotWire.Giraffe
-    let gameCard (game:Game) votes currentUser actionUrl voteUpdateTarget =
+    let gameCard (gnId: Guid<GameNightId>) (game:Game) votes currentUser actionUrl voteUpdateTarget =
         article [ 
             _class "media" 
             _dataGameName %game.Name
@@ -29,8 +29,11 @@ module Views =
             div [ _class "media-content" ] [
                 a [ _href (sprintf "/game/%A" game.Id); _targetTurboFrame "_top" ] [ strong [] [ game.Name |> GameName.toDisplayName |> str ] ]
                 nav [ _class "level" ] [ 
-                    div [ _class "level-left" ] [
-                        yield! GameNightViews.gameVoteButtons currentUser votes actionUrl voteUpdateTarget
+                    div [
+                        _id (sprintf "proposed-game-night-game-votes-%s-%s" (gnId.ToString()) (game.Id.ToString()))
+                        _class "level-left" 
+                    ] [
+                        yield! GameNightViews.gameVoteButtons gnId game.Id currentUser votes actionUrl voteUpdateTarget
                         if GameNightViews.hasVoted votes currentUser then
                             ()
                         else 
@@ -58,7 +61,7 @@ module Views =
                                 let actionUrl = sprintf "/proposedgamenight/%A/game/%A/vote" gn.Id game.Id
                                 ul [] [
                                     li [ ] [
-                                        gameCard game votes currentUser actionUrl turboFrameId
+                                        gameCard gn.Id game votes currentUser actionUrl turboFrameId
                                     ] 
                                 ] 
                         ]
@@ -67,7 +70,7 @@ module Views =
                                 let actionUrl = sprintf "/proposedgamenight/%A/date/%s/vote" gn.Id date.AsString
                                 ul [] [
                                     li [] [
-                                        GameNightViews.dateCard date votes currentUser actionUrl turboFrameId
+                                        GameNightViews.dateCard gn.Id date votes currentUser actionUrl turboFrameId
                                     ] 
                                 ]
                         ]
@@ -382,8 +385,8 @@ let showProposedGameNight env (ctx: HttpContext) stringId =
         let! id = GameNightId.parse stringId |> Result.mapError ApiError.BadRequest
         let! proposed, allGames = getData ()
         let gn = proposed |> List.filter (fun gn -> gn.Id = id) |> List.exactlyOne
-        let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-        return Views.showGameNightView allGames user gn
+        let! user = ctx.GetCurrentUser() |> Result.mapError ApiError.MissingUser
+        return Views.showGameNightView allGames user.Name gn
     }
     |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))
         
@@ -403,9 +406,9 @@ let addProposedGameNight env : HttpFunc =
 let saveProposedGameNight env (ctx: HttpContext) : HttpFuncResult =
     taskResult {
         let! form = ctx.BindFormAsync<CreateProposedGameNightForm>()
-        let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
+        let! user = ctx.GetCurrentUser() |> Result.mapError ApiError.MissingUser
         let! existingGames = Storage.Games.getAllGames env
-        let! req = Validation.validateCreateGameNightForm user (existingGames |> Set.ofSeq) form
+        let! req = Validation.validateCreateGameNightForm user.Name (existingGames |> Set.ofSeq) form
         let gn = Workflows.GameNights.createProposedGameNight req
         let! _ = Storage.GameNights.saveProposedGameNight env gn
         return "/proposedgamenight"
@@ -424,10 +427,46 @@ let getAll env : HttpFunc =
     fun ctx -> 
         taskResult {
             let! (proposed, allGames) = getData
-            let! currentUser = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-            return Views.gameNightsView allGames currentUser proposed 
+            let! currentUser = ctx.GetCurrentUser() |> Result.mapError ApiError.MissingUser
+            return Views.gameNightsView allGames currentUser.Name proposed 
         } 
         |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))
+        
+let sendGameVoteAddedNotification ctx (gameNightId: Guid<GameNightId>) (gameId: Guid<GameId>) user =
+    let votesId = sprintf "proposed-game-night-game-votes-%s-%s" (gameNightId.ToString()) (gameId.ToString())
+    let voteId = sprintf "proposed-game-night-game-vote-%s-%s-%s" (gameNightId.ToString()) (gameId.ToString()) %user.Name
+    GameNightViews.otherUsersVoteButton voteId user.Name
+    |> TurboStream.append votesId 
+    |> Seq.singleton
+    |> TurboStream.render
+    |> RenderView.AsString.htmlNodes
+    |> Notifications.sendEvent ctx (Notifications.exceptClient user)
+    
+let sendDateVoteAddedNotification ctx (gameNightId: Guid<GameNightId>) (date: DateTime) user =
+    let votesId = sprintf "proposed-game-night-date-votes-%s-%s" (gameNightId.ToString()) (date.AsString)
+    let voteId = sprintf "proposed-game-night-date-vote-%s-%s-%s" (gameNightId.ToString()) (date.AsString) %user.Name
+    GameNightViews.otherUsersVoteButton voteId user.Name
+    |> TurboStream.append votesId 
+    |> Seq.singleton
+    |> TurboStream.render
+    |> RenderView.AsString.htmlNodes
+    |> Notifications.sendEvent ctx (Notifications.exceptClient user)
+    
+let sendGameVoteRemovedNotification ctx (gameNightId: Guid<GameNightId>) (gameId: Guid<GameId>) user =
+    let id = sprintf "proposed-game-night-game-vote-%s-%s-%s" (gameNightId.ToString()) (gameId.ToString()) %user.Name
+    TurboStream.remove id 
+    |> Seq.singleton
+    |> TurboStream.render
+    |> RenderView.AsString.htmlNodes
+    |> Notifications.sendEvent ctx (Notifications.exceptClient user)
+    
+let sendDateVoteRemovedNotification ctx (gameNightId: Guid<GameNightId>) (date: DateTime) user =
+    let id = sprintf "proposed-game-night-date-vote-%s-%s-%s" (gameNightId.ToString()) (date.AsString) %user.Name
+    TurboStream.remove id 
+    |> Seq.singleton
+    |> TurboStream.render
+    |> RenderView.AsString.htmlNodes
+    |> Notifications.sendEvent ctx (Notifications.exceptClient user)
         
 let gameController env (gameNightId: string) =
     let voteController (gameIdStr: string) =
@@ -436,10 +475,12 @@ let gameController env (gameNightId: string) =
                 let! gameNightId = GameNightId.parse gameNightId |> Result.mapError ApiError.BadRequest
                 let! gameNight = Storage.GameNights.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError (fun _ -> ApiError.NotFound)
                 let! gameId = gameIdStr |> GameId.parse |> Result.mapError ApiError.BadRequest
-                let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-                let req = Workflows.GameNights.GameVoteRequest.create (gameNight, gameId, user)
+                let! user = ctx.GetCurrentUser() |> Result.mapError ApiError.MissingUser
+                let req = Workflows.GameNights.GameVoteRequest.create (gameNight, gameId, user.Name)
                 let updated = Workflows.GameNights.addGameVote req
                 let! _ = Storage.GameNights.saveProposedGameNight env updated
+                
+                let! _ = sendGameVoteAddedNotification ctx gameNightId gameId user
                 
                 return sprintf "/proposedgamenight/%s" (gameNightId.ToString())
             }
@@ -451,16 +492,19 @@ let gameController env (gameNightId: string) =
                 let! gameNight = Storage.GameNights.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError (fun _ -> ApiError.NotFound)
                 
                 let! gameId = gameIdStr |> GameId.parse |> Result.mapError ApiError.BadRequest
-                let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-                let req = Workflows.GameNights.GameVoteRequest.create (gameNight, gameId, user)
+                let! user = ctx.GetCurrentUser() |> Result.mapError ApiError.MissingUser
+                let req = Workflows.GameNights.GameVoteRequest.create (gameNight, gameId, user.Name)
                 let updated = Workflows.GameNights.removeGameVote req
                 
                 let! _ = Storage.GameNights.saveProposedGameNight env updated
+                
+                let! _ = sendGameVoteRemovedNotification ctx gameNightId gameId user
                 return sprintf "/proposedgamenight/%s" (gameNightId.ToString())
                 
             } |> ctx.RespondWithRedirect
     
         controller {
+            plug [ All ] CommonHttpHandlers.requireUsername
             create saveGameVote
             delete deleteGameVote
         }
@@ -478,11 +522,13 @@ let dateController env (gameNightId: string) =
                 let! gameNight = Storage.GameNights.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError (fun _ -> ApiError.NotFound)
                 
                 let! date = date |> DateTime.tryParse |> Result.mapError ApiError.BadRequest
-                let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-                let req = Workflows.GameNights.DateVoteRequest.create (gameNight, date, user)
+                let! user = ctx.GetCurrentUser() |> Result.mapError ApiError.MissingUser
+                let req = Workflows.GameNights.DateVoteRequest.create (gameNight, date, user.Name)
                 let updated = Workflows.GameNights.addDateVote req
                 
                 let! _ = Storage.GameNights.saveProposedGameNight env updated
+                
+                let! _ = sendDateVoteAddedNotification ctx gameNightId date user
                 
                 return sprintf "/proposedgamenight/%s" (gameNightId.ToString())
             }
@@ -494,16 +540,19 @@ let dateController env (gameNightId: string) =
                 let! gameNight = Storage.GameNights.getProposedGameNight env gameNightId |> Async.StartAsTask |> TaskResult.mapError (fun _ -> ApiError.NotFound)
                 
                 let! date = date |> DateTime.tryParse |> Result.mapError ApiError.BadRequest
-                let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-                let req = Workflows.GameNights.DateVoteRequest.create (gameNight, date, user)
+                let! user = ctx.GetCurrentUser() |> Result.mapError ApiError.MissingUser
+                let req = Workflows.GameNights.DateVoteRequest.create (gameNight, date, user.Name)
                 let updated = Workflows.GameNights.removeDateVote req
                 
                 let! _ = Storage.GameNights.saveProposedGameNight env updated
+                
+                let _ = sendDateVoteRemovedNotification ctx gameNightId date user
                 return sprintf "/proposedgamenight/%s" (gameNightId.ToString())
                 
             } |> ctx.RespondWithRedirect
     
         controller {
+            plug [ All ] CommonHttpHandlers.requireUsername
             create saveDateVote
             delete deleteDateVote
         }
@@ -549,7 +598,7 @@ module Fragments =
             }
             |> (fun view -> ctx.RespondWithHtmlFragment(env, view))
 
-    let addGameSelectFragment env : HttpHandler =
+    let addGameSelectFragment : HttpHandler =
         fun _ ctx ->
             let index = ctx.TryGetQueryStringValue "index" |> Option.map int |> Option.defaultValue 1
 
@@ -558,7 +607,7 @@ module Fragments =
               TurboStream.append "game-inputs" (Views.addGameButton (index + 1)) ]
             |> ctx.RespondWithTurboStream
         
-    let addDateInputFragment env : HttpHandler =
+    let addDateInputFragment : HttpHandler =
         fun _ ctx ->
             let index = ctx.TryGetQueryStringValue "index" |> Option.map int |> Option.defaultValue 1
 

@@ -12,7 +12,7 @@ module Domain =
     [<Measure>] type FutureDate
     [<Measure>] type GameNightId
     [<Measure>] type GameId
-//    [<Measure>] type UserId
+    [<Measure>] type UserId
                     
     type Game = 
         { Id: Guid<GameId>
@@ -39,6 +39,6 @@ module Domain =
           DateVotes : NonEmptyMap<DateTime, Set<string<CanonizedUsername>>>
           CreatedBy : string<CanonizedUsername> }
           
-//    type User =
-//        { Id : Guid<UserId>
-//          Name : string<CanonizedUsername> }
+    type User =
+        { Id : Guid<UserId>
+          Name : string<CanonizedUsername> }

@@ -146,7 +146,7 @@ let unvotedCountFragment env : HttpHandler =
     fun _ (ctx: HttpContext) ->
         taskResult {
             let! allGameNights = Storage.GameNights.getAllProposedGameNights env
-            let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
-            return Views.loadedUnvotedGameNightsCountViewTF allGameNights user
+            let! user = ctx.GetCurrentUser() |> Result.mapError ApiError.MissingUser
+            return Views.loadedUnvotedGameNightsCountViewTF allGameNights user.Name
         }
         |> (fun view -> ctx.RespondWithHtmlFragment(env, view))

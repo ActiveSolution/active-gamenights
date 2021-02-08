@@ -333,10 +333,10 @@ let editGame env (ctx: HttpContext) gameIdStr =
 let saveGame env (ctx: HttpContext): HttpFuncResult =
     taskResult {
         let! form = ctx.BindFormAsync<CreateGameForm>()
-        let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
+        let! user = ctx.GetCurrentUser() |> Result.mapError ApiError.MissingUser
         let! existingGames = Storage.Games.getAllGames env |> Async.map (Set.ofSeq >>Set.map (fun x -> x.Name))
         let gameId = GameId.newId() 
-        let! request = Validation.validateCreateGameForm gameId user existingGames form
+        let! request = Validation.validateCreateGameForm gameId user.Name existingGames form
         let! game = Workflows.Game.addGame request |> Result.mapError ApiError.BadRequest
         let! _ = Storage.Games.addGame env game
         return "/game"
@@ -347,10 +347,10 @@ let updateGame env (ctx: HttpContext) gameIdStr =
     taskResult {
         let! gameId = GameId.parse gameIdStr |> Result.mapError ApiError.BadRequest 
         let! form = ctx.BindFormAsync<CreateGameForm>()
-        let! user = ctx.GetUser() |> Result.mapError ApiError.MissingUser
+        let! user = ctx.GetCurrentUser() |> Result.mapError ApiError.MissingUser
         let! existingGames = Storage.Games.getAllGames env 
         let existingGameNames = existingGames |> Set.ofSeq |> Set.map (fun x -> x.Name)
-        let! request = Validation.validateUpdateGameForm gameId existingGameNames user form 
+        let! request = Validation.validateUpdateGameForm gameId existingGameNames user.Name form 
         let game = Workflows.Game.updateGame request 
         let! _ = Storage.Games.addGame env game
 
