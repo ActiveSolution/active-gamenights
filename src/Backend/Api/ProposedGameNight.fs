@@ -119,7 +119,7 @@ module Views =
                     _class "section"
                 ] [ 
                     div [ _class "container"] [ 
-                        h2 [ _class "title is-2" ] [ str "Proposed game nights" ]
+                        h2 [ _class "title is-2" ] [ str "Game nights" ]
                         for gameNight in proposed do proposedGameNightView false allGames currentUser gameNight 
                         addProposedGameNightLink
                     ]
