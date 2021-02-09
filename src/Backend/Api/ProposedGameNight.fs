@@ -138,41 +138,29 @@ module Views =
             ]
         ]
 
-    let gameSelect (allGames: seq<Game>) loadGames index (selectedGame: Guid<GameId> option) =
+    let gameSelect (allGames: seq<Game>) index (selectedGame: Guid<GameId> option) =
         let placeholder = if index > 1 then "Pick another game" else "Pick a game"
-        let fragmentEndpoint =
-            selectedGame
-            |> Option.map (fun selected -> (sprintf "/fragments/proposedgamenight/gameselect?index=%i&selectedGame=%A" index %selected))
-            |> Option.defaultValue (sprintf "/fragments/proposedgamenight/gameselect?index=%i" index)
         div [ _class "field"; _id (sprintf "game-input-%i-field" index) ] [
             div [ _class "control" ] [
-                turboFrame [
-                    _id (sprintf "game-select-%i" index)
-                    if loadGames then _src fragmentEndpoint
-                ] [ 
-                    div [ _class "select" ] [
-                        select [ 
-                            _name "Games"
-                            _style "min-width: 20em;"
-                        ] [
-                            option [ _value "none" ] [ str placeholder ]
-                            for game in allGames do 
-                                option [
-                                    _value <| game.Id.ToString()
-                                    match selectedGame with
-                                    | Some selected when selected = game.Id -> _selected
-                                    | _ -> ()
-                                ] [ 
-                                    game.Name |> GameName.toDisplayName |> str 
-                                ]
-                        ]
+                div [ _class "select" ] [
+                    select [ 
+                        _name "Games"
+                        _style "min-width: 20em;"
+                    ] [
+                        option [ _value "none" ] [ str placeholder ]
+                        for game in allGames do 
+                            option [
+                                _value <| game.Id.ToString()
+                                match selectedGame with
+                                | Some selected when selected = game.Id -> _selected
+                                | _ -> ()
+                            ] [ 
+                                game.Name |> GameName.toDisplayName |> str 
+                            ]
                     ]
                 ]
             ]
         ]
-
-    let lazyGameSelect index selectedGame = gameSelect Set.empty true index selectedGame
-    let loadedGameSelect allGames index selectedGame = gameSelect allGames false index selectedGame
 
     let addDateInputButton nextIndex =
         div [ _class "field" ] [
@@ -259,7 +247,7 @@ module Views =
                             _style "display:block; margin-top: 10px;" 
                         ] [
                             gameInputTitle
-                            loadedGameSelect allGames 1 game
+                            gameSelect allGames 1 game
                             addGameButton 2
                         ]
                         span [
@@ -287,6 +275,7 @@ module Views =
                 div [ _class "select is-danger" ] [
                     select [ 
                         _name "Games"
+                        _style "min-width: 20em;"
                     ] [
                         option [ _value "none" ] [ str placeholder ]
                         for game in allGames do option [ _value <| game.Id.ToString() ] [ game.Name |> GameName.toDisplayName |> str ]
@@ -312,11 +301,11 @@ type CreateProposedGameNightForm =
     { Games : string list
       Dates : string list }
     with
-        member private this.OkInputs submitButtonId = 
+        member private this.OkInputs allGames submitButtonId = 
             let gameSelects =
                 this.Games
                 |> List.mapi (fun i g -> 
-                    Views.lazyGameSelect (i + 1) (g |> GameId.parse |> Result.toOption) 
+                    Views.gameSelect allGames (i + 1) (g |> GameId.parse |> Result.toOption) 
                     |> TurboStream.replace (sprintf "game-input-%i-field" (i + 1)) )
                     |> List.append [ TurboStream.replace submitButtonId (Partials.loadingButton submitButtonId "Save") ]
             let dateInputs =
@@ -328,8 +317,8 @@ type CreateProposedGameNightForm =
                     |> TurboStream.replace (sprintf "date-input-%i-field" (index + 1)) )
             [ yield! gameSelects 
               yield! dateInputs ]
-        member this.FormValidationError submitButtonId errors =
-            TurboStream.mergeByTargetId (this.OkInputs submitButtonId) errors
+        member this.FormValidationError allGames submitButtonId errors =
+            TurboStream.mergeByTargetId (this.OkInputs allGames submitButtonId) errors
             |> FormValidationError 
 
 
@@ -372,7 +361,7 @@ module private Validation =
                   Games = games
                   Dates = dates }
         }
-        |> Result.mapError (form.FormValidationError "add-proposed-game-night-submit-button")
+        |> Result.mapError (form.FormValidationError existingGames "add-proposed-game-night-submit-button")
 
 let showProposedGameNight env (ctx: HttpContext) stringId =
     let getData () =
@@ -601,17 +590,22 @@ module Fragments =
                         |> Seq.tryFind (fun g -> g.Id = gameId) 
                         |> Option.map(fun g -> g.Id))
 
-                return Views.loadedGameSelect allGames index selectedGame
+                return Views.gameSelect allGames index selectedGame
             }
             |> (fun view -> ctx.RespondWithHtmlFragment(env, view))
 
-    let addGameSelectFragment : HttpHandler =
+    let addGameSelectFragment env : HttpHandler =
         fun _ ctx ->
             let index = ctx.TryGetQueryStringValue "index" |> Option.map int |> Option.defaultValue 1
                     
-            [ TurboStream.remove "add-game-button"
-              TurboStream.append "game-inputs" (Views.lazyGameSelect index None)
-              TurboStream.append "game-inputs" (Views.addGameButton (index + 1)) ]
+            taskResult {
+                let! allGames = Storage.Games.getAllGames env
+                
+                return
+                    [ TurboStream.remove "add-game-button"
+                      TurboStream.append "game-inputs" (Views.gameSelect allGames index None)
+                      TurboStream.append "game-inputs" (Views.addGameButton (index + 1)) ]
+            }
             |> ctx.RespondWithTurboStream
         
     let addDateInputFragment : HttpHandler =

@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Slack notification
 * Export Calendar event
 
+## [0.4.10] - 2021-02-09
+### Changed
+* Removed lazy-loaded game select
 
 ## [0.4.9] - 2021-02-09
 ### Added
