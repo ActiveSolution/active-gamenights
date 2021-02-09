@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Export Calendar event
 
 
+## [0.4.9] - 2021-02-09
+### Added
+* Flatpickr for date-inputs
+
 ## [0.4.8] - 2021-02-08
 ### Fixed
 * Navbar styling

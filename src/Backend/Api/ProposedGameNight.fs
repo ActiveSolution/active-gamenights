@@ -190,10 +190,10 @@ module Views =
             div [ _class "control" ] [
                 input [
                     _id (sprintf "date-input-%i" index)
-                    _type "text"
                     _class "input"
+                    Stimulus.controller "flatpickr"
+                    _type "text"
                     _name "Dates"
-                    _placeholder "yyyy-mm-dd"
                 ]
             ]
         ]
@@ -203,8 +203,9 @@ module Views =
             div [ _class "control" ] [
                 input [
                     _id (sprintf "date-input-%i" index)
+                    _class "input is-success"
+                    Stimulus.controller "flatpickr"
                     _type "text"
-                    _class "input"
                     _name "Dates"
                     _value (date |> DateTime.asString)
                 ]
@@ -217,8 +218,9 @@ module Views =
             div [ _class "control" ] [
                 input [
                     _id (sprintf "date-input-%i" index)
-                    _type "text"
                     _class "input is-danger"
+                    Stimulus.controller "flatpickr"
+                    _type "text"
                     _name "Dates"
                     match value with
                     | Some v -> _value v

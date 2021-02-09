@@ -69,5 +69,6 @@ src/Backend/Version.fs
 
 #js build output scripts
 src/backend/public/Scripts/*.js*
+src/backend/public/Scripts/*.css*
 
 .cache

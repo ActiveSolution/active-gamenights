@@ -48,16 +48,17 @@ let htmlHead (settings: ITemplateSettings) =
             attr "data-domain" settings.Domain.Val
             _src "https://plausible.io/js/plausible.js"
         ] []
+        link [
+            _rel "stylesheet"
+            _href "/Scripts/bundle.css"
+            _type "text/css"
+        ]
         script [
             _async
             _defer
             _src "/Scripts/bundle.js"
             _type "text/javascript"
         ] []
-        link [
-            _rel "stylesheet"
-            _href "/Styles/main.css"
-        ]
     ]
 
 let fragment content =
