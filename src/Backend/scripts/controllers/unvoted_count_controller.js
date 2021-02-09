@@ -8,7 +8,7 @@ export default class extends ApplicationController {
             .then(res => res.text())
             .then(html => {
                 if (this.hasCountTarget) {
-                    this.countTarget.innerHTML = html;
+                    this.countTarget.outerHTML = html;
                 }
             });
     }

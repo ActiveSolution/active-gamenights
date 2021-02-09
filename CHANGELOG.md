@@ -10,8 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Slack notification
 * Export Calendar event
 
-## [0.4.13] - 2021-02-09
+## [0.4.14] - 2021-02-09
 ### Fixed
+* Update outerHTML for unvoted count
 * Use game.Id as turbo-frame identifier
 
 ## [0.4.12] - 2021-02-09
