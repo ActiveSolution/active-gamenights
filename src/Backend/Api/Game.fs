@@ -63,7 +63,7 @@ module private Views =
             let numPlayers = match game.NumberOfPlayers with Some num -> str ("Number of players: " + num) | None -> emptyText
             let link = match game.Link with Some l -> a [ _href l; _target "_blank" ] [ str l ] | None -> emptyText
 
-            turboFrame [ _id ("game-" + %game.Name) ] [
+            turboFrame [ _id ("game-" + %game.Id.ToString()) ] [
                 div [ _class "box mb-5" ] [
                     article [ 
                         _class "media" 
@@ -170,7 +170,7 @@ module private Views =
         match game with
         | None -> gameNotFound
         | Some game ->
-            let id = "game-" + %game.Name
+            let id = "game-" + %game.Id.ToString()
             let target = if isInline then id else "_top"
             section [ _class "section" ] [
                 div [ _class "container" ] [
