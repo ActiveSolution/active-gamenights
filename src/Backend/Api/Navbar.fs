@@ -56,22 +56,12 @@ module Views =
         | None -> emptyText
 
     let unvotedGameNightsCountView (numGN: int) =
-        span [ _id "navbar-unvoted-count-span" ] [
+        span [ Stimulus.target { Controller = "unvoted-count"; TargetName = "count" } ] [
             if numGN < 1 then
                 emptyText
             else
                 div [ _class "circle ml-2" ] [ str (string numGN) ]
         ]
-
-    let private unvotedGameNightsCountViewTF lazyLoad (numGN: int option) =
-        turboFrame [
-            Stimulus.target { Controller = "unvoted-count"; TargetName = "count" }
-            _id "navbar-unvoted-count"
-            if lazyLoad then _src "/fragments/navbar/unvotedcount"
-        ] [ numGN |> Option.map unvotedGameNightsCountView |> Option.defaultValue emptyText ]
-        
-    let loadedUnvotedGameNightsCountViewTF (allGameNights: ProposedGameNight list) user =
-        unvotedGameNightsCountViewTF false (Some (ProposedGameNight.gameNightsWhereUserHasNotVoted allGameNights user))
 
     let gameNightsLink isActive =
         a [
@@ -82,7 +72,7 @@ module Views =
             _href "/gamenight" 
         ] [ 
             str "GameNights"
-            unvotedGameNightsCountViewTF true None
+            unvotedGameNightsCountView 0
         ]
 
     let gamesLink isActive =
@@ -147,6 +137,7 @@ let unvotedCountFragment env : HttpHandler =
         taskResult {
             let! allGameNights = Storage.GameNights.getAllProposedGameNights env
             let! user = ctx.GetCurrentUser() |> Result.mapError ApiError.MissingUser
-            return Views.loadedUnvotedGameNightsCountViewTF allGameNights user.Name
+            let count = ProposedGameNight.gameNightsWhereUserHasNotVoted allGameNights user.Name
+            return Views.unvotedGameNightsCountView count
         }
         |> (fun view -> ctx.RespondWithHtmlFragment(env, view))
