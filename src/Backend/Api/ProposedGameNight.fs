@@ -106,7 +106,6 @@ module Views =
             match proposed with
             | [] -> 
                 section [
-                    Stimulus.controller "refresh-vote-count"
                     _class "section"
                 ] [ 
                     div [ _class "container"] [ 
@@ -115,7 +114,6 @@ module Views =
                 ]
             | proposed ->
                 section [
-                    Stimulus.controller "refresh-vote-count"
                     _class "section"
                 ] [ 
                     div [ _class "container"] [ 
@@ -559,7 +557,6 @@ let dateController env (gameNightId: string) =
         
 let controller env = controller {
     plug [ All ] CommonHttpHandlers.requireUsername
-    plug [ Add ] ((CommonHttpHandlers.privateCachingWithQueries (TimeSpan.FromHours 24.)) [| "game" |])
     
     index (getAll env)
     show (showProposedGameNight env)

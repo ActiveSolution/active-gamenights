@@ -63,30 +63,24 @@ module Views =
                 div [ _class "circle ml-2" ] [ str (string numGN) ]
         ]
 
-    let gameNightsLink isActive =
+    let gameNightsLink unvotedCount isActive =
         a [
-            Stimulus.action { DomEvent = "click"; Controller = "active-page"; Action = "toggleClass" }
-            Stimulus.target { Controller = "active-page"; TargetName = "element" }
-            _targetTurboFrame "content"
             if isActive then _class "navbar-item is-tab is-active" else _class "navbar-item is-tab"
             _href "/gamenight" 
         ] [ 
             str "GameNights"
-            unvotedGameNightsCountView 0
+            unvotedGameNightsCountView unvotedCount
         ]
 
     let gamesLink isActive =
         a [
-            Stimulus.action { DomEvent = "click"; Controller = "active-page"; Action = "toggleClass" }
-            Stimulus.target { Controller = "active-page"; TargetName = "element" }
-            _targetTurboFrame "content"
             if isActive then _class "navbar-item is-tab is-active" else _class "navbar-item is-tab"
             _href "/game" 
         ] [ 
             str "Games"
         ]
 
-    let navbarView user (page: Page) =
+    let navbarView user (page: Page) unvotedCount =
         nav [
             _class "navbar is-fixed-top is-info"
             Accessibility._roleNavigation 
@@ -117,14 +111,12 @@ module Views =
                 Stimulus.target { Controller = "css-class"; TargetName = "element" }
             ] [
                 div [ 
-                    Stimulus.controller "active-page"
-                    Stimulus.cssClass { Controller = "active-page"; ClassName = "name"; ClassValue = "is-active" }
                     _class "navbar-start" 
                 ] [
                     match user with
                     | Some _ ->
                         gamesLink (page = Page.Games)
-                        gameNightsLink (page = Page.GameNights)
+                        gameNightsLink unvotedCount (page = Page.GameNights)
                     | None -> 
                         emptyText
                 ]

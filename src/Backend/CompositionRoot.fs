@@ -16,7 +16,7 @@ type BackendEnv() =
                     member _.Domain = config.Domain }
             { new ITemplates with
                 member _.Fragment(content) = Api.Shared.HtmlViews.fragment content 
-                member _.FullPage user page content = Api.Shared.HtmlViews.fullPage settings user page content }
+                member _.FullPage user unvotedCount page content = Api.Shared.HtmlViews.fullPage settings user page unvotedCount content }
 let env = BackendEnv()
 
 module Api =

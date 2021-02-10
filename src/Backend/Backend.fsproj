@@ -20,11 +20,11 @@
     <Compile Include="Domain\ProposedGameNight.fs" />
     <Compile Include="FsHotWire.fs" />
     <Compile Include="Types.fs" />
-    <Compile Include="Extensions.fs" />
-    <Compile Include="Version.fs" />
     <Compile Include="Infrastructure\Json.fs" />
     <Compile Include="Infrastructure\Storage.fs" />
+    <Compile Include="Extensions.fs" />
     <Compile Include="Infrastructure\Notifications.fs" />
+    <Compile Include="Version.fs" />
     <Compile Include="Configuration.fs" />
     <Compile Include="Validation.fs" />
     <Compile Include="CommonHttpHandlers.fs" />

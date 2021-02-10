@@ -10,6 +10,9 @@ open Giraffe
 open Saturn
 open FsHotWire
 open FsHotWire.Giraffe
+open Infrastructure
+open Giraffe.ViewEngine
+open FSharp.Control.Tasks.V2.ContextInsensitive
 
 type BasePath with
     member this.Val = this |> fun (BasePath bp) -> bp
@@ -74,20 +77,15 @@ module ApiResultHelpers =
             | _ -> Response.badRequest ctx ""
         
 
-    let getUsername (ctx: HttpContext) =
-        ctx.User 
-        |> ClaimsPrincipal.getUser
-        |> Result.toOption
-        |> Option.map (fun u -> u.Name)
-    let fullPageHtml (env: #ITemplateBuilder) page content ctx =
+    let fullPageHtml (env: #ITemplateBuilder) page username unvotedCount content ctx =
         content
         |> Seq.singleton
-        |> env.Templates.FullPage (getUsername ctx) page
+        |> env.Templates.FullPage username unvotedCount page
         |> Controller.html ctx
 
-    let fullPageHtmlMultiple (env: #ITemplateBuilder) page content (ctx: HttpContext) =
+    let fullPageHtmlMultiple (env: #ITemplateBuilder) page username unvotedCount content (ctx: HttpContext) =
         content
-        |> env.Templates.FullPage (getUsername ctx) page
+        |> env.Templates.FullPage username unvotedCount page
         |> Controller.html ctx
         
     let fragment (env: #ITemplateBuilder) content ctx =
@@ -101,6 +99,19 @@ type ApiFormResponse =
     | TurboStream of TurboStream list
     
    
+let getUsername (ctx: HttpContext) =
+    ctx.User 
+    |> ClaimsPrincipal.getUser
+    |> Result.toOption
+    |> Option.map (fun u -> u.Name)
+let getUnvotedCount env username =
+    async {
+        return!
+            Storage.GameNights.getAllProposedGameNights env |> Async.map (fun ps -> 
+                username 
+                |> Option.map (fun u -> ProposedGameNight.gameNightsWhereUserHasNotVoted ps u) 
+                |> Option.defaultValue 0)
+    }
 type HttpContext with
 
     member this.GetCurrentUser() =
@@ -117,21 +128,50 @@ type HttpContext with
         contentTaskResult
         |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.fragment env))
     member ctx.RespondWithHtml (env, page, content) =
-        ApiResultHelpers.fullPageHtml env page content ctx
-    member ctx.RespondWithHtml (env, page, contentResult) =
-        contentResult
-        |> ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtml env page)
+        task {
+            let username = getUsername ctx
+            let! unvotedCount = getUnvotedCount env username
+            return! ApiResultHelpers.fullPageHtml env page username unvotedCount content ctx
+        }
+    member ctx.RespondWithHtml (env, page, contentResult: Result<XmlNode, ApiError>) =
+        task {
+            let username = getUsername ctx
+            let! unvotedCount = getUnvotedCount env username
+            return!
+                contentResult
+                |> ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtml env page username unvotedCount)
+        }
     member ctx.RespondWithHtml (env, page, contentTaskResult) =
-        contentTaskResult
-        |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtml env page))
+        task {
+            let username = getUsername ctx
+            let! unvotedCount = getUnvotedCount env username
+            return!
+                contentTaskResult
+                |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtml env page username unvotedCount))
+        }
     member ctx.RespondWithHtml (env, page, content) =
-        ApiResultHelpers.fullPageHtmlMultiple env page content ctx
+        task {
+            let username = getUsername ctx
+            let! unvotedCount = getUnvotedCount env username
+            return!
+                ApiResultHelpers.fullPageHtmlMultiple env page username unvotedCount content ctx
+        }
     member ctx.RespondWithHtml (env, page, contentResult) =
-        contentResult
-        |> ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtmlMultiple env page)
+        task {
+            let username = getUsername ctx
+            let! unvotedCount = getUnvotedCount env username
+            return!
+                contentResult
+                |> ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtmlMultiple env page username unvotedCount)
+        }
     member ctx.RespondWithHtml (env, page, contentTaskResult) =
-        contentTaskResult
-        |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtmlMultiple env page))
+        task {
+            let username = getUsername ctx
+            let! unvotedCount = getUnvotedCount env username
+            return!
+                contentTaskResult
+                |> Task.bind (ApiResultHelpers.handleResult ctx (ApiResultHelpers.fullPageHtmlMultiple env page username unvotedCount))
+        }
     
     member ctx.RespondWithRedirect(location) = Turbo.redirect location ctx
     member ctx.RespondWithRedirect(locationResult) =

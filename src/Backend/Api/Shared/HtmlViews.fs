@@ -7,11 +7,18 @@ open Backend.Api
 open Giraffe.ViewEngine
 open FSharp.UMX
 
-let htmlHead (settings: ITemplateSettings) =
-    head [ _title "Active Game Night" ] [ 
+let htmlHead (user: string<CanonizedUsername> option) (settings: ITemplateSettings) =
+    head [ 
+        _title "Active Game Night" 
+    ] [ 
         ``base`` [ _href settings.BasePath.Val ] 
         meta [ _charset "utf8" ]
         meta [ _name "viewport"; _content "width=device-width, initial-scale=1" ]
+        if user.IsSome then  
+            script [ 
+                Stimulus.controllers [ "turbo-stream" ] 
+                Stimulus.value { Controller = "turbo-stream"; ValueName = "url"; Value = "/sse-notifications" } 
+            ] []
         link [
             _rel "apple-touch-icon"
             _sizes "180x180"
@@ -66,19 +73,16 @@ let fragment content =
     |> RenderView.AsString.htmlNode
         
 
-let fullPage env (user: string<CanonizedUsername> option) page content =
-    html [] [
-        htmlHead env
+let fullPage env (user: string<CanonizedUsername> option) unvotedCount page content =
+    html [ 
+    ] [
+        htmlHead user env
         body [
-            if user.IsSome then 
-                Stimulus.controllers [ "unvoted-count"; "turbo-stream" ]
-            else
-                Stimulus.controller "unvoted-count"
+            Stimulus.controller "unvoted-count" 
             Stimulus.action { DomEvent = "refresh-vote-count:connected"; Controller = "unvoted-count"; Action = "refresh" }
-            if user.IsSome then Stimulus.value { Controller = "turbo-stream"; ValueName = "url"; Value = "/sse-notifications" }
             _class "has-navbar-fixed-top" 
         ] [
-            Navbar.Views.navbarView user page
+            Navbar.Views.navbarView user unvotedCount page
             turboFrame [ _id "content" ] [
                 yield! content
             ]

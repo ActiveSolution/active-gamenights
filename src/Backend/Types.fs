@@ -32,7 +32,7 @@ type ITemplateSettings =
     abstract BasePath : BasePath
     abstract Domain : Domain
 type ITemplates =
-    abstract FullPage : string<CanonizedUsername> option -> Page -> XmlNode seq -> string
+    abstract FullPage : string<CanonizedUsername> option -> int -> Page -> XmlNode seq -> string
     abstract Fragment : XmlNode -> string
 type ITemplateBuilder =
     abstract Templates : ITemplates
