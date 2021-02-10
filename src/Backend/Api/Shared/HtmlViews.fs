@@ -49,12 +49,13 @@ let htmlHead (user: string<CanonizedUsername> option) (settings: ITemplateSettin
             _defer
             _src "https://use.fontawesome.com/releases/v5.14.0/js/all.js"
         ] []
-        script [
-            _async 
-            _defer
-            attr "data-domain" settings.Domain.Val
-            _src "https://plausible.io/js/plausible.js"
-        ] []
+        if not (settings.Domain.Val.ToLower().Contains("localhost") || settings.Domain.Val.ToLower().Contains("test")) then
+            script [
+                _async 
+                _defer
+                attr "data-domain" settings.Domain.Val
+                _src "https://plausible.io/js/plausible.js"
+            ] []
         link [
             _rel "stylesheet"
             _href "/Scripts/bundle.css"
