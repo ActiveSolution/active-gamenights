@@ -10,10 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Slack notification
 * Export Calendar event
 
-## [0.4.16] - 2021-02-10
+## [0.4.17] - 2021-02-10
 ### Changed
 * Simplify navbar, use page navigation
 * Only use Plausible analytics in prod environment.
+### Fixed
+* Bug in vote-count when adding new Game Night
 
 ## [0.4.14] - 2021-02-09
 ### Fixed

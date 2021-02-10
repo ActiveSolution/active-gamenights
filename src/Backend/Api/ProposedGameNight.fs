@@ -101,11 +101,12 @@ module Views =
                 ]
             ]
         
-    let gameNightsView allGames currentUser (proposed: List<_>) =
+    let gameNightsView refreshVoteCount allGames currentUser (proposed: List<_>) =
         turboFrame [ _id "proposed-game-nights"] [ 
             match proposed with
             | [] -> 
                 section [
+                    if refreshVoteCount then Stimulus.controller "refresh-vote-count"
                     _class "section"
                 ] [ 
                     div [ _class "container"] [ 
@@ -114,6 +115,7 @@ module Views =
                 ]
             | proposed ->
                 section [
+                    if refreshVoteCount then Stimulus.controller "refresh-vote-count"
                     _class "section"
                 ] [ 
                     div [ _class "container"] [ 
@@ -405,7 +407,7 @@ let saveProposedGameNight env (ctx: HttpContext) : HttpFuncResult =
         let! req = Validation.validateCreateGameNightForm user.Name (existingGames |> Set.ofSeq) form
         let gn = Workflows.GameNights.createProposedGameNight req
         let! _ = Storage.GameNights.saveProposedGameNight env gn
-        return "/proposedgamenight"
+        return "/proposedgamenight?refreshVoteCount=true"
             
     } |> ctx.RespondWithRedirect
 
@@ -420,9 +422,10 @@ let getAll env : HttpFunc =
         }
     fun ctx -> 
         taskResult {
+            let refreshVoteCount = ctx.TryGetQueryStringValue "refreshVoteCount" |> Option.bind (bool.tryParse) |> Option.defaultValue false
             let! (proposed, allGames) = getData
             let! currentUser = ctx.GetCurrentUser() |> Result.mapError ApiError.MissingUser
-            return Views.gameNightsView allGames currentUser.Name proposed 
+            return Views.gameNightsView refreshVoteCount allGames currentUser.Name proposed 
         } 
         |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))
         

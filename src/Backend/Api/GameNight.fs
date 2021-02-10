@@ -34,9 +34,10 @@ let getAll env : HttpFunc =
         }
     fun ctx ->
         taskResult {
+            let refreshVoteCount = ctx.TryGetQueryStringValue "refreshVoteCount" |> Option.bind (bool.tryParse) |> Option.defaultValue false
             let! (proposed, allGames) = getData env
             let! currentUser = ctx.GetCurrentUser() |> Result.mapError ApiError.MissingUser
-            return Views.gameNightsView allGames currentUser.Name proposed
+            return Views.gameNightsView refreshVoteCount allGames currentUser.Name proposed
         }
         |> (fun view -> ctx.RespondWithHtml(env, Page.GameNights, view))
     
